@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Post Fiat Validator — Permanent Upper Class</title>
+  <meta name="description" content="Post Fiat Network validator operated by Permanent Upper Class. Infrastructure that compounds.">
+  <meta name="theme-color" content="#000000">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --black: #000000;
+      --near-black: #060606;
+      --surface: #0a0a0a;
+      --surface-elevated: #111111;
+      --border: #1a1a1a;
+      --border-subtle: #131313;
+      --text-primary: #e0e0e0;
+      --text-secondary: #808080;
+      --text-muted: #4a4a4a;
+      --text-dim: #2a2a2a;
+      --accent: #c9a84c;
+      --accent-dim: rgba(201, 168, 76, 0.10);
+      --accent-line: rgba(201, 168, 76, 0.35);
+      --green: #4ade80;
+      --green-dim: rgba(74, 222, 128, 0.08);
+      --green-line: rgba(74, 222, 128, 0.4);
+      --red: #f87171;
+      --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+      --serif: 'EB Garamond', Georgia, serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      background: var(--black);
+      color: var(--text-primary);
+      font-family: var(--mono);
+      font-weight: 400;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* Grain */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    ::selection { background: var(--accent); color: var(--black); }
+
+    a { color: var(--text-secondary); text-decoration: none; transition: color 0.2s; }
+    a:hover { color: var(--accent); }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 0 2rem; }
+
+    /* ── Header ── */
+    header { padding: 2rem 0; border-bottom: 1px solid var(--border-subtle); }
+
+    .header-inner { display: flex; justify-content: space-between; align-items: center; }
+
+    .brand {
+      font-size: 0.65rem; font-weight: 500;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      font-size: 0.6rem; font-weight: 500;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-dim);
+      padding: 0.3rem 0.7rem; border: 1px solid var(--border);
+    }
+
+    .status-pill.online { color: var(--green); border-color: rgba(74,222,128,0.15); }
+    .status-pill.offline { color: var(--red); border-color: rgba(248,113,113,0.15); }
+
+    .status-pill .dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: currentColor; animation: pulse 2.5s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* ── Hero ── */
+    .hero { padding: 5rem 0 4rem; border-bottom: 1px solid var(--border-subtle); }
+
+    .hero-eyebrow {
+      font-size: 0.6rem; font-weight: 500;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 1.5rem;
+    }
+
+    .hero h1 {
+      font-family: var(--serif);
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 400; font-style: italic;
+      line-height: 1.15; color: var(--text-primary);
+      margin-bottom: 2.5rem; max-width: 560px;
+    }
+    .hero h1 em { font-style: normal; color: var(--accent); }
+
+    .key-row {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 0.9rem 1.2rem;
+      background: var(--surface); border: 1px solid var(--border);
+      cursor: pointer; max-width: 680px;
+      transition: border-color 0.2s; position: relative;
+    }
+    .key-row:hover { border-color: var(--accent-line); }
+
+    .key-label {
+      font-size: 0.55rem; font-weight: 600;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--text-dim); flex-shrink: 0;
+    }
+    .key-val { font-size: 0.72rem; color: var(--text-secondary); word-break: break-all; line-height: 1.4; }
+
+    .key-copy {
+      position: absolute; right: 1rem;
+      font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-dim); opacity: 0; transition: opacity 0.2s;
+    }
+    .key-row:hover .key-copy { opacity: 1; color: var(--accent); }
+
+    /* ── Vitals ── */
+    .vitals { padding: 4rem 0; border-bottom: 1px solid var(--border-subtle); }
+
+    .vitals-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 0; border: 1px solid var(--border-subtle);
+    }
+
+    .vital {
+      padding: 2rem 1.5rem;
+      border-right: 1px solid var(--border-subtle);
+    }
+    .vital:last-child { border-right: none; }
+
+    .vital-label {
+      font-size: 0.55rem; font-weight: 500;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 0.6rem;
+    }
+
+    .vital-value {
+      font-size: 1.8rem; font-weight: 300;
+      color: var(--text-primary); font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+    .vital-value.green { color: var(--green); }
+    .vital-value.accent { color: var(--accent); }
+
+    .vital-sub {
+      font-size: 0.6rem; color: var(--text-dim);
+      margin-top: 0.5rem; letter-spacing: 0.03em;
+    }
+
+    /* ── Charts ── */
+    .charts-section { padding: 4rem 0; border-bottom: 1px solid var(--border-subtle); }
+
+    .section-label {
+      font-size: 0.55rem; font-weight: 600;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 0.4rem;
+    }
+
+    .section-narrative {
+      font-family: var(--serif); font-size: 0.95rem;
+      color: var(--text-muted); font-style: italic;
+      margin-bottom: 2.5rem; max-width: 520px; line-height: 1.6;
+    }
+
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+
+    .chart-panel {
+      background: var(--near-black);
+      border: 1px solid var(--border-subtle); overflow: hidden;
+    }
+
+    .chart-header {
+      padding: 1.2rem 1.5rem 0;
+      display: flex; justify-content: space-between; align-items: flex-start;
+    }
+
+    .chart-title {
+      font-size: 0.6rem; font-weight: 500;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .chart-stat { text-align: right; }
+
+    .chart-stat-value {
+      font-size: 1.2rem; font-weight: 300;
+      color: var(--text-primary); font-variant-numeric: tabular-nums; line-height: 1;
+    }
+
+    .chart-stat-label {
+      font-size: 0.5rem; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text-dim); margin-top: 0.25rem;
+    }
+
+    .chart-body { padding: 1rem 0 0; height: 160px; position: relative; }
+
+    .chart-canvas { width: 100%; height: 100%; display: block; }
+
+    .chart-empty {
+      display: flex; align-items: center; justify-content: center;
+      height: 100%; font-size: 0.65rem; color: var(--text-dim);
+      letter-spacing: 0.05em; position: absolute; inset: 0;
+    }
+
+    .chart-footer {
+      padding: 0.6rem 1.5rem;
+      display: flex; justify-content: space-between;
+      font-size: 0.5rem; letter-spacing: 0.08em; color: var(--text-dim);
+    }
+
+    /* ── Details ── */
+    .details-section { padding: 4rem 0; border-bottom: 1px solid var(--border-subtle); }
+
+    .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+
+    .detail-panel {
+      background: var(--near-black);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .detail-panel-header {
+      padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-subtle);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .detail-panel-title {
+      font-size: 0.55rem; font-weight: 600;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .detail-badge {
+      font-size: 0.5rem; font-weight: 500;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 0.15rem 0.45rem;
+      color: var(--accent); background: var(--accent-dim);
+    }
+
+    .detail-body { padding: 0.5rem 1.5rem; }
+
+    .detail-row {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 0.65rem 0; border-bottom: 1px solid var(--border-subtle);
+    }
+    .detail-row:last-child { border-bottom: none; }
+
+    .detail-key { font-size: 0.65rem; color: var(--text-muted); }
+
+    .detail-val {
+      font-size: 0.7rem; color: var(--text-secondary);
+      font-variant-numeric: tabular-nums; text-align: right;
+    }
+    .detail-val.live { color: var(--green); }
+
+    .ledger-stream {
+      max-height: 280px; overflow-y: auto;
+      scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+    }
+    .ledger-stream::-webkit-scrollbar { width: 3px; }
+    .ledger-stream::-webkit-scrollbar-thumb { background: var(--border); }
+
+    .stream-entry {
+      display: grid; grid-template-columns: 1fr auto auto; gap: 1rem;
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border-subtle);
+      font-size: 0.65rem; animation: slideIn 0.3s ease;
+    }
+    .stream-entry:last-child { border-bottom: none; }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-3px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .stream-idx { color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+    .stream-txn { color: var(--text-muted); text-align: right; }
+    .stream-time { color: var(--text-dim); text-align: right; }
+
+    /* ── Identity ── */
+    .identity { padding: 4rem 0; border-bottom: 1px solid var(--border-subtle); }
+
+    .identity p {
+      font-family: var(--serif); font-size: 1.05rem;
+      line-height: 1.75; color: var(--text-muted);
+      max-width: 580px; margin-bottom: 1.25rem;
+    }
+    .identity p em { color: var(--text-secondary); font-style: italic; }
+
+    .identity blockquote {
+      padding-left: 1.25rem; border-left: 2px solid var(--accent-line);
+      margin: 2rem 0; max-width: 580px;
+    }
+    .identity blockquote p { color: var(--text-secondary); }
+
+    .ext-links { display: flex; gap: 2rem; margin-top: 2.5rem; flex-wrap: wrap; }
+
+    .ext-links a {
+      font-size: 0.65rem; font-weight: 500;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .ext-links a::after { content: ' ↗'; font-size: 0.8em; }
+    .ext-links a:hover { color: var(--accent); }
+
+    /* ── Footer ── */
+    footer { padding: 2.5rem 0; }
+
+    .footer-inner {
+      display: flex; justify-content: space-between;
+      align-items: center; flex-wrap: wrap; gap: 1rem;
+    }
+
+    .footer-brand {
+      font-size: 0.55rem; letter-spacing: 0.15em;
+      text-transform: uppercase; color: var(--text-dim);
+    }
+
+    .footer-right { display: flex; gap: 1.5rem; align-items: center; }
+
+    .footer-right a {
+      font-size: 0.55rem; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text-dim);
+    }
+
+    .footer-clock {
+      font-size: 0.55rem; color: var(--text-dim);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .toast {
+      position: fixed; bottom: 2rem; right: 2rem;
+      padding: 0.6rem 1rem;
+      background: var(--surface-elevated); border: 1px solid var(--accent-line);
+      color: var(--accent); font-size: 0.65rem; font-family: var(--mono);
+      letter-spacing: 0.1em; text-transform: uppercase;
+      opacity: 0; transform: translateY(8px);
+      transition: all 0.3s ease; pointer-events: none; z-index: 100;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    .ws-tag {
+      position: fixed; bottom: 1.25rem; left: 1.25rem;
+      display: flex; align-items: center; gap: 0.4rem;
+      font-size: 0.5rem; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text-dim); z-index: 50;
+    }
+    .ws-tag .dot {
+      width: 4px; height: 4px; border-radius: 50%;
+      background: var(--text-dim); transition: background 0.3s;
+    }
+    .ws-tag.connected .dot { background: var(--green); }
+    .ws-tag.connected { color: var(--text-muted); }
+    .ws-tag.error .dot { background: var(--red); }
+
+    .reveal {
+      opacity: 0; transform: translateY(16px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    .skel {
+      display: inline-block;
+      background: linear-gradient(90deg, var(--surface) 25%, var(--surface-elevated) 50%, var(--surface) 75%);
+      background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 1px;
+    }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    .skel-sm { width: 64px; height: 1.6rem; }
+    .skel-md { width: 96px; height: 2rem; }
+
+    @media (max-width: 768px) {
+      .container { padding: 0 1.25rem; }
+      .hero { padding: 3.5rem 0 3rem; }
+      .vitals-grid { grid-template-columns: repeat(2, 1fr); }
+      .vital:nth-child(2) { border-right: none; }
+      .vital:nth-child(1), .vital:nth-child(2) { border-bottom: 1px solid var(--border-subtle); }
+      .charts-grid { grid-template-columns: 1fr; }
+      .details-grid { grid-template-columns: 1fr; }
+      .key-row { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    }
+
+    @media (max-width: 480px) {
+      .vital-value { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container header-inner">
+      <div class="brand"><a href="https://permanentupperclass.com">Permanent Upper Class</a></div>
+      <div class="status-pill" id="statusPill">
+        <span class="dot"></span>
+        <span id="statusText">Connecting</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container">
+      <div class="hero-eyebrow">Post Fiat Testnet · Validator</div>
+      <h1>Infrastructure that <em>compounds.</em></h1>
+      <div class="key-row" onclick="copyKey()">
+        <span class="key-label">Pub Key</span>
+        <span class="key-val">nHB6Zc7mhr7swksEgpwTE7Hw7SvZ9cz22T2MECMSXjBeMTeHXQB7</span>
+        <span class="key-copy">Copy</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="vitals reveal">
+    <div class="container">
+      <div class="vitals-grid">
+        <div class="vital">
+          <div class="vital-label">State</div>
+          <div class="vital-value green" id="vState"><span class="skel skel-sm"></span></div>
+          <div class="vital-sub" id="vStateSub">—</div>
+        </div>
+        <div class="vital">
+          <div class="vital-label">Validated Ledger</div>
+          <div class="vital-value" id="vLedger"><span class="skel skel-md"></span></div>
+          <div class="vital-sub" id="vLedgerSub">—</div>
+        </div>
+        <div class="vital">
+          <div class="vital-label">Peers</div>
+          <div class="vital-value accent" id="vPeers"><span class="skel skel-sm"></span></div>
+          <div class="vital-sub">connected nodes</div>
+        </div>
+        <div class="vital">
+          <div class="vital-label">Uptime</div>
+          <div class="vital-value" id="vUptime"><span class="skel skel-sm"></span></div>
+          <div class="vital-sub" id="vUptimeSub">—</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="charts-section reveal">
+    <div class="container">
+      <div class="section-label">Network Pulse</div>
+      <div class="section-narrative">
+        Each bar is a closed ledger — consensus achieved, validators agreeing on the state of the world. The rhythm of a network that doesn't stop.
+      </div>
+      <div class="charts-grid">
+        <div class="chart-panel">
+          <div class="chart-header">
+            <span class="chart-title">Transactions per Ledger</span>
+            <div class="chart-stat">
+              <div class="chart-stat-value" id="avgTxn">—</div>
+              <div class="chart-stat-label">avg / ledger</div>
+            </div>
+          </div>
+          <div class="chart-body">
+            <canvas class="chart-canvas" id="txnChart"></canvas>
+            <div class="chart-empty" id="txnEmpty">Waiting for ledger data…</div>
+          </div>
+          <div class="chart-footer">
+            <span id="txnOldest">—</span>
+            <span id="txnNewest">now</span>
+          </div>
+        </div>
+
+        <div class="chart-panel">
+          <div class="chart-header">
+            <span class="chart-title">Consensus Interval</span>
+            <div class="chart-stat">
+              <div class="chart-stat-value" id="avgClose">—</div>
+              <div class="chart-stat-label">avg seconds</div>
+            </div>
+          </div>
+          <div class="chart-body">
+            <canvas class="chart-canvas" id="closeChart"></canvas>
+            <div class="chart-empty" id="closeEmpty">Waiting for ledger data…</div>
+          </div>
+          <div class="chart-footer">
+            <span id="closeOldest">—</span>
+            <span id="closeNewest">now</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="details-section reveal">
+    <div class="container">
+      <div class="details-grid">
+        <div class="detail-panel">
+          <div class="detail-panel-header">
+            <span class="detail-panel-title">Server</span>
+            <span class="detail-badge" id="netBadge">Testnet</span>
+          </div>
+          <div class="detail-body">
+            <div class="detail-row">
+              <span class="detail-key">Domain</span>
+              <span class="detail-val">pft.permanentupperclass.com</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-key">Operator</span>
+              <span class="detail-val">Permanent Upper Class</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-key">Build</span>
+              <span class="detail-val" id="dBuild">—</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-key">Ledger Range</span>
+              <span class="detail-val" id="dRange">—</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-key">Load Factor</span>
+              <span class="detail-val" id="dLoad">—</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-key">Quorum</span>
+              <span class="detail-val" id="dQuorum">—</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-key">Last Refresh</span>
+              <span class="detail-val" id="dTime">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-panel">
+          <div class="detail-panel-header">
+            <span class="detail-panel-title">Ledger Stream</span>
+            <span class="detail-badge" id="streamCount">0</span>
+          </div>
+          <div class="detail-body">
+            <div class="ledger-stream" id="ledgerStream">
+              <div style="padding:2rem 0;text-align:center;color:var(--text-dim);font-size:0.65rem;">
+                Waiting for closed ledgers…
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="identity reveal">
+    <div class="container">
+      <div class="section-label">About This Validator</div>
+      <p>
+        Operated by <em>Permanent Upper Class</em> on the Post Fiat Network — an
+        XRPL fork that uses AI-driven scoring to make validator selection
+        transparent and verifiable.
+      </p>
+      <p>
+        We don't run infrastructure to spectate.
+        We run it because <em>compounding requires participation</em>.
+      </p>
+      <blockquote>
+        <p>The doomer class watches. The upper class builds.<br>
+        The permanent upper class builds things that compound.</p>
+      </blockquote>
+      <div class="ext-links">
+        <a href="https://permanentupperclass.com">P.U.C</a>
+        <a href="https://b1e55ed.permanentupperclass.com">b1e55ed</a>
+        <a href="https://github.com/P-U-C">GitHub</a>
+        <a href="https://postfiat.org">Post Fiat</a>
+        <a href="https://postfiat.org/whitepaper/">Whitepaper</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container footer-inner">
+      <div class="footer-brand"><a href="https://permanentupperclass.com">permanentupperclass.com</a></div>
+      <div class="footer-right">
+        <a href="https://permanentupperclass.com/brand-identity">Brand</a>
+        <a href="https://github.com/P-U-C">GitHub</a>
+        <div class="footer-clock" id="clock">—</div>
+      </div>
+    </div>
+  </footer>
+
+  <div class="ws-tag" id="wsTag">
+    <span class="dot"></span>
+    <span id="wsLabel">Idle</span>
+  </div>
+
+  <div class="toast" id="toast">Key copied</div>
+
+  <script>
+  /* ═══════════════════════════════════════
+     Configuration
+     ═══════════════════════════════════════ */
+  const CFG = {
+    pubKey: 'nHB6Zc7mhr7swksEgpwTE7Hw7SvZ9cz22T2MECMSXjBeMTeHXQB7',
+    ws: [
+      'wss://pft.permanentupperclass.com:51233',
+      'wss://pft.permanentupperclass.com:6006',
+    ],
+    pollMs: 15000,
+    maxChartPoints: 60,
+    maxStreamEntries: 40,
+  };
+
+  /* ═══════════════════════════════════════
+     State
+     ═══════════════════════════════════════ */
+  let ws = null, wsIdx = 0, pollTimer = null;
+  let txnData = [];
+  let closeData = [];
+  let streamEntries = [];
+  let lastCloseTime = null;
+
+  const $ = id => document.getElementById(id);
+
+  /* ═══════════════════════════════════════
+     Helpers
+     ═══════════════════════════════════════ */
+  function fmt(n) { return n == null ? '—' : n.toLocaleString('en-US'); }
+
+  function fmtUptime(s) {
+    if (!s) return '—';
+    const d = Math.floor(s/86400), h = Math.floor((s%86400)/3600), m = Math.floor((s%3600)/60);
+    return d > 0 ? `${d}d ${h}h` : h > 0 ? `${h}h ${m}m` : `${m}m`;
+  }
+
+  function fmtTime(d) {
+    return d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  }
+
+  function fmtShort(d) {
+    return d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false});
+  }
+
+  /* ═══════════════════════════════════════
+     Charts
+     ═══════════════════════════════════════ */
+  function drawBars(canvasId, data, opts) {
+    const canvas = $(canvasId);
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+    const W = rect.width, H = rect.height;
+    const pt = 8, pb = 4;
+    ctx.clearRect(0, 0, W, H);
+
+    if (data.length < 2) { $(opts.emptyId).style.display = 'flex'; return; }
+    $(opts.emptyId).style.display = 'none';
+
+    const vals = data.map(d => d[opts.key]);
+    const max = Math.max(...vals, 1);
+    const avg = vals.reduce((a,b)=>a+b,0) / vals.length;
+    $(opts.avgId).textContent = opts.fmtAvg(avg);
+    $(opts.oldId).textContent = fmtShort(data[0].time);
+    $(opts.newId).textContent = 'now';
+
+    const chartH = H - pt - pb;
+    const barW = Math.max(2, (W / CFG.maxChartPoints) - 1.5);
+    const gap = 1.5;
+
+    for (let i = data.length - 1; i >= 0; i--) {
+      const ri = data.length - 1 - i;
+      const x = W - (ri * (barW + gap)) - barW;
+      if (x < 0) break;
+      const barH = Math.max(1, (vals[i] / max) * chartH);
+      const y = pt + chartH - barH;
+      ctx.fillStyle = opts.fill;
+      ctx.fillRect(x, y, barW, barH);
+      ctx.fillStyle = opts.color;
+      ctx.fillRect(x, y, barW, Math.min(1.5, barH));
+    }
+
+    // avg dashed line
+    const ay = pt + chartH - (avg / max) * chartH;
+    ctx.strokeStyle = opts.color;
+    ctx.lineWidth = 0.5;
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath(); ctx.moveTo(0, ay); ctx.lineTo(W, ay); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function drawLine(canvasId, data, opts) {
+    const canvas = $(canvasId);
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+    const W = rect.width, H = rect.height;
+    const pt = 8, pb = 4;
+    ctx.clearRect(0, 0, W, H);
+
+    if (data.length < 3) { $(opts.emptyId).style.display = 'flex'; return; }
+    $(opts.emptyId).style.display = 'none';
+
+    const vals = data.map(d => d[opts.key]);
+    const max = Math.max(...vals, 1) * 1.1;
+    const avg = vals.reduce((a,b)=>a+b,0) / vals.length;
+    $(opts.avgId).textContent = opts.fmtAvg(avg);
+    $(opts.oldId).textContent = fmtShort(data[0].time);
+    $(opts.newId).textContent = 'now';
+
+    const chartH = H - pt - pb;
+    const points = data.map((d, i) => ({
+      x: (i / (data.length - 1)) * W,
+      y: pt + chartH - (d[opts.key] / max) * chartH,
+    }));
+
+    // gradient fill
+    const grad = ctx.createLinearGradient(0, pt, 0, H);
+    grad.addColorStop(0, opts.fill);
+    grad.addColorStop(1, 'transparent');
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, H);
+    points.forEach(p => ctx.lineTo(p.x, p.y));
+    ctx.lineTo(points[points.length-1].x, H);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // line
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+    ctx.strokeStyle = opts.color;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // latest dot
+    const last = points[points.length - 1];
+    ctx.beginPath();
+    ctx.arc(last.x, last.y, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = opts.color;
+    ctx.fill();
+
+    // avg dashed
+    const ay = pt + chartH - (avg / max) * chartH;
+    ctx.strokeStyle = opts.color;
+    ctx.lineWidth = 0.5;
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath(); ctx.moveTo(0, ay); ctx.lineTo(W, ay); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function redraw() {
+    drawBars('txnChart', txnData, {
+      color: 'rgba(201,168,76,0.8)', fill: 'rgba(201,168,76,0.18)',
+      emptyId: 'txnEmpty', avgId: 'avgTxn',
+      oldId: 'txnOldest', newId: 'txnNewest',
+      key: 'txns', fmtAvg: v => v.toFixed(1),
+    });
+    drawLine('closeChart', closeData, {
+      color: 'rgba(74,222,128,0.7)', fill: 'rgba(74,222,128,0.06)',
+      emptyId: 'closeEmpty', avgId: 'avgClose',
+      oldId: 'closeOldest', newId: 'closeNewest',
+      key: 'interval', fmtAvg: v => v.toFixed(1) + 's',
+    });
+  }
+
+  /* ═══════════════════════════════════════
+     UI Updates
+     ═══════════════════════════════════════ */
+  function updateMetrics(data) {
+    const r = data.result?.info || data.result || data;
+
+    if (r.server_state) {
+      const s = r.server_state;
+      $('vState').textContent = s.charAt(0).toUpperCase() + s.slice(1);
+      $('vState').className = 'vital-value' + (s==='proposing'||s==='full' ? ' green' : '');
+      $('vStateSub').textContent = s==='proposing' ? 'actively validating' : s==='full' ? 'synced to network' : s;
+      setStatus('online');
+    }
+
+    if (r.validated_ledger?.seq != null) {
+      $('vLedger').textContent = fmt(r.validated_ledger.seq);
+      $('vLedgerSub').textContent = 'and counting';
+    }
+
+    if (r.peers != null) $('vPeers').textContent = r.peers;
+
+    if (r.uptime != null) {
+      $('vUptime').textContent = fmtUptime(r.uptime);
+      const days = Math.floor(r.uptime / 86400);
+      $('vUptimeSub').textContent = days > 0 ? `${days} day${days>1?'s':''} continuous` : 'since last restart';
+    }
+
+    if (r.build_version) $('dBuild').textContent = 'v' + r.build_version;
+    if (r.complete_ledgers) $('dRange').textContent = r.complete_ledgers;
+    if (r.load_factor != null) $('dLoad').textContent = r.load_factor === 1 ? '1× (nominal)' : r.load_factor + '×';
+    if (r.validation_quorum != null) $('dQuorum').textContent = r.validation_quorum;
+    if (r.network_id != null) $('netBadge').textContent = r.network_id === 0 ? 'Mainnet' : 'Net ' + r.network_id;
+    $('dTime').textContent = fmtTime(new Date());
+  }
+
+  function onLedgerClose(d) {
+    const seq = d.ledger_index || d.seq;
+    const txns = d.txn_count ?? d.transaction_count ?? 0;
+    const now = new Date();
+
+    if (txnData.some(e => e.seq === seq)) return;
+
+    txnData.push({ seq, txns, time: now });
+    if (txnData.length > CFG.maxChartPoints) txnData.shift();
+
+    if (lastCloseTime) {
+      const interval = (now - lastCloseTime) / 1000;
+      if (interval > 0 && interval < 30) {
+        closeData.push({ seq, interval, time: now });
+        if (closeData.length > CFG.maxChartPoints) closeData.shift();
+      }
+    }
+    lastCloseTime = now;
+
+    streamEntries.unshift({ seq, txns, time: now });
+    if (streamEntries.length > CFG.maxStreamEntries) streamEntries.pop();
+    renderStream();
+    redraw();
+  }
+
+  function renderStream() {
+    $('ledgerStream').innerHTML = streamEntries.map(e => `
+      <div class="stream-entry">
+        <span class="stream-idx">#${fmt(e.seq)}</span>
+        <span class="stream-txn">${e.txns} txn${e.txns!==1?'s':''}</span>
+        <span class="stream-time">${fmtTime(e.time)}</span>
+      </div>`).join('');
+    $('streamCount').textContent = streamEntries.length;
+  }
+
+  function setStatus(state) {
+    $('statusPill').className = 'status-pill ' + state;
+    $('statusText').textContent = state==='online' ? 'Online' : state==='offline' ? 'Offline' : 'Connecting';
+  }
+
+  function setWs(state, msg) {
+    $('wsTag').className = 'ws-tag ' + state;
+    $('wsLabel').textContent = msg || state;
+  }
+
+  /* ═══════════════════════════════════════
+     WebSocket
+     ═══════════════════════════════════════ */
+  function connect() {
+    if (ws && (ws.readyState === 0 || ws.readyState === 1)) return;
+    const url = CFG.ws[wsIdx];
+    if (!url) { setWs('error','No endpoints'); setStatus('offline'); return; }
+    setWs('','Connecting…');
+
+    try { ws = new WebSocket(url); } catch(e) { nextEp(); return; }
+
+    ws.onopen = () => {
+      setWs('connected','WebSocket live');
+      ws.send(JSON.stringify({ command:'server_info', id:'si' }));
+      ws.send(JSON.stringify({ command:'subscribe', streams:['ledger','server'], id:'sub' }));
+      clearInterval(pollTimer);
+      pollTimer = setInterval(() => {
+        if (ws?.readyState === 1) ws.send(JSON.stringify({ command:'server_info', id:'si' }));
+      }, CFG.pollMs);
+    };
+
+    ws.onmessage = ev => {
+      try {
+        const d = JSON.parse(ev.data);
+        if (d.id === 'si') updateMetrics(d);
+        if (d.type === 'ledgerClosed') {
+          onLedgerClose(d);
+          ws.send(JSON.stringify({ command:'server_info', id:'si' }));
+        }
+        if (d.type === 'serverStatus') updateMetrics({ result:{ info:d } });
+        if (d.id === 'sub' && d.result) {
+          if (d.result.ledger_index) onLedgerClose({ ledger_index:d.result.ledger_index, txn_count:d.result.txn_count||0 });
+          if (d.result.validated_ledger) updateMetrics({ result:{ info:d.result } });
+        }
+      } catch(e) {}
+    };
+
+    ws.onerror = () => nextEp();
+    ws.onclose = () => {
+      if (wsIdx < CFG.ws.length) { setWs('','Reconnecting…'); setTimeout(connect, 3000); }
+    };
+  }
+
+  function nextEp() {
+    wsIdx++;
+    if (wsIdx < CFG.ws.length) setTimeout(connect, 500);
+    else { setWs('error','WS unavailable'); setStatus('offline'); showFallback(); }
+  }
+
+  function showFallback() {
+    $('vState').textContent = 'Offline'; $('vState').className = 'vital-value';
+    $('vStateSub').textContent = 'WebSocket unreachable';
+    ['vLedger','vPeers','vUptime'].forEach(id => $(id).textContent = '—');
+  }
+
+  /* ═══════════════════════════════════════
+     Misc
+     ═══════════════════════════════════════ */
+  function copyKey() {
+    navigator.clipboard.writeText(CFG.pubKey).then(() => {
+      $('toast').classList.add('show');
+      setTimeout(() => $('toast').classList.remove('show'), 2000);
+    });
+  }
+
+  function initReveal() {
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.08 });
+    document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+  }
+
+  let resizeTimer;
+  window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(redraw, 150); });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initReveal();
+    setInterval(() => { $('clock').textContent = fmtTime(new Date()); }, 1000);
+    $('clock').textContent = fmtTime(new Date());
+    connect();
+  });
+  </script>
+
+</body>
+</html>
