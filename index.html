@@ -135,6 +135,19 @@
       display: block;
     }
 
+    .topology-status {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      font-size: 0.5rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      font-family: var(--mono);
+    }
+    .topology-status.live { color: var(--green); }
+
     .key-row {
       display: flex; align-items: center; gap: 1rem;
       padding: 0.9rem 1.2rem;
@@ -454,6 +467,7 @@
         </div>
         <div class="hero-canvas-wrap">
           <canvas id="networkViz"></canvas>
+          <div class="topology-status">STATIC · fallback</div>
         </div>
       </div>
     </div>
@@ -948,46 +962,105 @@
   /* ═══════════════════════════════════════
      Network Visualization
      ═══════════════════════════════════════ */
-  const NODES = [
-    // Positions as [longitude, latitude] for Mercator projection
-    // North America cluster
-    { id: 'puc', label: 'PUC', lon: -122, lat: 49, self: true },          // Vancouver
-    { id: 'perry', label: 'pftperry.com', lon: -118, lat: 55 },            // Western Canada
-    { id: 'auri', label: 'auri0x.io', lon: -95, lat: 42 },                 // US Midwest
-    { id: 'n9ja', label: 'n9JAEhX…', lon: -74, lat: 40 },                  // US East
-    { id: 'n9lc', label: 'n9LCWPg…', lon: -105, lat: 50 },                 // US/Canada
-    { id: 'nhuz', label: 'nHUzk9v…', lon: -85, lat: 35 },                  // US South
-    // Foundation / Core
-    { id: 'foundation1', label: 'postfiat.org', lon: -70, lat: 52, core: true },
-    { id: 'foundation2', label: 'postfiat.org', lon: -60, lat: 48, core: true },
-    // Europe
-    { id: 'eu1', label: '', lon: 2, lat: 48 },                              // Paris
-    { id: 'eu2', label: '', lon: 13, lat: 52 },                             // Berlin
-    { id: 'eu3', label: '', lon: -2, lat: 54 },                             // London
-    // Asia
-    { id: 'asia1', label: '', lon: 104, lat: 35 },                          // China
-    { id: 'asia2', label: '', lon: 140, lat: 36 },                          // Japan
-    { id: 'asia3', label: '', lon: 77, lat: 20 },                           // India
-    // Southern hemisphere
-    { id: 'sa1', label: '', lon: -47, lat: -15 },                           // Brazil
-    { id: 'oce1', label: '', lon: 150, lat: -30 },                          // Australia
-    { id: 'af1', label: '', lon: 28, lat: -2 },                             // Africa
+  const TOPOLOGY_API = 'https://pft-api.permanentupperclass.com/topology';
+  const TOPOLOGY_POLL = 30000; // 30s
+
+  // Self node (always present, updated with real geo when API responds)
+  const SELF_NODE = { id: 'self', label: 'PUC', lon: -122, lat: 49, self: true };
+
+  // Fallback static nodes (used until API is live)
+  const FALLBACK_NODES = [
+    SELF_NODE,
+    { id: 'fb1', label: 'pftperry.com', lon: -118, lat: 55 },
+    { id: 'fb2', label: 'auri0x.io', lon: -95, lat: 42 },
+    { id: 'fb3', label: 'n9JAEhX…', lon: -74, lat: 40 },
+    { id: 'fb4', label: 'postfiat.org', lon: -70, lat: 52, core: true },
+    { id: 'fb5', label: '', lon: 2, lat: 48 },
+    { id: 'fb6', label: '', lon: 13, lat: 52 },
+    { id: 'fb7', label: '', lon: 104, lat: 35 },
+    { id: 'fb8', label: '', lon: 140, lat: 36 },
+    { id: 'fb9', label: '', lon: 150, lat: -30 },
   ];
 
-  // Build connections — each node connects to 2-4 nearest
-  const EDGES = [];
-  NODES.forEach((a, i) => {
-    const dists = NODES.map((b, j) => ({ j, d: Math.hypot((a.lon - b.lon)/3, a.lat - b.lat) }))
-      .filter(e => e.j !== i)
-      .sort((a, b) => a.d - b.d);
-    const count = a.self || a.core ? 5 : 2 + Math.floor(Math.random() * 2);
-    for (let k = 0; k < count && k < dists.length; k++) {
-      const key = [Math.min(i, dists[k].j), Math.max(i, dists[k].j)].join('-');
-      if (!EDGES.find(e => e.key === key)) {
-        EDGES.push({ key, a: i, b: dists[k].j });
+  let NODES = [...FALLBACK_NODES];
+  let EDGES = [];
+  let topologyLive = false;
+
+  function buildEdges() {
+    EDGES = [];
+    NODES.forEach((a, i) => {
+      const dists = NODES.map((b, j) => ({ j, d: Math.hypot((a.lon - b.lon)/3, a.lat - b.lat) }))
+        .filter(e => e.j !== i)
+        .sort((a, b) => a.d - b.d);
+      const count = a.self || a.core ? Math.min(6, NODES.length - 1) : 2 + Math.floor(Math.random() * 2);
+      for (let k = 0; k < count && k < dists.length; k++) {
+        const key = [Math.min(i, dists[k].j), Math.max(i, dists[k].j)].join('-');
+        if (!EDGES.find(e => e.key === key)) {
+          EDGES.push({ key, a: i, b: dists[k].j });
+        }
       }
+    });
+  }
+
+  async function fetchTopology() {
+    try {
+      const resp = await fetch(TOPOLOGY_API);
+      if (!resp.ok) return;
+      const data = await resp.json();
+      if (!data.peers || !data.peers.length) return;
+
+      const newNodes = [];
+
+      // Self node
+      newNodes.push({
+        id: 'self',
+        label: 'PUC',
+        lon: SELF_NODE.lon,
+        lat: SELF_NODE.lat,
+        self: true,
+        state: data.self?.state || 'proposing',
+      });
+
+      // Peer nodes from API
+      data.peers.forEach((p, i) => {
+        if (!p.lat && !p.lon) return; // skip peers with no geo
+        const label = p.domain || (p.is_validator ? p.pubkey_short : '');
+        newNodes.push({
+          id: `peer-${i}`,
+          label: label,
+          lon: p.lon,
+          lat: p.lat,
+          city: p.city,
+          country: p.country,
+          core: p.is_validator,
+          latency: p.latency,
+          version: p.version,
+          ledger: p.ledger,
+        });
+      });
+
+      if (newNodes.length > 1) {
+        NODES = newNodes;
+        buildEdges();
+        topologyLive = true;
+        // Update the topology badge
+        const badge = document.querySelector('.topology-status');
+        if (badge) {
+          badge.textContent = `LIVE · ${data.peer_count} peers`;
+          badge.classList.add('live');
+        }
+      }
+    } catch (e) {
+      // Silently fall back to static nodes
     }
-  });
+  }
+
+  // Initial edge build for fallback nodes
+  buildEdges();
+
+  // Start polling topology
+  fetchTopology();
+  setInterval(fetchTopology, TOPOLOGY_POLL);
 
   let vizPulses = []; // { x, y, t, color }
   let vizFrame = 0;
