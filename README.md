@@ -39,4 +39,4 @@ Copy the `attestation` value from your existing TOML into `.well-known/xrp-ledge
 
 ---
 
-[permanentupperclass.com](https://permanentupperclass.com) · [Post Fiat](https://postfiat.org)
+[permanentupperclass.com](https://permanentupperclass.com) · [Monitoring](https://github.com/P-U-C/pf-monitor) · [Post Fiat](https://postfiat.org)
