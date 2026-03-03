@@ -338,7 +338,26 @@ curl -s https://yourdomain.com/.well-known/xrp-ledger.toml
 
 ## Monitoring & Maintenance
 
-### Health Check Script
+### Full Monitoring Stack (Recommended)
+
+For production validators, use the dedicated monitoring stack:
+
+**[P-U-C/pf-monitor](https://github.com/P-U-C/pf-monitor)** — Prometheus + Grafana + Alertmanager
+
+Features:
+- Custom exporter for postfiatd JSON-RPC metrics
+- 25+ pre-configured alert rules
+- Pre-built Grafana dashboard
+- Discord/Slack/PagerDuty alerting
+- Split architecture option (monitor survives if validator dies)
+
+```bash
+git clone https://github.com/P-U-C/pf-monitor && cd pf-monitor
+chmod +x setup.sh
+./setup.sh local  # or ./setup.sh split-validator + split-monitor
+```
+
+### Quick Health Check (No Stack)
 
 ```bash
 #!/bin/bash
