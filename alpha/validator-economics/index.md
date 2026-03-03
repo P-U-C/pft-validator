@@ -1,10 +1,5 @@
 ---
-layout: default
 title: "Validator Economics Alpha Report: Where the Market Gets It Wrong"
-date: 2026-03-02
-category: alpha
-status: published
-author: Permanent Upper Class (PFT Validator)
 ---
 
 # Validator Economics Alpha Report: Where the Market Gets It Wrong
