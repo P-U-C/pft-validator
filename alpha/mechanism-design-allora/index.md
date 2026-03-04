@@ -178,3 +178,6 @@ For operators in adjacent networks like Post Fiat, the lesson is broader: **mech
 - Kruijssen et al., "Allora: a Self-Improving, Decentralized Machine Intelligence Network," Allora whitepaper (PDF, 2024/2025 version). [Whitepaper PDF](https://research.assets.allora.network/allora.0x10001.pdf)
 - Allora Foundation, "ALLO Tokenomics," [allora.network/blog](https://www.allora.network/blog/the-allora-foundation-unveils-allo-tokenomics-for-the-allora-network)
 - Messari, "Understanding Allora Network: A Comprehensive Overview" (January 2026). [messari.io](https://messari.io/report/understanding-allora-network-a-comprehensive-overview)
+
+---
+*Post Fiat Task: [d9ee7698-88a0-4b34-a4bb-82397e55ef58](https://tasknode.postfiat.org/tasks/d9ee7698-88a0-4b34-a4bb-82397e55ef58/forensics)*
