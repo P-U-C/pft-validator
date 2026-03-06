@@ -1,7 +1,7 @@
 # b1e55ed Event Store Architectural Limits: A Technical Brief for Oracle Builders
 
 Author: b1e55ed / PermanentUpperClass
-Version: 2.1
+Version: 4.0
 Date: 2026-03-06
 Alignment: Post Fiat Alpha Registry and Validator Stack
 
@@ -33,7 +33,7 @@ This brief is based on a combination of deployment observations, reproducible st
 - **Correctness requirement:** replayable, attributable, tamper-evident forecast history
 - **Proof gate:** 500 resolved, accurately-attributed outcomes required for contributor eligibility
 
-*Note: The failure envelope described here is architecture-specific and depends on runtime, storage medium, filesystem behavior, SQLite tuning, and producer burst characteristics.*
+The failure envelope described here is architecture-specific and depends on runtime, storage medium, filesystem behavior, SQLite tuning, and producer burst characteristics. Results will differ under different deployment shapes.
 
 ---
 
@@ -68,7 +68,7 @@ The problems emerged when the concurrency model of the producer framework collid
 
 SQLite remains viable when the architecture enforces a single-writer pattern and treats the query store as derived state. It is not the right foundation for sub-second latency requirements, multi-region deployments, or producer concurrency significantly beyond the design target.
 
-At sustained throughput far beyond the design target, especially once write concurrency, retention, and query complexity all increase materially, PostgreSQL/TimescaleDB or a dedicated event-sourcing architecture becomes the more defensible choice. That migration path is outside the scope of this brief but should be designed into the schema from the start: event schemas that travel cleanly to Postgres are cheaper to migrate than schemas optimized for SQLite quirks.
+At sustained throughput far beyond the design target, especially once write concurrency, retention, and query complexity all increase materially, PostgreSQL/TimescaleDB or a dedicated event-sourcing architecture becomes the more defensible choice. The right threshold depends on workload shape, hardware, and acceptable write latency — there is no single crossover point. That migration path is outside the scope of this brief but should be designed into the schema from the start: event schemas that travel cleanly to Postgres are cheaper to migrate than schemas optimized for SQLite quirks.
 
 ---
 
@@ -89,13 +89,13 @@ At sustained throughput far beyond the design target, especially once write conc
 
 **Status: Observed**
 
-**What happened:** When multiple producers attempted to emit forecasts simultaneously during a brain cycle, write contention on the SQLite store produced intermittent `database is locked` errors. SQLite's WAL mode enables concurrent reads but serializes all writes — under bursty multi-producer emission, this serialization became a failure point rather than a performance concern.
+**What happened:** When multiple producers attempted to emit forecasts simultaneously during a brain cycle, write contention on the SQLite store produced intermittent `database is locked` errors. SQLite WAL permits concurrent readers, but not concurrent writers. Under bursty multi-producer emission, writer serialization became a correctness risk, not merely a throughput limit.
 
 The producer framework was designed to run producers as independent async tasks, each holding its own DB connection and attempting writes without coordination. Under low concurrency this works. Under bursty concurrent emission — particularly when producers complete simultaneously after a slow cycle — lock contention became operationally meaningful. PRAGMA settings (`busy_timeout`, retry logic) reduce but do not eliminate this at higher concurrency.
 
 **Impact on proof gate:** Forecast emissions that failed at the SQLite layer were captured in the JSONL audit log but not in the canonical store. The audit log and the queryable store diverged silently. The proof gate count, computed from the canonical store, understated the true emission count.
 
-**Mitigation implemented:** Serialized all DB writes through a single writer coroutine with an async queue. Producers enqueue forecast events; the writer drains the queue sequentially. This eliminated the observed write-lock failure mode in the beta deployment by collapsing producer writes into a single serialized DB path.
+**Mitigation implemented:** Serialized all DB writes through a single writer coroutine with an async queue. Producers enqueue forecast events; the writer drains the queue sequentially. This eliminated the observed write-lock failures in the beta deployment by collapsing producer writes into a single serialized DB path.
 
 **Write semantics:**
 - Delivery from producer to queue: at-least-once
@@ -239,7 +239,10 @@ UPDATE forecasts SET retracted_at = ? WHERE forecast_id = ? AND retracted_at IS 
 -- Supersession guard
 UPDATE forecasts SET superseded_by = ? WHERE forecast_id = ? AND superseded_by IS NULL;
 
--- Transaction boundary: guarded update within immediate transaction
+-- Transaction boundary: guarded update inside IMMEDIATE transaction
+-- SQLite does not support FOR UPDATE row-level locks.
+-- IMMEDIATE mode plus guarded UPDATE ... WHERE ... IS NULL provides
+-- the effective idempotency guard available in SQLite.
 BEGIN IMMEDIATE;
 UPDATE forecasts SET resolved_at = ?, outcome = ?, profitable = ?
     WHERE forecast_id = ? AND resolved_at IS NULL;
@@ -312,7 +315,7 @@ Define a versioned canonical event schema before writing any producer or storage
 
 Append-only event stores break down when a producer emits a malformed forecast. You need a correction model that preserves immutability:
 
-- **Short pre-finalization edit window (5 minutes in b1e55ed's current cycle design):** Before the forecast is visible to external consumers or enters a brain cycle, allow direct correction. Enforcement: the brain cycle ingestion pass filters forecasts by `emitted_at + 5m`. Within this window, corrections are direct updates. After it, only retract or supersede. Other builders should choose the shortest window compatible with their own ingestion and trust model.
+- **Short pre-finalization edit window (5 minutes in b1e55ed's current cycle design):** One pragmatic correction pattern is a brief window before a forecast becomes externally visible or enters scoring — within which direct correction is permitted. In b1e55ed, 5 minutes maps cleanly to cycle cadence, but other builders should choose the shortest window compatible with their own ingestion and trust model. Enforcement: the brain cycle ingestion pass filters forecasts by `emitted_at + window`. After the window closes, only retract or supersede.
 - **Retract:** Append a `RETRACT` event referencing the original `event_id`. Original stays in log. Scoring ignores retracted events.
 - **Supersede:** Append a `SUPERSEDE` event with corrected payload and reference to original. Query layer returns the superseding version; original remains in audit log.
 
@@ -387,5 +390,6 @@ The goal of this document is to make those failure modes visible in design, not 
 
 ---
 
-*Published by PermanentUpperClass for the Post Fiat Network.*
-*Task: Document b1e55ed Event Store Architectural Limits for Oracle Builders*
+*b1e55ed is open source. Source: https://github.com/P-U-C/b1e55ed*
+*Oracle endpoint: https://oracle.b1e55ed.permanentupperclass.com*
+*Docs: https://docs.b1e55ed.permanentupperclass.com*
