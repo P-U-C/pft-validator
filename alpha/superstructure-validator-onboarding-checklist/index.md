@@ -18,29 +18,113 @@ The Superstructure one-click deploy transforms a 45-step manual validator setup 
 
 ---
 
+## What You Are Creating
+
+By the end of this guide, you will have:
+
+1. **A validator node** — A server running the Post Fiat consensus software, syncing with the network
+2. **A validator identity** — A cryptographic keypair that uniquely identifies your validator on the network
+3. **An XRPL wallet** — A separate wallet for receiving PFT token rewards (not the same as your validator keys)
+4. **Domain verification** — A two-way cryptographic link proving you control both the validator and the domain
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    YOUR VALIDATOR                        │
+├─────────────────────────────────────────────────────────┤
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐  │
+│  │  Validator  │  │   XRPL      │  │    Domain       │  │
+│  │  Identity   │  │   Wallet    │  │    Verification │  │
+│  │  (keys)     │  │   (rewards) │  │    (TOML)       │  │
+│  └─────────────┘  └─────────────┘  └─────────────────┘  │
+│         │                │                  │            │
+│         └────────────────┼──────────────────┘            │
+│                          │                               │
+│              All linked to YOUR domain                   │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Glossary
+
+| Term | Meaning |
+|------|---------|
+| **Validator identity** | Your node's cryptographic keypair — public key is shared, private key file is secret |
+| **XRPL wallet** | Separate account for receiving PFT rewards — has its own seed/keys |
+| **Trust line** | XRPL permission allowing your wallet to hold a specific token (PFT) |
+| **Attestation** | Cryptographic proof linking your validator identity to your domain |
+| **UNL** | Unique Node List — the set of validators trusted for consensus |
+| **Syncing** | Downloading and verifying the blockchain — must complete before validating |
+| **Validating** | Actively participating in consensus (requires UNL inclusion) |
+| **Validator token** | Base64-encoded credential derived from your validator keys |
+
+---
+
 ## OPSEC Guidelines
 
-**What stays PUBLIC (this guide):**
-- Hardware requirements and VPS recommendations
-- Software dependencies and versions
-- General deployment flow and commands
-- Monitoring architecture and alert categories
-- Troubleshooting procedures
+### Public vs Private Material
 
-**What stays PRIVATE (your TaskNode profile / local notes):**
-- Your actual server IP addresses
-- Discord webhook URLs
-- Grafana/admin passwords
-- Validator key file contents
-- Your domain's specific attestation string
-- Any custom firewall rules or VPN configurations
+| Material | Classification | Notes |
+|----------|----------------|-------|
+| Validator **public key** | PUBLIC | Safe to share, appears in TOML and explorer |
+| Validator **key file** (`validator-keys.json`) | **SECRET** | Never share, never commit to git |
+| Validator **token** | **SECRET** | Derived from keys, treat as secret |
+| XRPL wallet **address** | PUBLIC | Safe to share for receiving rewards |
+| XRPL wallet **seed** | **SECRET** | Never share, controls your funds |
+| Server IP | PRIVATE | Limit exposure where possible |
+| Webhook URLs | PRIVATE | Can be abused for spam if leaked |
 
-**Best practices:**
-- Never commit `validator-keys.json` to any repository
-- Use environment variables for secrets, not hardcoded values
-- Store webhook URLs in password manager, not plain text
-- Keep a separate offline backup of validator identity (USB, paper)
-- Use your TaskNode Private Profile for deployment-specific configs
+### Secret Handling Rules
+
+```bash
+# ❌ NEVER do this — leaks to shell history
+export SEED="sXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+
+# ✅ Use .env file with restricted permissions
+echo "SEED=sXXXXXX" > .env
+chmod 600 .env
+
+# ✅ Or use interactive prompt
+read -s -p "Enter seed: " SEED
+```
+
+**Do NOT run sensitive commands on:**
+- Shared shell hosts
+- Recorded terminal sessions (asciinema, script)
+- CI/CD logs without secret masking
+
+### File Permissions
+
+```bash
+# Validator keys — owner read-only
+chmod 600 /opt/postfiatd/validator-keys.json
+
+# Config file — owner read-write
+chmod 600 /opt/postfiatd/postfiatd.cfg
+
+# Verify permissions
+ls -la /opt/postfiatd/*.json /opt/postfiatd/*.cfg
+```
+
+### Network Exposure Model
+
+```
+Internet ──► Port 51235 (peer-to-peer) ──► Validator
+             Port 22 (SSH, key auth only) ──► You
+
+Localhost only (NEVER expose):
+  - Port 5005 (admin RPC)
+  - Port 6006 (admin WebSocket)
+  - Port 3000 (Grafana) ← bind to localhost or VPN
+  - Port 9090 (Prometheus)
+```
+
+**Firewall baseline:**
+```bash
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw allow 22/tcp      # SSH
+sudo ufw allow 51235/tcp   # Peers
+sudo ufw enable
+```
 
 ⚠️ **If you accidentally expose your validator keys, generate new ones immediately and update your domain attestation.**
 
@@ -218,25 +302,48 @@ Funding sources:
 
 ### 2.3 Configure Trust Line
 
-Post Fiat tokens (PFT) require a trust line to the issuer:
+Post Fiat tokens (PFT) require a trust line to the issuer. A trust line is an XRPL mechanism that allows your wallet to hold tokens issued by another account.
+
+⚠️ **Superstructure-specific values below** — verify issuer address from official Post Fiat docs before use.
+
+**Option A: XUMM Wallet (Recommended for beginners)**
+1. Open XUMM app
+2. Go to Settings → Trust Lines → Add
+3. Enter currency: `PFT`
+4. Enter issuer: `rnQUEEg8yyjrwk9FhyXpKavHyCRJM9BDMW` *(verify from official docs)*
+5. Confirm transaction
+
+**Option B: Command-line (Advanced)**
+
+Create a script file (don't paste seeds in shell):
 
 ```bash
-# Using xrpl-py
-python3 << 'EOF'
+# Create the script
+cat > setup_trustline.py << 'EOF'
+import os
 from xrpl.clients import JsonRpcClient
 from xrpl.wallet import Wallet
 from xrpl.models.transactions import TrustSet
 from xrpl.models.amounts import IssuedCurrencyAmount
 from xrpl.transaction import submit_and_wait
 
+# Read seed from environment (set via .env file, not shell)
+seed = os.environ.get("XRPL_SEED")
+if not seed:
+    import getpass
+    seed = getpass.getpass("Enter wallet seed: ")
+
+# Superstructure-specific: verify this issuer from official docs
+PFT_ISSUER = "rnQUEEg8yyjrwk9FhyXpKavHyCRJM9BDMW"
+
 client = JsonRpcClient("https://xrplcluster.com")
-wallet = Wallet.from_seed("YOUR_SEED_HERE")  # Replace with your seed
+wallet = Wallet.from_seed(seed)
 
 trust_set = TrustSet(
     account=wallet.classic_address,
     limit_amount=IssuedCurrencyAmount(
         currency="PFT",
-        issuer="rnQUEEg8yyjrwk9FhyXpKavHyCRJM9BDMW",  # PFT issuer
+        issuer=PFT_ISSUER,
         value="1000000000"
     )
 )
@@ -244,18 +351,30 @@ trust_set = TrustSet(
 response = submit_and_wait(trust_set, client, wallet)
 print("Trust line result:", response.result["meta"]["TransactionResult"])
 EOF
+
+# Run with interactive prompt (seed never in shell history)
+pip install xrpl-py
+python3 setup_trustline.py
 ```
 
-### 2.4 Domain Ownership
+### 2.4 Domain Ownership and Verification
 
-You need a domain you control for validator verification. The one-click deploy will ask for this.
+Domain verification creates a **two-way cryptographic link**:
+
+```
+1. Validator → Domain:  Your validator config declares "I am validator.yourdomain.com"
+2. Domain → Validator:  Your TOML file declares "Validator nHUxxx is authorized for this domain"
+```
+
+Both sides must agree. This proves you control both the validator and the domain.
 
 **Requirements:**
-- Domain with HTTPS support
+- Domain with HTTPS support (required for TOML access)
 - Ability to host files at `/.well-known/xrp-ledger.toml`
 - DNS control (to point to GitHub Pages or your own hosting)
+- CORS enabled for the TOML file (`Access-Control-Allow-Origin: *`)
 
-**Easiest option:** GitHub Pages (free, HTTPS included)
+**Easiest option:** GitHub Pages (free, HTTPS included, CORS handled automatically)
 
 ### 2.5 Network Selection
 
@@ -381,10 +500,22 @@ public_key = "nHUVPzAmAmQ2QSc4oE1iLfsGi17qN2ado8PhxvgEkou76FLxAz7C"
 attestation = "[your-attestation-string]"
 network = "main"
 
+# Note: The domain is inferred from where this file is hosted.
+# The [METADATA] section below is Superstructure-specific (not standard XRPL).
 [METADATA]
-domain = "validator.yourdomain.com"
 network = "postfiat"
 ---
+
+⚠️ **CORS requirement:** Your web server must serve this file with:
+```
+Access-Control-Allow-Origin: *
+```
+GitHub Pages handles this automatically. For nginx, add to your config:
+```nginx
+location /.well-known/xrp-ledger.toml {
+    add_header Access-Control-Allow-Origin *;
+}
+```
 
 Bookmark this page: https://docs.postfiat.org/validator-guide
 ```
@@ -591,6 +722,19 @@ This ensures alerts work even if the validator server is completely down.
 ---
 
 ## 5. Troubleshooting Guide
+
+> **Note:** Commands in this section use Superstructure-specific conventions:
+> - Container name: `postfiatd`
+> - Install path: `/opt/postfiatd/`
+> - Image: `agtipft/postfiatd:devnet-light-latest`
+> 
+> For docker compose commands, run from `/opt/postfiatd/`:
+> ```bash
+> cd /opt/postfiatd
+> docker compose ps        # List containers
+> docker compose logs -f   # View logs
+> docker compose restart   # Restart
+> ```
 
 ### 5.1 Port Conflicts
 
@@ -816,6 +960,94 @@ curl -s http://localhost:5005/ -d '{"method":"ping"}'
 nano /opt/pf-monitor/prometheus/prometheus.yml
 # Verify targets are correct
 cd /opt/pf-monitor && docker compose restart prometheus
+```
+
+---
+
+## 6. Upgrades and Maintenance
+
+### 6.1 Updating the Validator Image
+
+```bash
+cd /opt/postfiatd
+
+# Check current version
+docker compose images
+
+# Pull latest image
+docker compose pull
+
+# Rolling restart (brief downtime)
+docker compose down
+docker compose up -d
+
+# Verify
+docker compose logs -f --tail 50
+```
+
+**Pre-upgrade checklist:**
+- [ ] Backup validator-keys.json
+- [ ] Note current ledger sequence
+- [ ] Check #announcements for breaking changes
+- [ ] Schedule during low-activity period if possible
+
+### 6.2 Log Rotation
+
+Prevent disk fill from container logs:
+
+```bash
+# Add to /etc/docker/daemon.json
+{
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m",
+    "max-file": "3"
+  }
+}
+
+# Restart Docker
+sudo systemctl restart docker
+```
+
+### 6.3 NTP/Time Sync
+
+Consensus requires accurate time. Verify:
+
+```bash
+# Check time sync status
+timedatectl status
+
+# If not synced, enable NTP
+sudo timedatectl set-ntp on
+
+# Verify
+timedatectl show --property=NTPSynchronized
+```
+
+### 6.4 Disk Monitoring
+
+Estimated ledger growth: ~2-5 GB/month (varies with network activity)
+
+```bash
+# Check current usage
+df -h /opt/postfiatd
+
+# Set up alert (add to cron)
+echo '[ $(df /opt/postfiatd --output=pcent | tail -1 | tr -d " %") -gt 80 ] && echo "Disk warning: $(df -h /opt/postfiatd)"' | crontab -
+```
+
+### 6.5 Security Updates
+
+```bash
+# Check for updates
+sudo apt update && apt list --upgradable
+
+# Apply security updates
+sudo unattended-upgrade --dry-run  # Preview
+sudo unattended-upgrade            # Apply
+
+# Reboot if kernel updated
+[ -f /var/run/reboot-required ] && sudo reboot
 ```
 
 ---
