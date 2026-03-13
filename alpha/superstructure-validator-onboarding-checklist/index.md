@@ -91,10 +91,12 @@ echo "Arch: $(uname -m)"
 
 | Port | Direction | Protocol | Purpose |
 |------|-----------|----------|---------|
-| 2559 | Inbound | TCP | Peer-to-peer (optional but recommended) |
-| 5005 | Local only | HTTP | Admin RPC |
-| 6005 | Inbound | WSS | WebSocket API |
+| 51235 | Inbound | TCP | Peer-to-peer (XRPL default) |
+| 5005 | **Local only** | HTTP | Admin JSON-RPC |
+| 6006 | **Local only** | WSS | Admin WebSocket |
 | 22 | Inbound | TCP | SSH (your access) |
+
+⚠️ **OPSEC: Validators should NOT expose public APIs.** Ports 5005 and 6006 must be localhost-only. If you need public API access, run a separate non-validator node behind a reverse proxy.
 
 **Pre-flight network check:**
 ```bash
@@ -106,9 +108,9 @@ nc -z -w5 postfiat.org 443 && echo "✅ Outbound HTTPS OK" || echo "❌ Outbound
 
 **Firewall rules (if using UFW):**
 ```bash
-sudo ufw allow 22/tcp    # SSH
-sudo ufw allow 2559/tcp  # Peer-to-peer
-sudo ufw allow 6005/tcp  # WebSocket
+sudo ufw allow 22/tcp      # SSH
+sudo ufw allow 51235/tcp   # Peer-to-peer
+# Do NOT expose 5005 or 6006 — admin ports stay local-only
 sudo ufw enable
 ```
 
@@ -126,6 +128,37 @@ sudo ufw enable
 - Shared/burst CPU (t2/t3 micro)
 - Network-attached storage (AWS EBS)
 - Providers that ban crypto operations
+
+### Security Hardening (Pre-Deploy)
+
+Before running the validator, harden your server:
+
+```bash
+# 1. Disable password authentication (use SSH keys only)
+sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
+sudo sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
+sudo systemctl restart sshd
+
+# 2. Install fail2ban (blocks repeated failed SSH attempts)
+sudo apt update && sudo apt install -y fail2ban
+sudo systemctl enable fail2ban
+
+# 3. Enable unattended security updates
+sudo apt install -y unattended-upgrades
+sudo dpkg-reconfigure -plow unattended-upgrades
+
+# 4. Verify firewall is active
+sudo ufw status
+```
+
+**SSH key setup (if not already done):**
+```bash
+# On your LOCAL machine, generate a key
+ssh-keygen -t ed25519 -C "validator-access"
+
+# Copy to server
+ssh-copy-id -i ~/.ssh/id_ed25519.pub root@your-server-ip
+```
 
 ### Software Prerequisites
 
@@ -173,12 +206,15 @@ print('⚠️ SAVE YOUR SEED OFFLINE. NEVER SHARE IT.')
 ### 2.2 Fund Your Wallet
 
 Your wallet needs:
-- **10 XRP minimum** — XRPL account reserve
-- **Additional XRP** — for transaction fees
+- **1 XRP** — Base account reserve (as of Dec 2024)
+- **0.2 XRP per trust line** — Owner reserve for ledger objects
+- **Recommended: 5-10 XRP** — Operational buffer for fees and future trust lines
+
+*Note: The base reserve was lowered from 10 XRP to 1 XRP in December 2024.*
 
 Funding sources:
-- Transfer from exchange
-- Purchase via onramp (MoonPay, etc.)
+- Transfer from exchange (Coinbase, Kraken, Bitstamp)
+- Purchase via onramp (MoonPay, Transak)
 
 ### 2.3 Configure Trust Line
 
@@ -221,15 +257,30 @@ You need a domain you control for validator verification. The one-click deploy w
 
 **Easiest option:** GitHub Pages (free, HTTPS included)
 
-### 2.5 Identity Checklist
+### 2.5 Network Selection
+
+| Network | Purpose | Image Tag | Notes |
+|---------|---------|-----------|-------|
+| **Testnet** | Testing, development | `devnet-light-latest` | Safe for experimentation |
+| **Mainnet** | Production validation | `mainnet-latest` | Real rewards, real consequences |
+
+**Start with testnet** until you've verified:
+- Node syncs successfully
+- Domain verification works
+- Monitoring captures metrics
+- You understand the operational requirements
+
+### 2.6 Identity Checklist
 
 Before running one-click deploy, confirm:
 
 - [ ] XRPL wallet created
-- [ ] Wallet funded with 10+ XRP
+- [ ] Wallet funded with 5+ XRP
 - [ ] Trust line configured for PFT token
 - [ ] Domain owned and accessible
 - [ ] DNS credentials available
+- [ ] Server security hardened (SSH keys, fail2ban)
+- [ ] Decided: testnet or mainnet
 
 ---
 
@@ -374,6 +425,67 @@ Ledger: 45234567
 Domain: validator.yourdomain.com
 ```
 
+### 3.7 Success Criteria
+
+**Level 1: Node Running** (achievable in ~30 min)
+- [ ] Container running (`docker ps` shows postfiatd)
+- [ ] State reaches `full` (synced with network)
+- [ ] 10+ peers connected
+- [ ] Admin RPC responds on localhost:5005
+
+**Level 2: Identity Verified** (achievable in ~1 hour)
+- [ ] TOML file accessible at `https://yourdomain.com/.well-known/xrp-ledger.toml`
+- [ ] Domain shows in `server_info` response
+- [ ] Attestation matches between config and TOML
+
+**Level 3: Operational** (ongoing)
+- [ ] Monitoring dashboard shows green
+- [ ] Alerts configured and tested
+- [ ] Validator visible on network explorer
+- [ ] 99.9% uptime maintained
+
+**Level 4: Earning** (requires network participation)
+- [ ] Joined Post Fiat Discord
+- [ ] Completed first task
+- [ ] Received PFT rewards
+- [ ] Top-50 economic activity (for monthly distribution)
+
+### 3.8 Backup and Recovery
+
+**Critical: Back up immediately after deploy**
+
+```bash
+# Create encrypted backup of validator identity
+tar -czf validator-backup-$(date +%Y%m%d).tar.gz \
+  /opt/postfiatd/validator-keys.json \
+  /opt/postfiatd/postfiatd.cfg
+
+# Encrypt with GPG (recommended)
+gpg -c validator-backup-$(date +%Y%m%d).tar.gz
+
+# Store the .gpg file:
+# - USB drive (offline)
+# - Password manager
+# - Encrypted cloud storage
+# - Paper backup of the seed (if available)
+```
+
+**Recovery procedure:**
+```bash
+# On new server, after base install:
+# 1. Copy backup file to server
+# 2. Decrypt
+gpg -d validator-backup-YYYYMMDD.tar.gz.gpg > validator-backup.tar.gz
+
+# 3. Extract
+tar -xzf validator-backup.tar.gz -C /
+
+# 4. Re-run deploy (will detect existing keys)
+curl -fsSL https://superstructure.postfiat.org/deploy.sh | bash
+```
+
+⚠️ **If you lose validator-keys.json, your validator identity is gone permanently.** You would need to generate new keys and re-verify your domain.
+
 ---
 
 ## 4. Monitoring and Alerting Configuration
@@ -487,11 +599,11 @@ This ensures alerts work even if the validator server is completely down.
 **Diagnosis:**
 ```bash
 # Check what's using the ports
-sudo lsof -i :2559
-sudo lsof -i :5005
-sudo lsof -i :6005
-sudo lsof -i :3000
-sudo lsof -i :9090
+sudo lsof -i :51235  # Peer-to-peer
+sudo lsof -i :5005   # Admin RPC
+sudo lsof -i :6006   # Admin WS
+sudo lsof -i :3000   # Grafana
+sudo lsof -i :9090   # Prometheus
 ```
 
 **Remediation:**
@@ -509,7 +621,7 @@ cd /opt/postfiatd && docker compose up -d
 
 **Prevention:** Use a fresh server or run the pre-flight port check:
 ```bash
-for port in 2559 5005 6005 3000 9090 9093; do
+for port in 51235 5005 6006 3000 9090 9093; do
   nc -z localhost $port && echo "❌ Port $port in use" || echo "✅ Port $port free"
 done
 ```
@@ -597,7 +709,7 @@ rm -rf data/db/*  # Delete ledger data
 docker compose up -d
 
 # Option D: Check network connectivity
-nc -zv seed.postfiat.org 2559
+nc -zv seed.postfiat.org 51235
 ```
 
 **Prevention:** Ensure stable network with low latency. Avoid VPN tunnels that add latency.
