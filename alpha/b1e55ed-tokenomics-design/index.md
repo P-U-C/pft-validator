@@ -8,7 +8,7 @@ status: published
 
 # $BLESS — Proof of Conviction
 
-**Tokenomics of the b1e55ed Signal Network v6**
+**Tokenomics of the b1e55ed Signal Network v7**
 
 ---
 
