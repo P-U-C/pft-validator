@@ -258,7 +258,7 @@
       <div class="desc">Each epoch, 0.25% of remaining supply becomes available — the same number that defines the boundary between signal and noise. The scoring math and the monetary policy share a constant.</div>
       <div class="emission-chart">
         <div style="display:flex;gap:8px">
-          <div style="display:flex;flex-direction:column;justify-content:space-between;font-size:10px;color:#4a6a4a;text-align:right;padding:0 4px">
+          <div style="display:flex;flex-direction:column;justify-content:space-between;font-size:10px;color:#4a6a4a;text-align:right;padding:0 4px;min-width:35px">
             <span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span>
           </div>
           <div style="flex:1;height:200px">
@@ -269,22 +269,50 @@
                   <stop offset="100%" stop-color="#00ff41" stop-opacity="0.02"/>
                 </linearGradient>
               </defs>
-              <!-- Area fill -->
-              <path d="M0,200 L0,166 C20,158 40,144 60,132 C80,120 100,108 120,98 C140,88 160,80 180,72 C200,64 220,58 240,52 C260,46 280,42 300,38 C320,34 340,30 360,26 C380,22 400,18 400,14 L400,200 Z" fill="url(#areaGrad)"/>
+              <!-- Grid lines -->
+              <line x1="0" y1="50" x2="400" y2="50" stroke="#1a2e1a" stroke-width="1"/>
+              <line x1="0" y1="100" x2="400" y2="100" stroke="#1a2e1a" stroke-width="1"/>
+              <line x1="0" y1="150" x2="400" y2="150" stroke="#1a2e1a" stroke-width="1"/>
+              <!-- Area fill: Y inverted (0%=200, 100%=0). Points: Yr1=17%, Yr2=23%, Yr3=32%, Yr5=48%, Yr8=65%, Yr10=73%, Yr15=86%, Yr20=93% -->
+              <path d="M0,200 L20,166 L40,154 L60,136 L100,104 L160,70 L200,54 L300,28 L400,14 L400,200 Z" fill="url(#areaGrad)"/>
               <!-- Line -->
-              <path d="M0,166 C20,158 40,144 60,132 C80,120 100,108 120,98 C140,88 160,80 180,72 C200,64 220,58 240,52 C260,46 280,42 300,38 C320,34 340,30 360,26 C380,22 400,18 400,14" fill="none" stroke="#00ff41" stroke-width="2"/>
+              <path d="M20,166 Q60,140 100,104 T200,54 T300,28 T400,14" fill="none" stroke="#00ff41" stroke-width="2.5"/>
+              <!-- Data points -->
+              <circle cx="20" cy="166" r="3" fill="#00ff41"/>
+              <circle cx="100" cy="104" r="3" fill="#00ff41"/>
+              <circle cx="200" cy="54" r="3" fill="#00ff41"/>
+              <circle cx="400" cy="14" r="3" fill="#00ff41"/>
             </svg>
           </div>
         </div>
-        <div class="emission-labels" style="margin-left:32px">
-          <span>Yr 1</span><span>5</span><span>10</span><span>15</span><span>Yr 20</span>
+        <div style="display:flex;margin-left:43px;margin-top:8px">
+          <div style="flex:1;display:flex;justify-content:space-between;font-size:10px;color:#4a6a4a">
+            <span>1</span><span>5</span><span>10</span><span>15</span><span>20</span>
+          </div>
         </div>
+        <div style="text-align:center;font-size:10px;color:#4a6a4a;margin-top:2px">Year</div>
       </div>
-      <div class="emission-note">
-        <span>Year 1: <span class="text">~17%</span></span>
-        <span>Year 5: <span class="text">~50%</span></span>
-        <span>Year 10: <span class="text">~74%</span></span>
-        <span>Year 20: <span class="text">~93%</span></span>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px;text-align:center">
+        <div style="background:#0a0f0a;padding:12px 8px;border:1px solid #1a2e1a">
+          <div style="font-size:11px;color:#4a6a4a">Year 1</div>
+          <div style="font-size:14px;color:#00ff41;margin:4px 0">17%</div>
+          <div style="font-size:10px;color:#4a6a4a">32M $BLESS</div>
+        </div>
+        <div style="background:#0a0f0a;padding:12px 8px;border:1px solid #1a2e1a">
+          <div style="font-size:11px;color:#4a6a4a">Year 5</div>
+          <div style="font-size:14px;color:#00ff41;margin:4px 0">48%</div>
+          <div style="font-size:10px;color:#4a6a4a">90M $BLESS</div>
+        </div>
+        <div style="background:#0a0f0a;padding:12px 8px;border:1px solid #1a2e1a">
+          <div style="font-size:11px;color:#4a6a4a">Year 10</div>
+          <div style="font-size:14px;color:#00ff41;margin:4px 0">73%</div>
+          <div style="font-size:10px;color:#4a6a4a">136M $BLESS</div>
+        </div>
+        <div style="background:#0a0f0a;padding:12px 8px;border:1px solid #1a2e1a">
+          <div style="font-size:11px;color:#4a6a4a">Year 20</div>
+          <div style="font-size:14px;color:#00ff41;margin:4px 0">93%</div>
+          <div style="font-size:10px;color:#4a6a4a">173M $BLESS</div>
+        </div>
       </div>
     </section>
     
