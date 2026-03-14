@@ -257,7 +257,11 @@
       </div>
       <div class="desc">Each epoch, 0.25% of remaining supply becomes available — the same number that defines the boundary between signal and noise. The scoring math and the monetary policy share a constant.</div>
       <div class="emission-chart">
-        <div class="emission-bars">
+        <div style="display:flex;gap:8px">
+          <div style="display:flex;flex-direction:column;justify-content:space-between;font-size:10px;color:#4a6a4a;text-align:right;padding:0 4px">
+            <span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span>
+          </div>
+          <div class="emission-bars" style="flex:1">
           <div class="emission-bar" style="height:17%"></div>
           <div class="emission-bar" style="height:28%"></div>
           <div class="emission-bar" style="height:38%"></div>
@@ -279,7 +283,8 @@
           <div class="emission-bar" style="height:91%"></div>
           <div class="emission-bar" style="height:93%"></div>
         </div>
-        <div class="emission-labels">
+        </div>
+        <div class="emission-labels" style="margin-left:32px">
           <span>Yr 1</span><span>5</span><span>10</span><span>15</span><span>Yr 20</span>
         </div>
       </div>
