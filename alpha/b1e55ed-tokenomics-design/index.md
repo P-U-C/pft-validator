@@ -24,16 +24,20 @@ In 1980, Grossman and Stiglitz proved that informationally efficient markets are
 
 ### [Consumer Guide →](./consumers/)
 
-**Visual infographic** covering:
-- Supply architecture (0xB1E55ED = 186,537,453)
-- Emission curve (smooth decay, no halvings)
-- Alpha gate (no value, no inflation)
-- Karma³ distribution (skill > capital)
-- Entry paths (shadow → graduate → delegation)
-- Consumer tiers (aggregate vs. provider-level access)
-- The flywheel
+**Visual infographic** — 11 sections covering the complete $BLESS token mechanics:
 
-*Interactive charts. Dark terminal aesthetic.*
+- Supply architecture (0xB1E55ED = 186.5M, 95/5 emission/earned split)
+- Emission curve with supply milestones (17% → 93% over 20 years)
+- Alpha-gated emissions (10% floor → 100% at 5%+ alpha)
+- Karma³ distribution mechanics (skill > capital, 8× earnings spread)
+- Entry paths (shadow → graduation → delegation)
+- Consumer tier access (Observer free → Institutional 2K/epoch)
+- Flywheel economics (slash → recycle → graduate)
+- Slashing thresholds (Brier > 0.35 triggers penalty)
+- Key parameter reference (all governable params)
+- Network deployment options (chain-agnostic sovereignty)
+
+*Dark terminal aesthetic. Mobile-responsive. Pure CSS/SVG — no JavaScript dependencies.*
 
 ---
 
