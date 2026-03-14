@@ -5,488 +5,450 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>$BLESS Consumer Guide — Proof of Conviction</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://cdn.jsdelivr.net/npm/recharts@2.10.3/umd/Recharts.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #050505; font-family: 'IBM Plex Mono', monospace; }
-    #root { min-height: 100vh; }
+    body { 
+      background: #050505; 
+      font-family: 'IBM Plex Mono', monospace; 
+      color: #c8e6c8;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+    .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+    
+    /* Scanlines */
+    .scanlines {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.04) 2px,rgba(0,0,0,0.04) 4px);
+    }
+    
+    /* Hero */
+    .hero { padding: 80px 0 56px; text-align: center; }
+    .hero-label { font-size: 11px; color: #4a6a4a; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 24px; }
+    .hero-title { margin-bottom: 36px; }
+    .hero-title .prefix { font-size: 13px; color: #4a6a4a; letter-spacing: 0.1em; }
+    .hero-title .name { font-size: 48px; color: #00ff41; font-weight: 300; letter-spacing: 0.06em; }
+    .hero-desc { font-size: 13px; color: #4a6a4a; max-width: 600px; margin: 0 auto 36px; }
+    .hero-desc .highlight { color: #c8e6c8; }
+    
+    /* Stats */
+    .stats { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; margin-bottom: 40px; }
+    .stat { text-align: center; min-width: 100px; }
+    .stat-value { font-size: 32px; font-weight: 300; color: #00ff41; line-height: 1.1; letter-spacing: -0.02em; }
+    .stat-value.cyan { color: #00ccff; }
+    .stat-value.amber { color: #ffaa00; }
+    .stat-sub { font-size: 10px; color: #4a6a4a; margin-top: 4px; letter-spacing: 0.04em; }
+    .stat-label { font-size: 10px; color: #4a6a4a; margin-top: 8px; letter-spacing: 0.1em; text-transform: uppercase; }
+    
+    /* Sections */
+    section { padding: 56px 0; border-bottom: 1px solid #1a2e1a; }
+    .section-label { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+    .section-num { color: #4a6a4a; font-size: 11px; letter-spacing: 0.15em; font-weight: 500; }
+    .section-text { color: #c8e6c8; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500; }
+    
+    /* Content */
+    .lead { font-size: 17px; color: #c8e6c8; line-height: 1.7; max-width: 700px; font-weight: 300; }
+    .highlight-box { font-size: 14px; color: #00ff41; margin-top: 20px; line-height: 1.7; border-left: 2px solid #00ff41; padding-left: 20px; }
+    .desc { font-size: 12px; color: #4a6a4a; margin-bottom: 24px; line-height: 1.6; }
+    .desc .text { color: #c8e6c8; }
+    .desc .green { color: #00ff41; }
+    .desc .cyan { color: #00ccff; }
+    
+    /* Supply breakdown */
+    .supply-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 40px; align-items: center; }
+    .supply-chart { text-align: center; padding: 20px; }
+    .supply-ring { width: 160px; height: 160px; border-radius: 50%; background: conic-gradient(#00ff41 0deg 342deg, #00ccff 342deg 360deg); margin: 0 auto; position: relative; }
+    .supply-ring::after { content: ''; position: absolute; top: 30px; left: 30px; right: 30px; bottom: 30px; background: #050505; border-radius: 50%; }
+    .supply-legend { display: flex; gap: 32px; margin-bottom: 20px; flex-wrap: wrap; }
+    .supply-item { display: flex; align-items: center; gap: 8px; }
+    .supply-dot { width: 10px; height: 10px; border-radius: 2px; }
+    .supply-dot.green { background: #00ff41; }
+    .supply-dot.cyan { background: #00ccff; }
+    
+    /* Emission curve */
+    .emission-chart { background: #0a0f0a; border: 1px solid #1a2e1a; padding: 30px; margin: 20px 0; }
+    .emission-bars { display: flex; align-items: flex-end; justify-content: space-between; height: 200px; gap: 4px; }
+    .emission-bar { flex: 1; background: linear-gradient(to top, #00ff4120, #00ff4160); border-top: 2px solid #00ff41; min-width: 0; }
+    .emission-labels { display: flex; justify-content: space-between; margin-top: 10px; font-size: 11px; color: #4a6a4a; }
+    .emission-note { display: flex; justify-content: center; gap: 40px; margin-top: 16px; font-size: 11px; color: #4a6a4a; flex-wrap: wrap; }
+    .emission-note .text { color: #c8e6c8; }
+    
+    /* Alpha gate */
+    .alpha-row { display: grid; grid-template-columns: 100px 60px 1fr; gap: 12px; padding: 12px 16px; align-items: center; }
+    .alpha-label { font-size: 12px; color: #4a6a4a; }
+    .alpha-pct { font-size: 14px; font-weight: 500; }
+    .alpha-bar { height: 20px; background: #0a0f0a; border-radius: 2px; overflow: hidden; }
+    .alpha-fill { height: 100%; border-radius: 2px; opacity: 0.7; }
+    .alpha-note { margin-top: 20px; padding: 14px 20px; border: 1px solid #1a2e1a; font-size: 12px; color: #4a6a4a; line-height: 1.6; }
+    .alpha-note .green { color: #00ff41; }
+    
+    /* Karma bars */
+    .karma-chart { background: #0a0f0a; padding: 20px; }
+    .karma-row { display: grid; grid-template-columns: 50px 1fr 60px; gap: 12px; padding: 8px 0; align-items: center; }
+    .karma-label { font-size: 12px; color: #4a6a4a; }
+    .karma-bar { height: 24px; background: #1a2e1a; border-radius: 0 3px 3px 0; }
+    .karma-value { font-size: 12px; color: #c8e6c8; }
+    
+    /* Path cards */
+    .path-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+    .path-card { background: #0a0f0a; border: 1px solid #1a2e1a; padding: 24px 20px; }
+    .path-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .path-num { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; }
+    .path-num.green { border-color: #00ff41; color: #00ff41; }
+    .path-num.cyan { border-color: #00ccff; color: #00ccff; }
+    .path-num.amber { border-color: #ffaa00; color: #ffaa00; }
+    .path-title { font-size: 14px; color: #c8e6c8; font-weight: 500; }
+    .path-desc { font-size: 12px; color: #4a6a4a; line-height: 1.6; margin-bottom: 12px; min-height: 80px; }
+    .path-meta { display: flex; gap: 16px; font-size: 11px; color: #4a6a4a; border-top: 1px solid #1a2e1a; padding-top: 12px; }
+    .path-meta .green { color: #00ff41; }
+    .path-meta .amber { color: #ffaa00; }
+    
+    /* Consumer tiers */
+    .tier-table { border: 1px solid #1a2e1a; overflow-x: auto; }
+    .tier-header { display: grid; grid-template-columns: 120px 100px 1fr 1fr; gap: 12px; padding: 10px 16px; font-size: 10px; color: #4a6a4a; letter-spacing: 0.1em; text-transform: uppercase; border-bottom: 1px solid #1a2e1a; background: #0a0f0a; }
+    .tier-row { display: grid; grid-template-columns: 120px 100px 1fr 1fr; gap: 12px; padding: 14px 16px; font-size: 12px; }
+    .tier-row.highlight { background: #0f1a0f; border-left: 2px solid #00ff41; }
+    .tier-name { color: #c8e6c8; }
+    .tier-name.bright { color: #00ff41; font-weight: 500; }
+    .tier-cost { color: #00ccff; }
+    .tier-cost.free { color: #00ff41; }
+    .tier-signal { color: #4a6a4a; }
+    .tier-provider { color: #4a6a4a; }
+    .tier-provider.full { color: #00ff41; }
+    .tier-provider.muted { color: #2a3a2a; }
+    
+    /* Flywheel */
+    .flywheel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 2px; margin-bottom: 24px; }
+    .flywheel-step { padding: 20px 16px; background: #0a0f0a; border-top: 2px solid; }
+    .flywheel-step.dim { border-color: #4a6a4a; }
+    .flywheel-step.green { border-color: #00ff41; }
+    .flywheel-step.amber { border-color: #ffaa00; }
+    .flywheel-step.cyan { border-color: #00ccff; }
+    .flywheel-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .flywheel-num { font-size: 18px; font-weight: 300; }
+    .flywheel-label { font-size: 13px; color: #c8e6c8; font-weight: 500; }
+    .flywheel-desc { font-size: 11px; color: #4a6a4a; line-height: 1.5; }
+    .flywheel-note { padding: 14px 20px; border: 1px solid #1a2e1a; text-align: center; font-size: 12px; color: #4a6a4a; line-height: 1.6; }
+    .flywheel-note .green { color: #00ff41; }
+    
+    /* Slashing */
+    .slash-chart { display: flex; gap: 2px; align-items: flex-end; height: 120px; padding: 0 20px; }
+    .slash-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .slash-pct { font-size: 9px; color: #ff4444; min-height: 12px; }
+    .slash-bar { width: 80%; border-radius: 2px 2px 0 0; min-height: 2px; }
+    .slash-label { font-size: 9px; color: #4a6a4a; }
+    .slash-legend { display: flex; justify-content: space-between; font-size: 10px; color: #4a6a4a; padding: 8px 20px 0; }
+    .slash-legend .muted { color: #2a3a2a; }
+    
+    /* Params */
+    .params-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 2px; }
+    .param-item { padding: 12px 16px; display: flex; flex-direction: column; gap: 2px; }
+    .param-item:nth-child(odd) { background: #0a0f0a; }
+    .param-label { font-size: 10px; color: #4a6a4a; letter-spacing: 0.08em; text-transform: uppercase; }
+    .param-value { font-size: 13px; color: #c8e6c8; }
+    .param-note { font-size: 10px; color: #2a3a2a; }
+    
+    /* Network options */
+    .network-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+    .network-card { padding: 20px 16px; background: #0a0f0a; border: 1px solid #1a2e1a; }
+    .network-title { font-size: 13px; color: #c8e6c8; font-weight: 500; margin-bottom: 8px; }
+    .network-desc { font-size: 11px; color: #4a6a4a; line-height: 1.6; margin-bottom: 12px; }
+    .network-status { font-size: 10px; letter-spacing: 0.08em; }
+    .network-status.green { color: #00ff41; }
+    .network-status.amber { color: #ffaa00; }
+    
+    /* Footer */
+    .footer { padding: 48px 0 80px; text-align: center; }
+    .footer-title { font-size: 32px; color: #00ff41; font-weight: 300; letter-spacing: 0.06em; margin-bottom: 16px; }
+    .footer-desc { font-size: 12px; color: #4a6a4a; line-height: 1.8; max-width: 500px; margin: 0 auto; }
+    .footer-version { margin-top: 24px; font-size: 10px; color: #2a3a2a; letter-spacing: 0.15em; text-transform: uppercase; }
+    
+    @media (max-width: 600px) {
+      .hero-title .name { font-size: 36px; }
+      .stats { gap: 24px; }
+      .stat-value { font-size: 24px; }
+      .supply-grid { grid-template-columns: 1fr; }
+      .tier-header, .tier-row { grid-template-columns: 1fr; gap: 8px; }
+      .tier-header > *, .tier-row > * { display: block; }
+    }
   </style>
 </head>
 <body>
-  <div id="root"></div>
-  <script type="text/babel">
-    const { useState } = React;
-    const { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie } = Recharts;
-
-    // === DATA (verified against v7) ===
-    const SUPPLY = 186537453;
-    const POOL = SUPPLY * 0.95; // 177,210,580 emission pool
-    const RETRO = SUPPLY * 0.05; // 9,326,873 Phase 0 retroactive
-    const DECAY = 0.0025;
-
-    const emissionData = Array.from({ length: 20 }, (_, i) => {
-      const year = i + 1;
-      const epoch = year * 52;
-      const remaining = POOL * Math.pow(1 - DECAY, epoch);
-      const poolEmitted = POOL - remaining;
-      const totalDistributed = poolEmitted + RETRO;
-      const pct = Math.round(totalDistributed / SUPPLY * 100);
-      const weekly = Math.round(remaining * DECAY);
-      return { year, pct, weekly };
-    });
-
-    const karmaData = [
-      { label: "0.90", earnings: 73 },
-      { label: "0.80", earnings: 51 },
-      { label: "0.70", earnings: 34 },
-      { label: "0.60", earnings: 22 },
-      { label: "0.50", earnings: 13 },
-      { label: "0.45", earnings: 9 },
-    ];
-
-    const alphaGates = [
-      { gate: "> 5%", mult: 100, color: "#00ff41" },
-      { gate: "2–5%", mult: 75, color: "#00cc33" },
-      { gate: "0.5–2%", mult: 50, color: "#009926" },
-      { gate: "0–0.5%", mult: 25, color: "#006619" },
-      { gate: "≤ 0%", mult: 10, color: "#1a3a1a" },
-    ];
-
-    const supplyBreakdown = [
-      { name: "Emission Pool", value: 95, color: "#00ff41" },
-      { name: "Phase 0 Earned", value: 5, color: "#00ccff" },
-    ];
-
-    const G = {
-      bg: "#050505",
-      panel: "#0a0f0a",
-      elevated: "#0f1a0f",
-      border: "#1a2e1a",
-      borderActive: "#2a4a2a",
-      text: "#c8e6c8",
-      bright: "#00ff41",
-      dim: "#4a6a4a",
-      muted: "#2a3a2a",
-      cyan: "#00ccff",
-      amber: "#ffaa00",
-    };
-
-    const Scanlines = () => (
-      <div style={{
-        position: "fixed",
-        inset: 0,
-        pointerEvents: "none",
-        zIndex: 9999,
-        background: "repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.04) 2px,rgba(0,0,0,0.04) 4px)"
-      }} />
-    );
-
-    const Section = ({ children }) => (
-      <section style={{ padding: "56px 0", borderBottom: `1px solid ${G.border}` }}>
-        {children}
-      </section>
-    );
-
-    const SectionLabel = ({ num, text }) => (
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
-        <span style={{ color: G.dim, fontSize: 11, letterSpacing: "0.15em", fontWeight: 500 }}>{num}</span>
-        <span style={{ color: G.text, fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 500 }}>{text}</span>
+  <div class="scanlines"></div>
+  
+  <div class="container">
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-label">Proof of Conviction</div>
+      <div class="hero-title">
+        <span class="prefix">0x</span><span class="name">B1E55ED</span>
       </div>
-    );
-
-    const Stat = ({ value, label, color = G.bright, sub }) => (
-      <div style={{ textAlign: "center", minWidth: 100 }}>
-        <div style={{ fontSize: 32, fontWeight: 300, color, lineHeight: 1.1, letterSpacing: "-0.02em" }}>{value}</div>
-        {sub && <div style={{ fontSize: 10, color: G.dim, marginTop: 4, letterSpacing: "0.04em" }}>{sub}</div>}
-        <div style={{ fontSize: 10, color: G.dim, marginTop: 8, letterSpacing: "0.1em", textTransform: "uppercase" }}>{label}</div>
+      <div class="hero-desc">
+        The system's name is its supply cap. <span class="highlight">186,537,453</span> tokens.<br>
+        The emission rate is the Brier noise floor. <span class="highlight">0.25%</span> per epoch.<br>
+        Nothing is borrowed. Everything is earned.
       </div>
-    );
-
-    const PathCard = ({ num, title, desc, time, capital, color }) => (
-      <div style={{
-        background: G.panel,
-        border: `1px solid ${G.border}`,
-        padding: "24px 20px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-        minHeight: 200,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{
-            width: 28,
-            height: 28,
-            borderRadius: "50%",
-            border: `1.5px solid ${color}`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 12,
-            color,
-            fontWeight: 500,
-          }}>{num}</div>
-          <div style={{ fontSize: 14, color: G.text, fontWeight: 500 }}>{title}</div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-value">186.5M</div>
+          <div class="stat-sub">0xB1E55ED in decimal</div>
+          <div class="stat-label">Max Supply</div>
         </div>
-        <div style={{ fontSize: 12, color: G.dim, lineHeight: 1.6, flex: 1 }}>{desc}</div>
-        <div style={{ display: "flex", gap: 16, fontSize: 11, color: G.dim, borderTop: `1px solid ${G.border}`, paddingTop: 12 }}>
-          <span>⏱ {time}</span>
-          <span style={{ color: capital === "None" ? G.bright : G.amber }}>◆ {capital}</span>
+        <div class="stat">
+          <div class="stat-value cyan">95 / 5</div>
+          <div class="stat-sub">0% team allocation</div>
+          <div class="stat-label">Emission / Earned</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">0.25%</div>
+          <div class="stat-sub">= Brier noise floor</div>
+          <div class="stat-label">Epoch Decay</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value amber">5.3yr</div>
+          <div class="stat-sub">277 epochs</div>
+          <div class="stat-label">Half-Life</div>
         </div>
       </div>
-    );
-
-    const TierRow = ({ tier, cost, signal, provider, highlight }) => (
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "minmax(90px, 120px) minmax(70px, 100px) 1fr 1fr",
-        gap: 12,
-        padding: "14px 16px",
-        fontSize: 12,
-        background: highlight ? G.elevated : "transparent",
-        borderLeft: highlight ? `2px solid ${G.bright}` : "2px solid transparent",
-        overflow: "hidden",
-      }}>
-        <div style={{ color: highlight ? G.bright : G.text, fontWeight: highlight ? 500 : 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tier}</div>
-        <div style={{ color: cost === "Free" ? G.bright : G.cyan, whiteSpace: "nowrap" }}>{cost}</div>
-        <div style={{ color: G.dim, overflow: "hidden", textOverflow: "ellipsis" }}>{signal}</div>
-        <div style={{ color: provider === "Full" ? G.bright : provider === "None" ? G.muted : G.dim, overflow: "hidden", textOverflow: "ellipsis" }}>{provider}</div>
+    </section>
+    
+    <!-- 01 WHY -->
+    <section>
+      <div class="section-label">
+        <span class="section-num">01</span>
+        <span class="section-text">Why This Exists</span>
       </div>
-    );
-
-    const EmissionTooltip = ({ active, payload }) => {
-      if (!active || !payload?.length) return null;
-      const d = payload[0].payload;
-      return (
-        <div style={{ background: G.panel, border: `1px solid ${G.border}`, padding: "10px 14px", fontSize: 12 }}>
-          <div style={{ color: G.text }}>Year {d.year}</div>
-          <div style={{ color: G.bright }}>{d.pct}% distributed</div>
-          <div style={{ color: G.dim }}>{d.weekly.toLocaleString()} $BLESS/week</div>
+      <p class="lead">If markets already reflect all information, no one has an incentive to gather it. If no one gathers it, markets can't reflect it.</p>
+      <div class="highlight-box">$BLESS pays people to know things — independent of whether they trade on what they know. The first token where emissions are gated to measurable alpha production.</div>
+    </section>
+    
+    <!-- 02 SUPPLY -->
+    <section>
+      <div class="section-label">
+        <span class="section-num">02</span>
+        <span class="section-text">Supply Architecture</span>
+      </div>
+      <div class="supply-grid">
+        <div class="supply-chart">
+          <div class="supply-ring"></div>
         </div>
-      );
-    };
-
-    function BlessTokenomics() {
-      return (
-        <div style={{
-          background: G.bg,
-          color: G.text,
-          fontFamily: "'IBM Plex Mono', monospace",
-          minHeight: "100vh",
-          position: "relative",
-          overflowX: "hidden",
-        }}>
-          <Scanlines />
-
-          <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px" }}>
-            {/* HERO */}
-            <section style={{ paddingTop: 80, paddingBottom: 56, textAlign: "center" }}>
-              <div style={{ fontSize: 11, color: G.dim, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 24 }}>
-                Proof of Conviction
-              </div>
-
-              <div style={{ marginBottom: 36 }}>
-                <span style={{ fontSize: 13, color: G.dim, letterSpacing: "0.1em" }}>0x</span>
-                <span style={{ fontSize: 48, color: G.bright, fontWeight: 300, letterSpacing: "0.06em" }}>B1E55ED</span>
-              </div>
-
-              <div style={{ fontSize: 13, color: G.dim, lineHeight: 1.8, maxWidth: 600, margin: "0 auto 36px" }}>
-                The system's name is its supply cap. <span style={{ color: G.text }}>186,537,453</span> tokens.<br />
-                The emission rate is the Brier noise floor. <span style={{ color: G.text }}>0.25%</span> per epoch.<br />
-                Nothing is borrowed. Everything is earned.
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "center", gap: 40, flexWrap: "wrap" }}>
-                <Stat value="186.5M" label="Max Supply" sub="0xB1E55ED in decimal" />
-                <Stat value="95 / 5" label="Emission / Earned" color={G.cyan} sub="0% team allocation" />
-                <Stat value="0.25%" label="Epoch Decay" sub="= Brier noise floor" />
-                <Stat value="5.3yr" label="Half-Life" color={G.amber} sub="277 epochs" />
-              </div>
-            </section>
-
-            {/* 01 WHY */}
-            <Section>
-              <SectionLabel num="01" text="Why This Exists" />
-              <div style={{ fontSize: 17, color: G.text, lineHeight: 1.7, maxWidth: 700, fontWeight: 300 }}>
-                If markets already reflect all information, no one has an incentive to gather it. If no one gathers it, markets can't reflect it.
-              </div>
-              <div style={{ fontSize: 14, color: G.bright, marginTop: 20, lineHeight: 1.7, borderLeft: `2px solid ${G.bright}`, paddingLeft: 20 }}>
-                $BLESS pays people to know things — independent of whether they trade on what they know. The first token where emissions are gated to measurable alpha production.
-              </div>
-            </Section>
-
-            {/* 02 SUPPLY */}
-            <Section>
-              <SectionLabel num="02" text="Supply Architecture" />
-              <div style={{ display: "grid", gridTemplateColumns: "minmax(150px, 200px) 1fr", gap: 40, alignItems: "center" }}>
-                <div style={{ height: 200 }}>
-                  <ResponsiveContainer>
-                    <PieChart>
-                      <Pie data={supplyBreakdown} dataKey="value" cx="50%" cy="50%" innerRadius={55} outerRadius={80} strokeWidth={0}>
-                        {supplyBreakdown.map((d, i) => <Cell key={i} fill={d.color} />)}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div>
-                  <div style={{ display: "flex", gap: 32, marginBottom: 20, flexWrap: "wrap" }}>
-                    {supplyBreakdown.map(d => (
-                      <div key={d.name} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <div style={{ width: 10, height: 10, borderRadius: 2, background: d.color }} />
-                        <span style={{ fontSize: 12, color: G.dim }}>{d.name}</span>
-                        <span style={{ fontSize: 14, color: G.text, fontWeight: 500 }}>{d.value}%</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ fontSize: 12, color: G.dim, lineHeight: 1.7 }}>
-                    <span style={{ color: G.cyan }}>5%</span> retroactively allocated to Phase 0 participants who test the software — scored on <span style={{ color: G.text }}>repo contribution</span> and <span style={{ color: G.text }}>producer signaling quality</span>. Earned through work, not granted.
-                    <br /><br />
-                    <span style={{ color: G.bright }}>95%</span> enters the emission pool. Smooth exponential decay. No halvings. No manufactured scarcity. Performance is the narrative.
-                  </div>
-                </div>
-              </div>
-            </Section>
-
-            {/* 03 EMISSION */}
-            <Section>
-              <SectionLabel num="03" text="Emission Curve — Smooth Decay, No Halvings" />
-              <div style={{ fontSize: 12, color: G.dim, marginBottom: 24, lineHeight: 1.6 }}>
-                Each epoch, 0.25% of remaining supply becomes available — the same number that defines the boundary between signal and noise. The scoring math and the monetary policy share a constant.
-              </div>
-              <div style={{ height: 280 }}>
-                <ResponsiveContainer>
-                  <AreaChart data={emissionData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="emGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={G.bright} stopOpacity={0.3} />
-                        <stop offset="100%" stopColor={G.bright} stopOpacity={0.02} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="year" tick={{ fill: G.dim, fontSize: 11 }} axisLine={{ stroke: G.border }} tickLine={false} />
-                    <YAxis tick={{ fill: G.dim, fontSize: 11 }} axisLine={{ stroke: G.border }} tickLine={false} tickFormatter={v => `${v}%`} domain={[0, 100]} />
-                    <Tooltip content={<EmissionTooltip />} />
-                    <Area type="monotone" dataKey="pct" stroke={G.bright} fill="url(#emGrad)" strokeWidth={2} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-              <div style={{ display: "flex", justifyContent: "center", gap: 40, marginTop: 16, fontSize: 11, color: G.dim, flexWrap: "wrap" }}>
-                <span>Year 1: <span style={{ color: G.text }}>~17%</span></span>
-                <span>Year 5: <span style={{ color: G.text }}>~50%</span></span>
-                <span>Year 10: <span style={{ color: G.text }}>~74%</span></span>
-                <span>Year 20: <span style={{ color: G.text }}>~93%</span></span>
-              </div>
-            </Section>
-
-            {/* 04 ALPHA GATE */}
-            <Section>
-              <SectionLabel num="04" text="The Alpha Gate — No Value, No Inflation" />
-              <div style={{ fontSize: 12, color: G.dim, marginBottom: 24, lineHeight: 1.6 }}>
-                Emissions flow only when the network produces measurable alpha. The Conviction-Weighted Portfolio is scored against an equal-weight benchmark each epoch. Published on-chain. Anyone can verify.
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {alphaGates.map((g, i) => (
-                  <div key={i} style={{ display: "grid", gridTemplateColumns: "100px 60px 1fr", gap: 12, padding: "12px 16px", alignItems: "center" }}>
-                    <div style={{ fontSize: 12, color: G.dim }}>Alpha {g.gate}</div>
-                    <div style={{ fontSize: 14, color: g.color, fontWeight: 500 }}>{g.mult}%</div>
-                    <div style={{ position: "relative", height: 20, background: G.panel, borderRadius: 2, overflow: "hidden" }}>
-                      <div style={{ width: `${g.mult}%`, height: "100%", background: g.color, borderRadius: 2, opacity: 0.7 }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ marginTop: 20, padding: "14px 20px", border: `1px solid ${G.border}`, fontSize: 12, color: G.dim, lineHeight: 1.6 }}>
-                <span style={{ color: G.bright }}>10% survival floor</span> prevents death spirals. Even at zero alpha, producers earn enough to persist while the network recalibrates.
-              </div>
-            </Section>
-
-            {/* 05 KARMA */}
-            <Section>
-              <SectionLabel num="05" text="Be Good, Not Rich — Karma³ Distribution" />
-              <div style={{ fontSize: 12, color: G.dim, marginBottom: 24, lineHeight: 1.6 }}>
-                Emissions distribute by <span style={{ color: G.text }}>effective_stake × karma³</span>. The cubic exponent means calibration quality dominates capital. Same stake, different skill → 8× earnings difference.
-              </div>
-              <div style={{ height: 240 }}>
-                <ResponsiveContainer>
-                  <BarChart data={karmaData} layout="vertical" margin={{ top: 0, right: 40, left: 0, bottom: 0 }}>
-                    <XAxis type="number" tick={{ fill: G.dim, fontSize: 11 }} axisLine={{ stroke: G.border }} tickLine={false} tickFormatter={v => `${v}K`} />
-                    <YAxis type="category" dataKey="label" tick={{ fill: G.dim, fontSize: 12 }} axisLine={false} tickLine={false} width={50} />
-                    <Tooltip formatter={(v) => [`${v}K $BLESS/week`, "Earnings"]} contentStyle={{ background: G.panel, border: `1px solid ${G.border}`, fontSize: 12, color: G.text }} />
-                    <Bar dataKey="earnings" radius={[0, 3, 3, 0]}>
-                      {karmaData.map((d, i) => <Cell key={i} fill={i === 0 ? G.bright : i < 3 ? "#00cc33" : "#006619"} />)}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <div style={{ textAlign: "center", fontSize: 11, color: G.dim, marginTop: 8 }}>
-                Equal stake · 10 producers · Year 1, 75% alpha gate · <span style={{ color: G.bright }}>Top karma earns 8× bottom</span>
-              </div>
-            </Section>
-
-            {/* 06 ENTRY */}
-            <Section>
-              <SectionLabel num="06" text="How You Enter — Skill First, Capital Second" />
-              <div style={{ fontSize: 12, color: G.dim, marginBottom: 24, lineHeight: 1.6 }}>
-                Shadow mode never closes. Prove your calibration against live markets with zero tokens. Graduate, and the protocol funds your participation.
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
-                <PathCard num="1" title="Shadow → Graduate" color={G.bright} desc="Submit convictions for 8 epochs. Hit 80+ convictions. Build karma above 0.55. The Protocol Reserve grants you 100 $BLESS to stake. Your track record carries over." time="~2 months" capital="None" />
-                <PathCard num="2" title="Graduate → Delegation" color={G.cyan} desc="After graduation, attract delegators who back your skill with their capital. You earn 80% of emissions on delegated stake. They earn 20% and share your slashing risk." time="~2–3 months" capital="None" />
-                <PathCard num="3" title="Buy → Stake" color={G.amber} desc="Skip shadow mode. Buy 100+ $BLESS, stake immediately, start submitting. Faster — but you'll lose stake if you're miscalibrated. 4-epoch cooldown to unstake." time="Immediate" capital="Market price" />
-              </div>
-              <div style={{ marginTop: 20, padding: "14px 20px", background: G.panel, fontSize: 12, color: G.dim, lineHeight: 1.6, textAlign: "center" }}>
-                Once staked, <span style={{ color: G.bright }}>karma³ treats everyone identically</span> regardless of how they entered.
-              </div>
-            </Section>
-
-            {/* 07 CONSUMER */}
-            <Section>
-              <SectionLabel num="07" text="Consumer Access — Aggregate vs. Provider-Level" />
-              <div style={{ fontSize: 12, color: G.dim, marginBottom: 24, lineHeight: 1.6 }}>
-                Two data products: the <span style={{ color: G.text }}>aggregate signal</span> (the network's collective conviction) and the <span style={{ color: G.text }}>provider-level signal</span> (individual producer karma, convictions, and contribution weights). Higher tiers see through the aggregate to the producers inside.
-              </div>
-              <div style={{ border: `1px solid ${G.border}`, overflow: "hidden" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "minmax(90px, 120px) minmax(70px, 100px) 1fr 1fr", gap: 12, padding: "10px 16px", fontSize: 10, color: G.dim, letterSpacing: "0.1em", textTransform: "uppercase", borderBottom: `1px solid ${G.border}`, background: G.panel }}>
-                  <div>Tier</div><div>Cost/Epoch</div><div>Signal</div><div>Provider Access</div>
-                </div>
-                <TierRow tier="Observer" cost="Free" signal="72h delayed direction" provider="None" />
-                <TierRow tier="Standard" cost="50 $BLESS" signal="24h delayed + confidence" provider="None" />
-                <TierRow tier="Real-time" cost="200 $BLESS" signal="Live aggregate + history" provider="Producer count" />
-                <TierRow tier="Professional" cost="500 $BLESS" signal="Live + decomposition" provider="Full" highlight />
-                <TierRow tier="Institutional" cost="2K $BLESS" signal="Full + backtest + custom" provider="Full + custom agg." highlight />
-              </div>
-              <div style={{ marginTop: 16, fontSize: 11, color: G.dim, lineHeight: 1.6 }}>
-                <span style={{ color: G.bright }}>Provider access</span> = see individual producer karma, convictions, contribution weights. Build custom aggregates. Identify niche-edge producers. Evaluate delegation targets. Lower tiers see the aggregate as opaque — the commercial incentive to upgrade.
-              </div>
-            </Section>
-
-            {/* 08 FLYWHEEL */}
-            <Section>
-              <SectionLabel num="08" text="The Flywheel" />
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 2, marginBottom: 24 }}>
-                {[
-                  { step: "1", label: "Prove", desc: "Shadow mode — free, permissionless. Build a track record.", color: G.dim },
-                  { step: "2", label: "Graduate", desc: "Protocol Reserve funds your stake. Slashed tokens → new producers.", color: G.bright },
-                  { step: "3", label: "Produce", desc: "Submit calibrated convictions. Scored by Brier. Karma accumulates.", color: G.bright },
-                  { step: "4", label: "Measure", desc: "CWP scored vs. benchmark. Network Alpha published on-chain.", color: G.amber },
-                  { step: "5", label: "Earn", desc: "Emissions gated to alpha. Distributed by karma³ × stake.", color: G.bright },
-                  { step: "6", label: "Consume", desc: "Subscribers pay $BLESS. Treasury buyback recycles to emission pool.", color: G.cyan },
-                ].map((f, i) => (
-                  <div key={i} style={{ padding: "20px 16px", background: G.panel, borderTop: `2px solid ${f.color}`, display: "flex", flexDirection: "column", gap: 8 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontSize: 18, color: f.color, fontWeight: 300 }}>{f.step}</span>
-                      <span style={{ fontSize: 13, color: G.text, fontWeight: 500 }}>{f.label}</span>
-                    </div>
-                    <div style={{ fontSize: 11, color: G.dim, lineHeight: 1.5 }}>{f.desc}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ padding: "14px 20px", border: `1px solid ${G.border}`, textAlign: "center", fontSize: 12, color: G.dim, lineHeight: 1.6 }}>
-                Bad producers get slashed → reserve funds better replacements. Good producers earn more → attract delegation. Better signal → more consumers → more revenue → <span style={{ color: G.bright }}>more graduates</span>.
-              </div>
-            </Section>
-
-            {/* 09 SLASHING */}
-            <Section>
-              <SectionLabel num="09" text="Slashing — Miscalibration, Not Volatility" />
-              <div style={{ fontSize: 12, color: G.dim, marginBottom: 24, lineHeight: 1.6 }}>
-                Penalized for <span style={{ color: G.text }}>being overconfident and wrong</span>, not for markets being volatile. Brier score above 0.35 triggers proportional slash. Maximum 10% per epoch. Confidence floor at 0.55 prevents low-confidence flooding.
-              </div>
-              <div style={{ display: "flex", gap: 2, alignItems: "flex-end", height: 120, padding: "0 20px" }}>
-                {[
-                  { bs: "0.25", slash: 0 },
-                  { bs: "0.30", slash: 0 },
-                  { bs: "0.35", slash: 0 },
-                  { bs: "0.40", slash: 0.75 },
-                  { bs: "0.50", slash: 2.25 },
-                  { bs: "0.60", slash: 3.75 },
-                  { bs: "0.70", slash: 5.25 },
-                  { bs: "0.80", slash: 6.75 },
-                  { bs: "0.90", slash: 8.25 },
-                ].map((d, i) => (
-                  <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                    <div style={{ fontSize: 9, color: d.slash > 0 ? "#ff4444" : G.dim, minHeight: 12 }}>
-                      {d.slash > 0 ? `${d.slash}%` : ""}
-                    </div>
-                    <div style={{ width: "80%", height: Math.max(2, d.slash * 12), background: d.slash > 0 ? `rgba(255,68,68,${0.3 + d.slash / 12})` : G.border, borderRadius: "2px 2px 0 0" }} />
-                    <div style={{ fontSize: 9, color: G.dim }}>{d.bs}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: G.dim, padding: "8px 20px 0" }}>
-                <span>← Better calibration</span>
-                <span style={{ color: G.muted }}>Threshold: 0.35</span>
-                <span>Worse calibration →</span>
-              </div>
-            </Section>
-
-            {/* 10 PARAMS */}
-            <Section>
-              <SectionLabel num="10" text="Key Parameters" />
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 2 }}>
-                {[
-                  ["Supply", "186,537,453", "0xB1E55ED"],
-                  ["Decay Rate", "0.25% / epoch", "Brier noise floor"],
-                  ["Karma Exponent", "³ (cubic)", "Skill > capital"],
-                  ["Min Stake", "100 $BLESS", "Authorization gate"],
-                  ["Slash Threshold", "Brier > 0.35", "Calibration penalty"],
-                  ["Max Slash", "10% / epoch", "Survivable"],
-                  ["Unstaking", "4 epoch cooldown", "5% forfeit for emergency exit"],
-                  ["Shadow Graduation", "8 epochs · 80 convictions · κ>0.55", "Skill-based entry"],
-                  ["Delegation Split", "80 / 20", "Producer / delegator"],
-                  ["Coverage Set", "≥ 20 assets · 80% submission", "Specialization"],
-                  ["Liveness", "≥ 1 conviction / epoch", "Stay active or deregister"],
-                  ["Treasury Split", "80 / 15 / 5", "Buyback / dev / reserve"],
-                ].map(([label, value, note], i) => (
-                  <div key={i} style={{ padding: "12px 16px", background: i % 2 === 0 ? G.panel : "transparent", display: "flex", flexDirection: "column", gap: 2 }}>
-                    <div style={{ fontSize: 10, color: G.dim, letterSpacing: "0.08em", textTransform: "uppercase" }}>{label}</div>
-                    <div style={{ fontSize: 13, color: G.text }}>{value}</div>
-                    <div style={{ fontSize: 10, color: G.muted }}>{note}</div>
-                  </div>
-                ))}
-              </div>
-            </Section>
-
-            {/* 11 NETWORK */}
-            <Section>
-              <SectionLabel num="11" text="Sovereign Infrastructure" />
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
-                {[
-                  { label: "Existing Chain", desc: "Deploy on any EVM L1/L2. Immediate liquidity access.", status: "Available", color: G.bright },
-                  { label: "Dedicated Appchain", desc: "Sovereign block space. Own fee economics.", status: "Available", color: G.bright },
-                  { label: "Own Network Layer", desc: "Producers as oracle nodes. Conviction as native tx type.", status: "At scale", color: G.amber },
-                ].map((n, i) => (
-                  <div key={i} style={{ padding: "20px 16px", background: G.panel, border: `1px solid ${G.border}`, display: "flex", flexDirection: "column", gap: 8 }}>
-                    <div style={{ fontSize: 13, color: G.text, fontWeight: 500 }}>{n.label}</div>
-                    <div style={{ fontSize: 11, color: G.dim, lineHeight: 1.6, flex: 1 }}>{n.desc}</div>
-                    <div style={{ fontSize: 10, color: n.color, letterSpacing: "0.08em" }}>{n.status}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ fontSize: 12, color: G.dim, marginTop: 20, lineHeight: 1.6, textAlign: "center" }}>
-                Not locked to any chain, L1, or ecosystem. The signal quality is the value. Everything else is infrastructure.
-              </div>
-            </Section>
-
-            {/* FOOTER */}
-            <section style={{ padding: "48px 0 80px", textAlign: "center" }}>
-              <div style={{ fontSize: 32, color: G.bright, fontWeight: 300, letterSpacing: "0.06em", marginBottom: 16 }}>
-                0xB1E55ED
-              </div>
-              <div style={{ fontSize: 12, color: G.dim, lineHeight: 1.8, maxWidth: 500, margin: "0 auto" }}>
-                The supply is the system's name. The emission rate is the evaluation benchmark. The token exists if and only if the network produces alpha.
-              </div>
-              <div style={{ marginTop: 24, fontSize: 10, color: G.muted, letterSpacing: "0.15em", textTransform: "uppercase" }}>
-                Permanent Upper Class · Proof of Conviction · v7
-              </div>
-            </section>
+        <div>
+          <div class="supply-legend">
+            <div class="supply-item"><div class="supply-dot green"></div><span style="font-size:12px;color:#4a6a4a">Emission Pool</span><span style="font-size:14px;color:#c8e6c8;font-weight:500;margin-left:4px">95%</span></div>
+            <div class="supply-item"><div class="supply-dot cyan"></div><span style="font-size:12px;color:#4a6a4a">Phase 0 Earned</span><span style="font-size:14px;color:#c8e6c8;font-weight:500;margin-left:4px">5%</span></div>
+          </div>
+          <div class="desc">
+            <span class="cyan">5%</span> retroactively allocated to Phase 0 participants who test the software — scored on <span class="text">repo contribution</span> and <span class="text">producer signaling quality</span>. Earned through work, not granted.
+            <br><br>
+            <span class="green">95%</span> enters the emission pool. Smooth exponential decay. No halvings. No manufactured scarcity. Performance is the narrative.
           </div>
         </div>
-      );
-    }
-
-    ReactDOM.createRoot(document.getElementById('root')).render(<BlessTokenomics />);
-  </script>
+      </div>
+    </section>
+    
+    <!-- 03 EMISSION -->
+    <section>
+      <div class="section-label">
+        <span class="section-num">03</span>
+        <span class="section-text">Emission Curve — Smooth Decay, No Halvings</span>
+      </div>
+      <div class="desc">Each epoch, 0.25% of remaining supply becomes available — the same number that defines the boundary between signal and noise. The scoring math and the monetary policy share a constant.</div>
+      <div class="emission-chart">
+        <div class="emission-bars">
+          <div class="emission-bar" style="height:17%"></div>
+          <div class="emission-bar" style="height:28%"></div>
+          <div class="emission-bar" style="height:38%"></div>
+          <div class="emission-bar" style="height:46%"></div>
+          <div class="emission-bar" style="height:53%"></div>
+          <div class="emission-bar" style="height:59%"></div>
+          <div class="emission-bar" style="height:64%"></div>
+          <div class="emission-bar" style="height:68%"></div>
+          <div class="emission-bar" style="height:72%"></div>
+          <div class="emission-bar" style="height:75%"></div>
+          <div class="emission-bar" style="height:78%"></div>
+          <div class="emission-bar" style="height:80%"></div>
+          <div class="emission-bar" style="height:82%"></div>
+          <div class="emission-bar" style="height:84%"></div>
+          <div class="emission-bar" style="height:86%"></div>
+          <div class="emission-bar" style="height:87%"></div>
+          <div class="emission-bar" style="height:89%"></div>
+          <div class="emission-bar" style="height:90%"></div>
+          <div class="emission-bar" style="height:91%"></div>
+          <div class="emission-bar" style="height:93%"></div>
+        </div>
+        <div class="emission-labels">
+          <span>Yr 1</span><span>5</span><span>10</span><span>15</span><span>Yr 20</span>
+        </div>
+      </div>
+      <div class="emission-note">
+        <span>Year 1: <span class="text">~17%</span></span>
+        <span>Year 5: <span class="text">~50%</span></span>
+        <span>Year 10: <span class="text">~74%</span></span>
+        <span>Year 20: <span class="text">~93%</span></span>
+      </div>
+    </section>
+    
+    <!-- 04 ALPHA GATE -->
+    <section>
+      <div class="section-label">
+        <span class="section-num">04</span>
+        <span class="section-text">The Alpha Gate — No Value, No Inflation</span>
+      </div>
+      <div class="desc">Emissions flow only when the network produces measurable alpha. The Conviction-Weighted Portfolio is scored against an equal-weight benchmark each epoch. Published on-chain. Anyone can verify.</div>
+      <div class="alpha-row"><span class="alpha-label">Alpha > 5%</span><span class="alpha-pct" style="color:#00ff41">100%</span><div class="alpha-bar"><div class="alpha-fill" style="width:100%;background:#00ff41"></div></div></div>
+      <div class="alpha-row"><span class="alpha-label">Alpha 2–5%</span><span class="alpha-pct" style="color:#00cc33">75%</span><div class="alpha-bar"><div class="alpha-fill" style="width:75%;background:#00cc33"></div></div></div>
+      <div class="alpha-row"><span class="alpha-label">Alpha 0.5–2%</span><span class="alpha-pct" style="color:#009926">50%</span><div class="alpha-bar"><div class="alpha-fill" style="width:50%;background:#009926"></div></div></div>
+      <div class="alpha-row"><span class="alpha-label">Alpha 0–0.5%</span><span class="alpha-pct" style="color:#006619">25%</span><div class="alpha-bar"><div class="alpha-fill" style="width:25%;background:#006619"></div></div></div>
+      <div class="alpha-row"><span class="alpha-label">Alpha ≤ 0%</span><span class="alpha-pct" style="color:#1a3a1a">10%</span><div class="alpha-bar"><div class="alpha-fill" style="width:10%;background:#1a3a1a"></div></div></div>
+      <div class="alpha-note"><span class="green">10% survival floor</span> prevents death spirals. Even at zero alpha, producers earn enough to persist while the network recalibrates.</div>
+    </section>
+    
+    <!-- 05 KARMA -->
+    <section>
+      <div class="section-label">
+        <span class="section-num">05</span>
+        <span class="section-text">Be Good, Not Rich — Karma³ Distribution</span>
+      </div>
+      <div class="desc">Emissions distribute by <span class="text">effective_stake × karma³</span>. The cubic exponent means calibration quality dominates capital. Same stake, different skill → 8× earnings difference.</div>
+      <div class="karma-chart">
+        <div class="karma-row"><span class="karma-label">0.90</span><div class="karma-bar" style="width:100%;background:#00ff41"></div><span class="karma-value">73K</span></div>
+        <div class="karma-row"><span class="karma-label">0.80</span><div class="karma-bar" style="width:70%;background:#00cc33"></div><span class="karma-value">51K</span></div>
+        <div class="karma-row"><span class="karma-label">0.70</span><div class="karma-bar" style="width:47%;background:#00cc33"></div><span class="karma-value">34K</span></div>
+        <div class="karma-row"><span class="karma-label">0.60</span><div class="karma-bar" style="width:30%;background:#006619"></div><span class="karma-value">22K</span></div>
+        <div class="karma-row"><span class="karma-label">0.50</span><div class="karma-bar" style="width:18%;background:#006619"></div><span class="karma-value">13K</span></div>
+        <div class="karma-row"><span class="karma-label">0.45</span><div class="karma-bar" style="width:12%;background:#006619"></div><span class="karma-value">9K</span></div>
+      </div>
+      <div style="text-align:center;font-size:11px;color:#4a6a4a;margin-top:8px">Equal stake · 10 producers · Year 1, 75% alpha gate · <span style="color:#00ff41">Top karma earns 8× bottom</span></div>
+    </section>
+    
+    <!-- 06 ENTRY -->
+    <section>
+      <div class="section-label">
+        <span class="section-num">06</span>
+        <span class="section-text">How You Enter — Skill First, Capital Second</span>
+      </div>
+      <div class="desc">Shadow mode never closes. Prove your calibration against live markets with zero tokens. Graduate, and the protocol funds your participation.</div>
+      <div class="path-grid">
+        <div class="path-card">
+          <div class="path-header"><div class="path-num green">1</div><div class="path-title">Shadow → Graduate</div></div>
+          <div class="path-desc">Submit convictions for 8 epochs. Hit 80+ convictions. Build karma above 0.55. The Protocol Reserve grants you 100 $BLESS to stake. Your track record carries over.</div>
+          <div class="path-meta"><span>⏱ ~2 months</span><span class="green">◆ None</span></div>
+        </div>
+        <div class="path-card">
+          <div class="path-header"><div class="path-num cyan">2</div><div class="path-title">Graduate → Delegation</div></div>
+          <div class="path-desc">After graduation, attract delegators who back your skill with their capital. You earn 80% of emissions on delegated stake. They earn 20% and share your slashing risk.</div>
+          <div class="path-meta"><span>⏱ ~2–3 months</span><span class="green">◆ None</span></div>
+        </div>
+        <div class="path-card">
+          <div class="path-header"><div class="path-num amber">3</div><div class="path-title">Buy → Stake</div></div>
+          <div class="path-desc">Skip shadow mode. Buy 100+ $BLESS, stake immediately, start submitting. Faster — but you'll lose stake if you're miscalibrated. 4-epoch cooldown to unstake.</div>
+          <div class="path-meta"><span>⏱ Immediate</span><span class="amber">◆ Market price</span></div>
+        </div>
+      </div>
+      <div style="margin-top:20px;padding:14px 20px;background:#0a0f0a;font-size:12px;color:#4a6a4a;line-height:1.6;text-align:center">Once staked, <span style="color:#00ff41">karma³ treats everyone identically</span> regardless of how they entered.</div>
+    </section>
+    
+    <!-- 07 CONSUMER -->
+    <section>
+      <div class="section-label">
+        <span class="section-num">07</span>
+        <span class="section-text">Consumer Access — Aggregate vs. Provider-Level</span>
+      </div>
+      <div class="desc">Two data products: the <span class="text">aggregate signal</span> (the network's collective conviction) and the <span class="text">provider-level signal</span> (individual producer karma, convictions, and contribution weights). Higher tiers see through the aggregate to the producers inside.</div>
+      <div class="tier-table">
+        <div class="tier-header"><span>Tier</span><span>Cost/Epoch</span><span>Signal</span><span>Provider Access</span></div>
+        <div class="tier-row"><span class="tier-name">Observer</span><span class="tier-cost free">Free</span><span class="tier-signal">72h delayed direction</span><span class="tier-provider muted">None</span></div>
+        <div class="tier-row"><span class="tier-name">Standard</span><span class="tier-cost">50 $BLESS</span><span class="tier-signal">24h delayed + confidence</span><span class="tier-provider muted">None</span></div>
+        <div class="tier-row"><span class="tier-name">Real-time</span><span class="tier-cost">200 $BLESS</span><span class="tier-signal">Live aggregate + history</span><span class="tier-provider">Producer count</span></div>
+        <div class="tier-row highlight"><span class="tier-name bright">Professional</span><span class="tier-cost">500 $BLESS</span><span class="tier-signal">Live + decomposition</span><span class="tier-provider full">Full</span></div>
+        <div class="tier-row highlight"><span class="tier-name bright">Institutional</span><span class="tier-cost">2K $BLESS</span><span class="tier-signal">Full + backtest + custom</span><span class="tier-provider full">Full + custom agg.</span></div>
+      </div>
+      <div style="margin-top:16px;font-size:11px;color:#4a6a4a;line-height:1.6"><span style="color:#00ff41">Provider access</span> = see individual producer karma, convictions, contribution weights. Build custom aggregates. Identify niche-edge producers. Evaluate delegation targets. Lower tiers see the aggregate as opaque — the commercial incentive to upgrade.</div>
+    </section>
+    
+    <!-- 08 FLYWHEEL -->
+    <section>
+      <div class="section-label">
+        <span class="section-num">08</span>
+        <span class="section-text">The Flywheel</span>
+      </div>
+      <div class="flywheel-grid">
+        <div class="flywheel-step dim"><div class="flywheel-header"><span class="flywheel-num" style="color:#4a6a4a">1</span><span class="flywheel-label">Prove</span></div><div class="flywheel-desc">Shadow mode — free, permissionless. Build a track record.</div></div>
+        <div class="flywheel-step green"><div class="flywheel-header"><span class="flywheel-num" style="color:#00ff41">2</span><span class="flywheel-label">Graduate</span></div><div class="flywheel-desc">Protocol Reserve funds your stake. Slashed tokens → new producers.</div></div>
+        <div class="flywheel-step green"><div class="flywheel-header"><span class="flywheel-num" style="color:#00ff41">3</span><span class="flywheel-label">Produce</span></div><div class="flywheel-desc">Submit calibrated convictions. Scored by Brier. Karma accumulates.</div></div>
+        <div class="flywheel-step amber"><div class="flywheel-header"><span class="flywheel-num" style="color:#ffaa00">4</span><span class="flywheel-label">Measure</span></div><div class="flywheel-desc">CWP scored vs. benchmark. Network Alpha published on-chain.</div></div>
+        <div class="flywheel-step green"><div class="flywheel-header"><span class="flywheel-num" style="color:#00ff41">5</span><span class="flywheel-label">Earn</span></div><div class="flywheel-desc">Emissions gated to alpha. Distributed by karma³ × stake.</div></div>
+        <div class="flywheel-step cyan"><div class="flywheel-header"><span class="flywheel-num" style="color:#00ccff">6</span><span class="flywheel-label">Consume</span></div><div class="flywheel-desc">Subscribers pay $BLESS. Treasury buyback recycles to emission pool.</div></div>
+      </div>
+      <div class="flywheel-note">Bad producers get slashed → reserve funds better replacements. Good producers earn more → attract delegation. Better signal → more consumers → more revenue → <span class="green">more graduates</span>.</div>
+    </section>
+    
+    <!-- 09 SLASHING -->
+    <section>
+      <div class="section-label">
+        <span class="section-num">09</span>
+        <span class="section-text">Slashing — Miscalibration, Not Volatility</span>
+      </div>
+      <div class="desc">Penalized for <span class="text">being overconfident and wrong</span>, not for markets being volatile. Brier score above 0.35 triggers proportional slash. Maximum 10% per epoch. Confidence floor at 0.55 prevents low-confidence flooding.</div>
+      <div class="slash-chart">
+        <div class="slash-col"><span class="slash-pct"></span><div class="slash-bar" style="height:2px;background:#1a2e1a"></div><span class="slash-label">0.25</span></div>
+        <div class="slash-col"><span class="slash-pct"></span><div class="slash-bar" style="height:2px;background:#1a2e1a"></div><span class="slash-label">0.30</span></div>
+        <div class="slash-col"><span class="slash-pct"></span><div class="slash-bar" style="height:2px;background:#1a2e1a"></div><span class="slash-label">0.35</span></div>
+        <div class="slash-col"><span class="slash-pct">0.75%</span><div class="slash-bar" style="height:9px;background:rgba(255,68,68,0.4)"></div><span class="slash-label">0.40</span></div>
+        <div class="slash-col"><span class="slash-pct">2.25%</span><div class="slash-bar" style="height:27px;background:rgba(255,68,68,0.5)"></div><span class="slash-label">0.50</span></div>
+        <div class="slash-col"><span class="slash-pct">3.75%</span><div class="slash-bar" style="height:45px;background:rgba(255,68,68,0.6)"></div><span class="slash-label">0.60</span></div>
+        <div class="slash-col"><span class="slash-pct">5.25%</span><div class="slash-bar" style="height:63px;background:rgba(255,68,68,0.7)"></div><span class="slash-label">0.70</span></div>
+        <div class="slash-col"><span class="slash-pct">6.75%</span><div class="slash-bar" style="height:81px;background:rgba(255,68,68,0.8)"></div><span class="slash-label">0.80</span></div>
+        <div class="slash-col"><span class="slash-pct">8.25%</span><div class="slash-bar" style="height:99px;background:rgba(255,68,68,0.9)"></div><span class="slash-label">0.90</span></div>
+      </div>
+      <div class="slash-legend"><span>← Better calibration</span><span class="muted">Threshold: 0.35</span><span>Worse calibration →</span></div>
+    </section>
+    
+    <!-- 10 PARAMS -->
+    <section>
+      <div class="section-label">
+        <span class="section-num">10</span>
+        <span class="section-text">Key Parameters</span>
+      </div>
+      <div class="params-grid">
+        <div class="param-item"><span class="param-label">Supply</span><span class="param-value">186,537,453</span><span class="param-note">0xB1E55ED</span></div>
+        <div class="param-item"><span class="param-label">Decay Rate</span><span class="param-value">0.25% / epoch</span><span class="param-note">Brier noise floor</span></div>
+        <div class="param-item"><span class="param-label">Karma Exponent</span><span class="param-value">³ (cubic)</span><span class="param-note">Skill > capital</span></div>
+        <div class="param-item"><span class="param-label">Min Stake</span><span class="param-value">100 $BLESS</span><span class="param-note">Authorization gate</span></div>
+        <div class="param-item"><span class="param-label">Slash Threshold</span><span class="param-value">Brier > 0.35</span><span class="param-note">Calibration penalty</span></div>
+        <div class="param-item"><span class="param-label">Max Slash</span><span class="param-value">10% / epoch</span><span class="param-note">Survivable</span></div>
+        <div class="param-item"><span class="param-label">Unstaking</span><span class="param-value">4 epoch cooldown</span><span class="param-note">5% forfeit for emergency exit</span></div>
+        <div class="param-item"><span class="param-label">Shadow Graduation</span><span class="param-value">8 epochs · 80 convictions · κ>0.55</span><span class="param-note">Skill-based entry</span></div>
+        <div class="param-item"><span class="param-label">Delegation Split</span><span class="param-value">80 / 20</span><span class="param-note">Producer / delegator</span></div>
+        <div class="param-item"><span class="param-label">Coverage Set</span><span class="param-value">≥ 20 assets · 80% submission</span><span class="param-note">Specialization</span></div>
+        <div class="param-item"><span class="param-label">Liveness</span><span class="param-value">≥ 1 conviction / epoch</span><span class="param-note">Stay active or deregister</span></div>
+        <div class="param-item"><span class="param-label">Treasury Split</span><span class="param-value">80 / 15 / 5</span><span class="param-note">Buyback / dev / reserve</span></div>
+      </div>
+    </section>
+    
+    <!-- 11 NETWORK -->
+    <section>
+      <div class="section-label">
+        <span class="section-num">11</span>
+        <span class="section-text">Sovereign Infrastructure</span>
+      </div>
+      <div class="network-grid">
+        <div class="network-card"><div class="network-title">Existing Chain</div><div class="network-desc">Deploy on any EVM L1/L2. Immediate liquidity access.</div><div class="network-status green">Available</div></div>
+        <div class="network-card"><div class="network-title">Dedicated Appchain</div><div class="network-desc">Sovereign block space. Own fee economics.</div><div class="network-status green">Available</div></div>
+        <div class="network-card"><div class="network-title">Own Network Layer</div><div class="network-desc">Producers as oracle nodes. Conviction as native tx type.</div><div class="network-status amber">At scale</div></div>
+      </div>
+      <div style="font-size:12px;color:#4a6a4a;margin-top:20px;line-height:1.6;text-align:center">Not locked to any chain, L1, or ecosystem. The signal quality is the value. Everything else is infrastructure.</div>
+    </section>
+    
+    <!-- FOOTER -->
+    <section class="footer" style="border-bottom:none">
+      <div class="footer-title">0xB1E55ED</div>
+      <div class="footer-desc">The supply is the system's name. The emission rate is the evaluation benchmark. The token exists if and only if the network produces alpha.</div>
+      <div class="footer-version">Permanent Upper Class · Proof of Conviction · v7</div>
+    </section>
+  </div>
 </body>
 </html>
