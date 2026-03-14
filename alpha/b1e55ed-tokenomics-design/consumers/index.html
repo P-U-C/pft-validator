@@ -261,28 +261,20 @@
           <div style="display:flex;flex-direction:column;justify-content:space-between;font-size:10px;color:#4a6a4a;text-align:right;padding:0 4px">
             <span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span>
           </div>
-          <div class="emission-bars" style="flex:1">
-          <div class="emission-bar" style="height:17%"></div>
-          <div class="emission-bar" style="height:28%"></div>
-          <div class="emission-bar" style="height:38%"></div>
-          <div class="emission-bar" style="height:46%"></div>
-          <div class="emission-bar" style="height:53%"></div>
-          <div class="emission-bar" style="height:59%"></div>
-          <div class="emission-bar" style="height:64%"></div>
-          <div class="emission-bar" style="height:68%"></div>
-          <div class="emission-bar" style="height:72%"></div>
-          <div class="emission-bar" style="height:75%"></div>
-          <div class="emission-bar" style="height:78%"></div>
-          <div class="emission-bar" style="height:80%"></div>
-          <div class="emission-bar" style="height:82%"></div>
-          <div class="emission-bar" style="height:84%"></div>
-          <div class="emission-bar" style="height:86%"></div>
-          <div class="emission-bar" style="height:87%"></div>
-          <div class="emission-bar" style="height:89%"></div>
-          <div class="emission-bar" style="height:90%"></div>
-          <div class="emission-bar" style="height:91%"></div>
-          <div class="emission-bar" style="height:93%"></div>
-        </div>
+          <div style="flex:1;height:200px">
+            <svg width="100%" height="100%" viewBox="0 0 400 200" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#00ff41" stop-opacity="0.3"/>
+                  <stop offset="100%" stop-color="#00ff41" stop-opacity="0.02"/>
+                </linearGradient>
+              </defs>
+              <!-- Area fill -->
+              <path d="M0,200 L0,166 C20,158 40,144 60,132 C80,120 100,108 120,98 C140,88 160,80 180,72 C200,64 220,58 240,52 C260,46 280,42 300,38 C320,34 340,30 360,26 C380,22 400,18 400,14 L400,200 Z" fill="url(#areaGrad)"/>
+              <!-- Line -->
+              <path d="M0,166 C20,158 40,144 60,132 C80,120 100,108 120,98 C140,88 160,80 180,72 C200,64 220,58 240,52 C260,46 280,42 300,38 C320,34 340,30 360,26 C380,22 400,18 400,14" fill="none" stroke="#00ff41" stroke-width="2"/>
+            </svg>
+          </div>
         </div>
         <div class="emission-labels" style="margin-left:32px">
           <span>Yr 1</span><span>5</span><span>10</span><span>15</span><span>Yr 20</span>
