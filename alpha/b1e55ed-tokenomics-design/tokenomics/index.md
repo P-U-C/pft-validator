@@ -2,7 +2,7 @@
 layout: default
 title: "$BLESS — Proof of Conviction"
 date: 2026-03-14
-version: 6.0
+version: 7.0
 category: tokenomics
 status: final
 ---
@@ -11,7 +11,7 @@ status: final
 
 ## Tokenomics of the b1e55ed Signal Network
 
-**v6 — March 2026**
+**v7 — March 2026**
 
 -----
 
@@ -469,24 +469,16 @@ The provider-level data enables consumers to:
 - Backtest against individual producer track records, not just the network aggregate
 - Evaluate whether to delegate to specific producers (Section 5.4)
 
-### 8.3 Producer Staking by Consumers
-
-Consumers at any paid tier can stake $BLESS on specific producers they believe will maintain high calibration. If the producer's karma increases that epoch: consumer earns 10% of the karma-proportional emissions the producer would earn on the consumer's staked amount. If karma decreases: consumer loses proportionally. Consumers can reallocate each epoch.
-
-This is distinct from delegation (Section 5.4). Consumer staking is epoch-by-epoch and bets on karma trajectory. Delegation is longer-term capital backing with emission sharing. Both reward identifying good producers, but on different time horizons.
-
-Professional and Institutional tier consumers have an informational advantage in consumer staking — they can see provider-level data to inform their staking decisions. This is intentional: the data access hierarchy creates willingness to pay, and willingness to pay funds the flywheel.
-
-### 8.4 Fee Structure
+### 8.3 Fee Structure
 
 Subscription-based, not query-based. Institutional tier consumers pay 2,000 $BLESS per epoch for unlimited API access. Per-query pricing is not implemented — subscription access avoids metering complexity and per-call gas overhead. Per-query pricing may be introduced via governance after Phase 3 if demand warrants it.
 
 Fee discounts are not offered to token holders or stakers. Consumer pricing is uniform. The token's utility for producers is emission eligibility and conviction weight, not fee reduction. This avoids securities classification risk.
 
-### 8.5 Revenue Flow
+### 8.4 Revenue Flow
 
 ```
-Consumer subscriptions + producer-staking fees → Protocol Treasury
+Consumer subscriptions → Protocol Treasury
                             ↓
                      Treasury Split:
                 80% → Quarterly Buyback-and-Recycle
@@ -622,7 +614,7 @@ Pairwise correlation >0.85 across 4+ epochs: lower-karma copycat's emissions hal
 
 ### 13.3 Wash Prevention
 
-Producers cannot self-delegate or self-stake through consumer staking. Forge identity check enforced at protocol level.
+Producers cannot self-delegate. Forge identity check enforced at protocol level.
 
 ### 13.4 Oracle Manipulation Defense
 
