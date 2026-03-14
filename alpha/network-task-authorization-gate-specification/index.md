@@ -14,68 +14,88 @@ status: published
 
 ---
 
-## Overview
+## The Problem
 
-This specification addresses the governance gap identified by the Post Fiat Network founder: the network's #2 all-time earner operated without authorization, extracting ~1M PFT without core team contact.
+The Post Fiat Network's #2 all-time earner extracted ~1M PFT without authorization, without contacting the core team, and without triggering any enforcement response until the gap was identified after the fact.
 
-The deliverable comprises three documents progressing from accessible to comprehensive:
+This wasn't a failure of permissionlessness. It was a failure of three specific system properties:
 
-1. **Contributor Guide** — Public-facing, easy to digest
-2. **Naive Specification (v3)** — Baseline mechanism design
-3. **Battle-Tested Specification (v4)** — Robust version with additional hardening
+1. **No contributor-level authorization state** — the verification pipeline validated task completions with no concept of whether the contributor was operating within the intended participation model
+2. **No entry-point communication** — the Proof of Alignment model wasn't communicated at the point of entry
+3. **No emission ceiling** — PFT minted without epoch constraints creates an unbounded extraction surface
 
----
-
-## Documents
-
-### [Contributor Guide](./contributor-guide/)
-
-**Audience:** New and prospective contributors  
-**Purpose:** Clear, accessible explanation of how earning works, contributor levels, and advancement paths  
-**Length:** ~1,400 words
-
-*Easy to digest. No implementation details. This is what contributors see.*
+This specification defines a Task Authorization Gate that closes these gaps.
 
 ---
 
-### [Naive Specification v3.0](./specification/)
+## What This Deliverable Contains
 
-**Audience:** Core team, initial reviewers  
-**Purpose:** Baseline mechanism design — the straightforward version  
-**Length:** ~5,800 words
+Three documents, progressing from accessible to comprehensive:
 
-Covers:
-- 5 authorization states (UNKNOWN → PROBATIONARY → AUTHORIZED → TRUSTED + SUSPENDED)
-- AI-driven extraction detection with redirect-first philosophy
-- Epoch-bound emission mechanics
-- Founder's Pledge as wallet-signed entry ritual
-- 4-phase rollout plan
+### 1. [Contributor Guide](./contributor-guide/)
+
+**For:** New and prospective contributors  
+**Length:** ~1,400 words  
+**Purpose:** Clear, human-readable explanation of how earning works
+
+This is the public-facing document. It explains:
+- What PFT is and how earning works
+- The four contributor levels (New → Probationary → Authorized → Trusted)
+- How to move up and what determines your weight
+- The Founder's Pledge
+- FAQs
+
+No implementation details. No mechanism design jargon. Just "here's how the system works for you."
 
 ---
 
-### [Battle-Tested Specification v4.0](./specification-v4/)
+### 2. [Naive Specification v3.0](./specification/)
 
-**Audience:** Core team, implementers, adversarial reviewers  
-**Purpose:** Hardened version incorporating attack surface analysis  
-**Length:** ~7,200 words
+**For:** Core team, initial reviewers  
+**Length:** ~5,800 words  
+**Purpose:** The straightforward version — what the system does
+
+This is the baseline mechanism design. It covers:
+- **Extraction detection and steering** — AI-driven pattern detection with redirect-first philosophy
+- **Epoch-bound emission** — 28-day periods with bounded PFT budgets
+- **Authorization state machine** — 5 states with defined transitions
+- **The Founder's Pledge** — wallet-signed entry commitment
+- **Integration points** — where gates insert into the existing pipeline
+- **Rollout plan** — 4 phases from testnet to algorithmic authorization
+
+The v3 framing: a sophisticated extractor is demonstrating capability. Redirect that capability toward alignment rather than blocking it.
+
+---
+
+### 3. [Battle-Tested Specification v4.0](./specification-v4/)
+
+**For:** Core team, implementers, adversarial reviewers  
+**Length:** ~7,200 words  
+**Purpose:** The hardened version — what happens when smart people try to break it
+
+This is the robust specification after attack surface analysis. It asks: "What if detection fails? What if extractors adapt? What if cartels form at TRUSTED level?"
 
 **Key additions over v3:**
 
-| Feature | v3 | v4 |
-|---------|----|----|
-| Scoring architecture | Single 30-day composite | **Three separated ledgers** (eligibility, rewards, trust) |
-| Early-state containment | Detection-based | **Vesting by authorization state** (0%/25%/100% liquid) |
-| Detection scope | Entry-focused | **All tiers continuously** (AUTHORIZED extraction is highest-damage) |
-| Extractor response | Uniform redirect | **Typology-based** (I/II redirect, III redesign, IV enforce) |
-| Epoch concentration | Unbounded | **15% cap per control graph** |
-| Task classification | Unspecified | **Governance hardening** (blinding, rotation, 30-day audit) |
-| Innovation protection | None | **5% exploration allowance** |
-| Identity model | "One identity" | **Declared control graph** (teams, automation stacks) |
-| Conflict resolution | Unspecified | **Constitutional hierarchy** |
+| Problem | v3 Approach | v4 Hardening |
+|---------|-------------|--------------|
+| Single score governs everything | 30-day composite | **Three separated ledgers** (eligibility, rewards, trust) with different time horizons |
+| Early-state extraction | Detection-based | **Vesting by state** — UNKNOWN gets 0% liquid, PROBATIONARY gets 25%, rest vests over 30 days |
+| Extractors adapt to detection | Entry-focused monitoring | **Detection at all tiers** — AUTHORIZED extraction is highest-damage |
+| All extractors treated the same | Uniform redirect | **Extractor typology** — Type I/II redirect, Type III redesign incentives, Type IV enforce |
+| Superstar captures epoch | Unbounded | **15% concentration cap** per control graph |
+| Alpha classification gaming | Unspecified | **Governance hardening** — blinding, rotation, 30-day audit, published rationale |
+| No room for contrarian work | Tight alignment scoring | **5% exploration allowance** for roadmap-divergent value |
+| "One identity" is wrong primitive | Single wallet | **Declared control graph** — teams, automation stacks, beneficial control |
+| Conflicting signals | Unspecified | **Constitutional hierarchy** — who overrides whom, logged with reason |
+
+The v4 design principle: the bounded-risk architecture must hold even when detection fails.
 
 ---
 
-## State Machine Summary
+## Core Mechanism Summary
+
+### Authorization States
 
 ```
 UNKNOWN ──► PROBATIONARY ──► AUTHORIZED ──► TRUSTED
@@ -86,34 +106,79 @@ UNKNOWN ──► PROBATIONARY ──► AUTHORIZED ──► TRUSTED
 [Vesting: 0% → 25% → 100% liquid by state]
 ```
 
----
+| State | Access | Earnings | Key Gate |
+|-------|--------|----------|----------|
+| 🔵 UNKNOWN | Tier 1 only, 1 task/48h | 0% liquid (pending) | Sign Founder's Pledge |
+| 🟡 PROBATIONARY | Tier 1+2, 3 tasks/24h | 25% liquid, 75% vests 30d | 14 days minimum |
+| 🟢 AUTHORIZED | All tiers, no limit | 100% liquid | 10 completions + auth request |
+| 🌟 TRUSTED | All tiers + governance | 100% liquid, 1.2× weight | 90 days + nomination + ZK identity |
+| ⛔ SUSPENDED | None | Frozen | Core team action only |
 
-## Three Ledgers (v4 Architecture)
+### Three Ledgers (v4)
 
-| Ledger | Purpose | Time Horizon | Gaming Resistance |
-|--------|---------|--------------|-------------------|
-| **Eligibility** | Which state, which tasks | Per epoch (28d) | Slow-moving, minimum durations |
-| **Rewards** | Epoch budget share | Daily, settled at epoch close | Concentration caps, blinded review |
-| **Trust** | Governance rights | Monthly, path-dependent | 90+ day history, peer nomination |
+| Ledger | Governs | Updates | Gaming Resistance |
+|--------|---------|---------|-------------------|
+| **Eligibility** | Which state, which tasks | Per epoch (28d) | Minimum durations, slow-moving |
+| **Rewards** | Epoch budget share | Daily | Concentration caps, blinded review |
+| **Trust** | Governance rights | Monthly | 90+ day history, peer nomination, path-dependent |
 
----
+### Vesting Schedule
 
-## Vesting by State (v4)
-
-| State | Liquid | Vesting |
-|-------|--------|---------|
+| State | Immediate | Vesting |
+|-------|-----------|---------|
 | UNKNOWN | 0% | 100% pending (released on advancement, forfeited after 60d) |
-| PROBATIONARY | 25% | 75% over 30 days post-epoch |
-| AUTHORIZED | 100% | None |
-| TRUSTED | 100% | None |
+| PROBATIONARY | 25% | 75% linear over 30 days post-epoch |
+| AUTHORIZED+ | 100% | None |
+
+This makes wallet rotation economically punishing even when detection fails.
+
+### Task Tiers
+
+| Tier | Type | Weight | Classification |
+|------|------|--------|----------------|
+| 1 | Personal | 1× | Automated |
+| 2 | Network | 3× | Core team (TRUSTED reviewable) |
+| 3 | Alpha | 9× | Core team only + published rationale + 30d audit |
 
 ---
 
-## Verification
+## The Economic Target
 
-- **Format:** Publicly accessible URL
-- **Word count:** 14,400+ words across all documents (requirement: 1,200+)
-- **Coverage:** ✅ Authorization flow (5 states) ✅ Cooldown mechanics ✅ Escalation paths ✅ Integration points
+For any rational high-skill newcomer:
+
+> **NPV(cooperation through authorization) > NPV(burst extraction under best evasion strategy)**
+
+This isn't aspirational. It's a verifiable constraint the mechanism either satisfies or doesn't.
+
+The v4 architecture achieves this through layered containment:
+1. Vesting delays liquidity for early-state contributors
+2. Rate limits bound throughput before authorization
+3. Concentration caps prevent epoch dominance
+4. Detection adds friction (but isn't the primary defense)
+5. Task routing keeps high-value surfaces locked until trust is demonstrated
+
+---
+
+## What Kind of Network This Is
+
+This specification implements **Model A: a curated high-trust contributor network**.
+
+People may arrive permissionlessly, but meaningful earning and governance is gated by demonstrated alignment and social trust.
+
+The network is honest about being curated. It invites contribution, but it does not promise that all contribution is equal.
+
+---
+
+## Open Questions
+
+These are flagged for network discussion before finalization:
+
+1. Is 75% vesting over 30 days the right PROBATIONARY schedule?
+2. Should the 15% concentration cap be higher for mainnet?
+3. Is 5% exploration allowance enough to protect innovation?
+4. Which ZK identity protocols should be supported first?
+5. Should automation stacks have a separate governance track?
+6. What are the success metrics for this mechanism?
 
 ---
 
