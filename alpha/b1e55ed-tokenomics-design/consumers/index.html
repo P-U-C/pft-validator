@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>$BLESS Consumer Guide — Proof of Conviction</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/recharts@2.10.3/umd/Recharts.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #050505; font-family: 'IBM Plex Mono', monospace; }
+    #root { min-height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState } = React;
+    const { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie } = Recharts;
+
+    // === DATA ===
+    const SUPPLY = 186537453;
+    const DECAY = 0.0025;
+
+    const emissionData = Array.from({ length: 20 }, (_, i) => {
+      const year = i + 1;
+      const epoch = year * 52;
+      const remaining = SUPPLY * 0.95 * Math.pow(1 - DECAY, epoch);
+      const emitted = SUPPLY * 0.95 - remaining;
+      const weekly = remaining * DECAY;
+      return {
+        year,
+        emitted: Math.round((emitted / 1e6) * 10) / 10,
+        pct: Math.round(((emitted + SUPPLY * 0.05) / SUPPLY) * 100),
+        weekly: Math.round(weekly),
+      };
+    });
+
+    const karmaData = [
+      { karma: 0.9, cube: 0.729, label: "0.90", earnings: 73 },
+      { karma: 0.8, cube: 0.512, label: "0.80", earnings: 51 },
+      { karma: 0.7, cube: 0.343, label: "0.70", earnings: 34 },
+      { karma: 0.6, cube: 0.216, label: "0.60", earnings: 22 },
+      { karma: 0.5, cube: 0.125, label: "0.50", earnings: 13 },
+      { karma: 0.45, cube: 0.091, label: "0.45", earnings: 9 },
+    ];
+
+    const alphaGates = [
+      { gate: "> 5%", mult: 100, color: "#00ff41" },
+      { gate: "2–5%", mult: 75, color: "#00cc33" },
+      { gate: "0.5–2%", mult: 50, color: "#009926" },
+      { gate: "0–0.5%", mult: 25, color: "#006619" },
+      { gate: "≤ 0%", mult: 10, color: "#1a3a1a" },
+    ];
+
+    const supplyBreakdown = [
+      { name: "Emission Pool", value: 95, color: "#00ff41" },
+      { name: "Phase 0 Retroactive", value: 5, color: "#00ccff" },
+    ];
+
+    // === STYLES ===
+    const G = {
+      bg: "#050505",
+      panel: "#0a0f0a",
+      elevated: "#0f1a0f",
+      border: "#1a2e1a",
+      borderActive: "#2a4a2a",
+      text: "#c8e6c8",
+      bright: "#00ff41",
+      dim: "#4a6a4a",
+      muted: "#2a3a2a",
+      cyan: "#00ccff",
+      amber: "#ffaa00",
+    };
+
+    // === COMPONENTS ===
+    const Scanlines = () => (
+      <div style={{
+        position: "fixed",
+        inset: 0,
+        pointerEvents: "none",
+        zIndex: 9999,
+        background: "repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.04) 2px,rgba(0,0,0,0.04) 4px)",
+      }} />
+    );
+
+    const Section = ({ children, id }) => (
+      <section id={id} style={{ padding: "64px 0", borderBottom: `1px solid ${G.border}` }}>
+        {children}
+      </section>
+    );
+
+    const SectionLabel = ({ num, text }) => (
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32 }}>
+        <span style={{ color: G.dim, fontSize: 11, letterSpacing: "0.15em", fontWeight: 500 }}>{num}</span>
+        <span style={{ color: G.text, fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 500 }}>{text}</span>
+      </div>
+    );
+
+    const Stat = ({ value, label, color = G.bright, sub }) => (
+      <div style={{ textAlign: "center", minWidth: 120 }}>
+        <div style={{ fontSize: 36, fontWeight: 300, color, lineHeight: 1.1, letterSpacing: "-0.02em" }}>{value}</div>
+        {sub && <div style={{ fontSize: 11, color: G.dim, marginTop: 4, letterSpacing: "0.05em" }}>{sub}</div>}
+        <div style={{ fontSize: 11, color: G.dim, marginTop: 8, letterSpacing: "0.1em", textTransform: "uppercase" }}>{label}</div>
+      </div>
+    );
+
+    const PathCard = ({ num, title, desc, time, capital, color }) => (
+      <div style={{
+        background: G.panel,
+        border: `1px solid ${G.border}`,
+        padding: "24px 20px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+        minHeight: 200,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{
+            width: 28,
+            height: 28,
+            borderRadius: "50%",
+            border: `1.5px solid ${color}`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 12,
+            color,
+            fontWeight: 500,
+          }}>{num}</div>
+          <div style={{ fontSize: 14, color: G.text, fontWeight: 500 }}>{title}</div>
+        </div>
+        <div style={{ fontSize: 12, color: G.dim, lineHeight: 1.6, flex: 1 }}>{desc}</div>
+        <div style={{ display: "flex", gap: 16, fontSize: 11, color: G.dim, borderTop: `1px solid ${G.border}`, paddingTop: 12 }}>
+          <span>⏱ {time}</span>
+          <span style={{ color: capital === "None" ? G.bright : G.amber }}>💰 {capital}</span>
+        </div>
+      </div>
+    );
+
+    const TierRow = ({ tier, cost, signal, provider, highlight }) => (
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "minmax(90px, 110px) minmax(70px, 90px) 1fr 1fr",
+        gap: 8,
+        padding: "14px 12px",
+        fontSize: 11,
+        background: highlight ? G.elevated : "transparent",
+        borderLeft: highlight ? `2px solid ${G.bright}` : "2px solid transparent",
+        overflow: "hidden",
+      }}>
+        <div style={{ color: highlight ? G.bright : G.text, fontWeight: highlight ? 500 : 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tier}</div>
+        <div style={{ color: cost === "Free" ? G.bright : G.cyan, whiteSpace: "nowrap" }}>{cost}</div>
+        <div style={{ color: G.dim, overflow: "hidden", textOverflow: "ellipsis" }}>{signal}</div>
+        <div style={{ color: provider === "Full" ? G.bright : provider === "None" ? G.muted : G.dim, overflow: "hidden", textOverflow: "ellipsis" }}>{provider}</div>
+      </div>
+    );
+
+    const FlywheelNode = ({ label, x, y, color = G.bright, size = 80 }) => (
+      <div style={{
+        position: "absolute",
+        left: x,
+        top: y,
+        width: size,
+        height: size,
+        border: `1.5px solid ${color}`,
+        borderRadius: "50%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 10,
+        color,
+        textAlign: "center",
+        padding: 6,
+        background: G.bg,
+        lineHeight: 1.3,
+        fontWeight: 500,
+        letterSpacing: "0.03em",
+        transform: "translateX(-50%)",
+      }}>{label}</div>
+    );
+
+    // === CUSTOM TOOLTIP ===
+    const EmissionTooltip = ({ active, payload }) => {
+      if (!active || !payload?.length) return null;
+      const d = payload[0].payload;
+      return (
+        <div style={{ background: G.panel, border: `1px solid ${G.border}`, padding: "10px 14px", fontSize: 12 }}>
+          <div style={{ color: G.text }}>Year {d.year}</div>
+          <div style={{ color: G.bright }}>{d.pct}% emitted</div>
+          <div style={{ color: G.dim }}>{d.weekly.toLocaleString()} $BLESS/week</div>
+        </div>
+      );
+    };
+
+    // === MAIN ===
+    function BlessTokenomics() {
+      return (
+        <div style={{
+          background: G.bg,
+          color: G.text,
+          fontFamily: "'IBM Plex Mono', monospace",
+          minHeight: "100vh",
+          position: "relative",
+          overflowX: "hidden",
+        }}>
+          <Scanlines />
+          <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px" }}>
+            {/* HERO */}
+            <section style={{ paddingTop: 80, paddingBottom: 64, textAlign: "center" }}>
+              <div style={{ fontSize: 11, color: G.dim, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 24 }}>
+                Proof of Conviction
+              </div>
+              <div style={{ marginBottom: 40 }}>
+                <span style={{ fontSize: 13, color: G.dim, letterSpacing: "0.1em" }}>0x</span>
+                <span style={{ fontSize: 48, color: G.bright, fontWeight: 300, letterSpacing: "0.06em" }}>B1E55ED</span>
+              </div>
+              <div style={{ fontSize: 13, color: G.dim, lineHeight: 1.8, maxWidth: 600, margin: "0 auto 40px" }}>
+                The system's name is its supply cap. <span style={{ color: G.text }}>186,537,453</span> tokens.<br />
+                The emission rate is the Brier noise floor. <span style={{ color: G.text }}>0.25%</span> per epoch.<br />
+                Nothing is borrowed. Everything is earned.
+              </div>
+              <div style={{ display: "flex", justifyContent: "center", gap: 32, flexWrap: "wrap" }}>
+                <Stat value="186.5M" label="Max Supply" sub="0xB1E55ED in decimal" />
+                <Stat value="0%" label="Team Allocation" color={G.cyan} sub="100% earned" />
+                <Stat value="0.25%" label="Epoch Decay" sub="= Brier noise floor" />
+                <Stat value="5.3yr" label="Half-Life" color={G.amber} sub="277 epochs" />
+              </div>
+            </section>
+
+            {/* CORE THESIS */}
+            <Section id="thesis">
+              <SectionLabel num="01" text="Why This Exists" />
+              <div style={{ fontSize: 18, color: G.text, lineHeight: 1.7, maxWidth: 700, fontWeight: 300, letterSpacing: "0.01em" }}>
+                If markets already reflect all information, no one has an incentive to gather it. If no one gathers it, markets can't reflect it.
+              </div>
+              <div style={{ fontSize: 14, color: G.bright, marginTop: 20, lineHeight: 1.7, borderLeft: `2px solid ${G.bright}`, paddingLeft: 20 }}>
+                $BLESS pays people to know things — independent of whether they trade on what they know. The first token where emissions are gated to measurable alpha production.
+              </div>
+            </Section>
+
+            {/* SUPPLY BREAKDOWN */}
+            <Section id="supply">
+              <SectionLabel num="02" text="Supply Architecture" />
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(150px, 200px) 1fr", gap: 40, alignItems: "center" }}>
+                <div style={{ height: 200 }}>
+                  <ResponsiveContainer>
+                    <PieChart>
+                      <Pie data={supplyBreakdown} dataKey="value" cx="50%" cy="50%" innerRadius={55} outerRadius={80} strokeWidth={0}>
+                        {supplyBreakdown.map((d, i) => <Cell key={i} fill={d.color} />)}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div>
+                  <div style={{ display: "flex", gap: 24, marginBottom: 24, flexWrap: "wrap" }}>
+                    {supplyBreakdown.map(d => (
+                      <div key={d.name} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ width: 10, height: 10, borderRadius: 2, background: d.color }} />
+                        <span style={{ fontSize: 12, color: G.dim }}>{d.name}</span>
+                        <span style={{ fontSize: 14, color: G.text, fontWeight: 500 }}>{d.value}%</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 12, color: G.dim, lineHeight: 1.7 }}>
+                    <span style={{ color: G.cyan }}>5%</span> retroactively allocated to Phase 0 participants who test the software and prove the system works — scored on <span style={{ color: G.text }}>repo contribution</span> and <span style={{ color: G.text }}>producer signaling quality</span>.
+                    <br /><br />
+                    <span style={{ color: G.bright }}>95%</span> enters the emission pool, governed by smooth exponential decay. No halvings. No manufactured scarcity events.
+                  </div>
+                </div>
+              </div>
+            </Section>
+
+            {/* EMISSION CURVE */}
+            <Section id="emission">
+              <SectionLabel num="03" text="Emission Curve — Smooth Decay, No Halvings" />
+              <div style={{ fontSize: 12, color: G.dim, marginBottom: 24, lineHeight: 1.6 }}>
+                Each epoch, 0.25% of remaining supply becomes available — the same number that defines the boundary between signal and noise.
+              </div>
+              <div style={{ height: 280 }}>
+                <ResponsiveContainer>
+                  <AreaChart data={emissionData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="emGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={G.bright} stopOpacity={0.3} />
+                        <stop offset="100%" stopColor={G.bright} stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="year" tick={{ fill: G.dim, fontSize: 11 }} axisLine={{ stroke: G.border }} tickLine={false} />
+                    <YAxis tick={{ fill: G.dim, fontSize: 11 }} axisLine={{ stroke: G.border }} tickLine={false} tickFormatter={v => `${v}%`} domain={[0, 100]} />
+                    <Tooltip content={<EmissionTooltip />} />
+                    <Area type="monotone" dataKey="pct" stroke={G.bright} fill="url(#emGrad)" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+              <div style={{ display: "flex", justifyContent: "center", gap: 24, marginTop: 20, fontSize: 11, color: G.dim, flexWrap: "wrap" }}>
+                <span>Year 1: <span style={{ color: G.text }}>12%</span></span>
+                <span>Year 5: <span style={{ color: G.text }}>48%</span></span>
+                <span>Year 10: <span style={{ color: G.text }}>73%</span></span>
+                <span>Year 20: <span style={{ color: G.text }}>93%</span></span>
+              </div>
+            </Section>
+
+            {/* ALPHA GATE */}
+            <Section id="alpha">
+              <SectionLabel num="04" text="The Alpha Gate — No Value, No Inflation" />
+              <div style={{ fontSize: 12, color: G.dim, marginBottom: 24, lineHeight: 1.6 }}>
+                Emissions flow only when the network produces measurable alpha. The Conviction-Weighted Portfolio is scored against an equal-weight benchmark each epoch.
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {alphaGates.map((g, i) => (
+                  <div key={i} style={{ display: "grid", gridTemplateColumns: "100px 60px 1fr", gap: 12, padding: "12px 16px", alignItems: "center" }}>
+                    <div style={{ fontSize: 12, color: G.dim }}>Alpha {g.gate}</div>
+                    <div style={{ fontSize: 14, color: g.color, fontWeight: 500 }}>{g.mult}%</div>
+                    <div style={{ position: "relative", height: 20, background: G.panel, borderRadius: 2, overflow: "hidden" }}>
+                      <div style={{ width: `${g.mult}%`, height: "100%", background: g.color, borderRadius: 2, opacity: 0.7 }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 20, padding: "14px 20px", border: `1px solid ${G.border}`, fontSize: 12, color: G.dim, lineHeight: 1.6 }}>
+                <span style={{ color: G.bright }}>10% survival floor</span> prevents death spirals. Even at zero alpha, producers earn enough to persist while the network recalibrates.
+              </div>
+            </Section>
+
+            {/* BE GOOD NOT RICH */}
+            <Section id="karma">
+              <SectionLabel num="05" text="Be Good, Not Rich — Karma³ Distribution" />
+              <div style={{ fontSize: 12, color: G.dim, marginBottom: 24, lineHeight: 1.6 }}>
+                Emissions distribute by <span style={{ color: G.text }}>effective_stake × karma³</span>. The cubic exponent means calibration quality dominates capital. Same stake, different skill → 8× earnings difference.
+              </div>
+              <div style={{ height: 240 }}>
+                <ResponsiveContainer>
+                  <BarChart data={karmaData} layout="vertical" margin={{ top: 0, right: 40, left: 0, bottom: 0 }}>
+                    <XAxis type="number" tick={{ fill: G.dim, fontSize: 11 }} axisLine={{ stroke: G.border }} tickLine={false} tickFormatter={v => `${v}K`} />
+                    <YAxis type="category" dataKey="label" tick={{ fill: G.dim, fontSize: 12 }} axisLine={false} tickLine={false} width={50} />
+                    <Tooltip formatter={(v) => [`${v}K $BLESS/week`, "Earnings"]} contentStyle={{ background: G.panel, border: `1px solid ${G.border}`, fontSize: 12, color: G.text }} />
+                    <Bar dataKey="earnings" radius={[0, 3, 3, 0]}>
+                      {karmaData.map((d, i) => <Cell key={i} fill={i === 0 ? G.bright : i < 3 ? "#00cc33" : "#006619"} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div style={{ textAlign: "center", fontSize: 11, color: G.dim, marginTop: 8 }}>
+                Equal stake. 10 producers. Year 1, 75% alpha gate. <span style={{ color: G.bright }}>Top karma earns 8× bottom.</span>
+              </div>
+            </Section>
+
+            {/* ENTRY PATHS */}
+            <Section id="enter">
+              <SectionLabel num="06" text="How You Enter — Skill First, Capital Second" />
+              <div style={{ fontSize: 12, color: G.dim, marginBottom: 24, lineHeight: 1.6 }}>
+                Shadow mode never closes. Prove your calibration against live markets with zero tokens. Graduate, and the protocol funds your participation.
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
+                <PathCard num="1" title="Shadow → Graduate" color={G.bright} desc="Submit convictions for 8 epochs. Build karma above 0.55. The Protocol Reserve grants you 100 $BLESS to stake." time="~2 months" capital="None" />
+                <PathCard num="2" title="Graduate → Delegation" color={G.cyan} desc="After graduation, attract delegators who back your skill with their capital. You earn 80% of emissions on delegated stake." time="~2–3 months" capital="None" />
+                <PathCard num="3" title="Buy → Stake" color={G.amber} desc="Skip shadow mode. Buy 100+ $BLESS on a DEX, stake immediately. Faster, but you'll lose stake if you're miscalibrated." time="Immediate" capital="Market price" />
+              </div>
+              <div style={{ marginTop: 20, padding: "14px 20px", background: G.panel, fontSize: 12, color: G.dim, lineHeight: 1.6, textAlign: "center" }}>
+                Once staked, <span style={{ color: G.bright }}>karma³ treats everyone identically</span> regardless of how they entered.
+              </div>
+            </Section>
+
+            {/* CONSUMER TIERS */}
+            <Section id="consume">
+              <SectionLabel num="07" text="Consumer Access — Aggregate vs. Provider-Level" />
+              <div style={{ fontSize: 12, color: G.dim, marginBottom: 24, lineHeight: 1.6 }}>
+                Two data products: the <span style={{ color: G.text }}>aggregate signal</span> (the network's collective conviction) and the <span style={{ color: G.text }}>provider-level signal</span> (individual producer karma, convictions, and contribution weights).
+              </div>
+              <div style={{ border: `1px solid ${G.border}`, overflow: "hidden" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "minmax(90px, 110px) minmax(70px, 90px) 1fr 1fr", gap: 8, padding: "10px 12px", fontSize: 10, color: G.dim, letterSpacing: "0.1em", textTransform: "uppercase", borderBottom: `1px solid ${G.border}`, background: G.panel }}>
+                  <div>Tier</div><div>Cost/Epoch</div><div>Signal</div><div>Provider</div>
+                </div>
+                <TierRow tier="Observer" cost="Free" signal="72h delayed direction" provider="None" />
+                <TierRow tier="Standard" cost="50 $BLESS" signal="24h delayed + confidence" provider="None" />
+                <TierRow tier="Real-time" cost="200 $BLESS" signal="Live aggregate + history" provider="Count only" />
+                <TierRow tier="Professional" cost="500 $BLESS" signal="Live + decomposition" provider="Full" highlight />
+                <TierRow tier="Institutional" cost="2K $BLESS" signal="Full + backtest" provider="Full + custom" highlight />
+              </div>
+            </Section>
+
+            {/* FLYWHEEL */}
+            <Section id="flywheel">
+              <SectionLabel num="08" text="The Flywheel" />
+              <div style={{ position: "relative", height: 340, margin: "0 auto", maxWidth: 600 }}>
+                <FlywheelNode label="Shadow Producers" x="50%" y={0} color={G.dim} />
+                <FlywheelNode label="Staked Producers" x="85%" y={80} color={G.bright} />
+                <FlywheelNode label="Network Alpha" x="85%" y={200} color={G.amber} />
+                <FlywheelNode label="Consumers" x="15%" y={200} color={G.cyan} />
+                <FlywheelNode label="Protocol Reserve" x="15%" y={80} color={G.dim} />
+                <FlywheelNode label="Emissions" x="50%" y={260} color={G.bright} size={70} />
+                <div style={{ position: "absolute", top: "45%", left: "50%", transform: "translate(-50%, -50%)", fontSize: 11, color: G.muted, textAlign: "center", lineHeight: 1.5, maxWidth: 120 }}>
+                  Slashed tokens<br />fund graduates.<br />Bad signal →<br />better signal.
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginTop: 20 }}>
+                {[
+                  { icon: "→", label: "Produce", desc: "Submit calibrated convictions", color: G.bright },
+                  { icon: "◎", label: "Measure", desc: "CWP scored vs. benchmark", color: G.amber },
+                  { icon: "↻", label: "Recycle", desc: "Consumer fees → buyback → emissions", color: G.cyan },
+                ].map((f, i) => (
+                  <div key={i} style={{ padding: "16px", background: G.panel, border: `1px solid ${G.border}`, textAlign: "center" }}>
+                    <div style={{ fontSize: 20, color: f.color, marginBottom: 8 }}>{f.icon}</div>
+                    <div style={{ fontSize: 12, color: G.text, fontWeight: 500, marginBottom: 4 }}>{f.label}</div>
+                    <div style={{ fontSize: 11, color: G.dim }}>{f.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </Section>
+
+            {/* SLASHING */}
+            <Section id="slashing">
+              <SectionLabel num="09" text="Slashing — Miscalibration, Not Volatility" />
+              <div style={{ fontSize: 12, color: G.dim, marginBottom: 24, lineHeight: 1.6 }}>
+                You're penalized for <span style={{ color: G.text }}>being overconfident and wrong</span>, not for markets being volatile. Brier score above 0.35 triggers a proportional slash. Maximum 10% per epoch.
+              </div>
+              <div style={{ display: "flex", gap: 2, alignItems: "flex-end", height: 120, padding: "0 20px" }}>
+                {[
+                  { bs: 0.25, slash: 0, label: "0.25" },
+                  { bs: 0.30, slash: 0, label: "0.30" },
+                  { bs: 0.35, slash: 0, label: "0.35" },
+                  { bs: 0.40, slash: 0.75, label: "0.40" },
+                  { bs: 0.50, slash: 2.25, label: "0.50" },
+                  { bs: 0.60, slash: 3.75, label: "0.60" },
+                  { bs: 0.70, slash: 5.25, label: "0.70" },
+                  { bs: 0.80, slash: 6.75, label: "0.80" },
+                  { bs: 0.90, slash: 8.25, label: "0.90" },
+                ].map((d, i) => (
+                  <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                    <div style={{ fontSize: 9, color: d.slash > 0 ? "#ff4444" : G.dim }}>{d.slash > 0 ? `${d.slash}%` : ""}</div>
+                    <div style={{ width: "80%", height: Math.max(2, d.slash * 12), background: d.slash > 0 ? `rgba(255,68,68,${0.3 + d.slash / 12})` : G.border, borderRadius: "2px 2px 0 0" }} />
+                    <div style={{ fontSize: 9, color: G.dim }}>{d.label}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: G.dim, padding: "8px 20px 0" }}>
+                <span>← Better calibration</span>
+                <span style={{ color: G.muted }}>Threshold: 0.35</span>
+                <span>Worse calibration →</span>
+              </div>
+            </Section>
+
+            {/* KEY PARAMS */}
+            <Section id="params">
+              <SectionLabel num="10" text="Key Parameters" />
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 2 }}>
+                {[
+                  ["Supply", "186,537,453", "0xB1E55ED"],
+                  ["Decay Rate", "0.25% / epoch", "Brier noise floor"],
+                  ["Karma Exponent", "³ (cubic)", "Skill > capital"],
+                  ["Min Stake", "100 $BLESS", "Authorization gate"],
+                  ["Slash Threshold", "Brier > 0.35", "Calibration penalty"],
+                  ["Max Slash", "10% / epoch", "Survivable"],
+                  ["Unstaking Cooldown", "4 epochs", "1 month"],
+                  ["Shadow Graduation", "8 epochs + κ > 0.55", "Skill-based entry"],
+                  ["Delegation Split", "80 / 20", "Producer / delegator"],
+                  ["Coverage Set", "≥ 20 assets", "Specialization"],
+                  ["Independence Bonus", "1.15×", "Contrarian reward"],
+                  ["Treasury Split", "80 / 15 / 5", "Buyback / dev / reserve"],
+                ].map(([label, value, note], i) => (
+                  <div key={i} style={{ padding: "12px 16px", background: i % 2 === 0 ? G.panel : "transparent", display: "flex", flexDirection: "column", gap: 2 }}>
+                    <div style={{ fontSize: 10, color: G.dim, letterSpacing: "0.08em", textTransform: "uppercase" }}>{label}</div>
+                    <div style={{ fontSize: 14, color: G.text }}>{value}</div>
+                    <div style={{ fontSize: 10, color: G.muted }}>{note}</div>
+                  </div>
+                ))}
+              </div>
+            </Section>
+
+            {/* NETWORK AGNOSTIC */}
+            <Section id="network">
+              <SectionLabel num="11" text="Sovereign Infrastructure" />
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
+                {[
+                  { label: "Existing Chain", desc: "Deploy on any EVM L1/L2 for immediate liquidity access", status: "Available" },
+                  { label: "Dedicated Appchain", desc: "Sovereign block space and fee economics", status: "Available" },
+                  { label: "Own Network Layer", desc: "Producers as oracle nodes. Conviction as native transaction type.", status: "At scale" },
+                ].map((n, i) => (
+                  <div key={i} style={{ padding: "20px 16px", background: G.panel, border: `1px solid ${G.border}`, display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ fontSize: 13, color: G.text, fontWeight: 500 }}>{n.label}</div>
+                    <div style={{ fontSize: 11, color: G.dim, lineHeight: 1.6, flex: 1 }}>{n.desc}</div>
+                    <div style={{ fontSize: 10, color: i < 2 ? G.bright : G.amber, letterSpacing: "0.08em" }}>{n.status}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize: 12, color: G.dim, marginTop: 20, lineHeight: 1.6, textAlign: "center" }}>
+                b1e55ed is not locked to any chain, L1, or ecosystem. The signal quality is the value. Everything else is infrastructure.
+              </div>
+            </Section>
+
+            {/* FOOTER */}
+            <section style={{ padding: "48px 0 80px", textAlign: "center" }}>
+              <div style={{ fontSize: 32, color: G.bright, fontWeight: 300, letterSpacing: "0.06em", marginBottom: 16 }}>
+                0xB1E55ED
+              </div>
+              <div style={{ fontSize: 12, color: G.dim, lineHeight: 1.8, maxWidth: 500, margin: "0 auto" }}>
+                The supply is the system's name. The emission rate is the evaluation benchmark. The token exists if and only if the network produces alpha.
+              </div>
+              <div style={{ marginTop: 24, fontSize: 10, color: G.muted, letterSpacing: "0.15em", textTransform: "uppercase" }}>
+                Permanent Upper Class · Proof of Conviction · v6
+              </div>
+            </section>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<BlessTokenomics />);
+  </script>
+</body>
+</html>
