@@ -8,7 +8,7 @@ status: published
 
 # Post Fiat Network: Task Authorization Gate Specification
 
-**Version:** 4.1.0  
+**Version:** 4.1.0 (rev. 2)  
 **Date:** 2026-03-15  
 **Status:** Published  
 **Author:** b1e55ed (Oracle Node Operator, Synthesis Hackathon Participant)  
@@ -324,8 +324,8 @@ This decomposition is more useful than a single conservative number, and high-ag
 
 ```
 UNKNOWN ──► PROBATIONARY ──► AUTHORIZED ──► TRUSTED
-    │              │               │            │
-    └──────────────┴───────────────┴────────────┴──► SUSPENDED
+    │              │              │              │
+    └──────────────┴──────────────┴──────────────┴──► SUSPENDED
 
 [Extraction detection active at ALL states]
 ```
@@ -334,7 +334,7 @@ UNKNOWN ──► PROBATIONARY ──► AUTHORIZED ──► TRUSTED
 
 | Property | Mainnet | Testnet |
 |----------|---------|---------|
-| Eligibility | Tasks assignable | Tier 1 only | Tier 1 only |
+| Tasks assignable | Tier 1 only | Tier 1 only |
 | Rate limit | 1 per 48h | 1 per 12h |
 | Rewards | Pending credits only (0% liquid) | Same |
 | Vesting | 100% pending; released on PROBATIONARY advancement within 60 days | Same |
@@ -559,7 +559,7 @@ Epoch Close → [LINKING LAYER: composite score → provisional grouping → cap
 
 ## 12. Sybil-Resistant Control Graph Linking Layer
 
-The 15% per-control-graph concentration cap (Section 6.3) is only as strong as the system's ability to detect undeclared common control. A sophisticated operator who spins up five wallets without declaring them as associated can capture 5 × 15% = 75% of an epoch budget while appearing to be five independent contributors — unless the linking layer catches the correlation.
+The 15% per-control-graph concentration cap (Section 6.3) is only as strong as the system's ability to detect undeclared common control. A sophisticated operator who spins up five wallets without declaring them as associated can capture 75% of an epoch budget while appearing to be five independent contributors — unless the linking layer catches the correlation.
 
 This section specifies the behavioral fingerprinting heuristics, staking-based identity binding, escalation workflow, and integration points that enforce the cap against undeclared control graphs. It is designed to be complementary to the gap-filling incentive structure (Section 5.5.1–5.5.3): that mechanism makes sybil *economically irrational*; this one makes it *detectable* when it occurs anyway.
 
@@ -617,7 +617,45 @@ Threshold: N-gram match flags are treated as medium-confidence — they do not t
 
 False-positive mitigation: N-gram profiles are normalized against a language model's expected distribution for the task type to remove task-prompt-induced similarity. Profiles from non-English contributors are processed in detected language to avoid false positives from shared translation artifacts.
 
-#### 12.1.5 Composite Linking Score
+#### 12.1.5 Anti-Evasion Properties
+
+Static thresholds are inherently gameable once published. A sophisticated operator who reads this specification can tune their behavior to sit permanently below the declaration prompt threshold — randomizing cadence, using separate withdrawal addresses, varying artifact surface content — and extract indefinitely at soft-flag level.
+
+Three adaptive properties address this.
+
+**Threshold decay under sustained soft flagging**
+
+A wallet pair that registers a soft flag (score ≥ 1.5) for N consecutive epochs faces a decayed declaration prompt threshold:
+
+| Consecutive soft-flag epochs | Declaration prompt threshold |
+|------------------------------|------------------------------|
+| 0–2 | 2.5 (standard) |
+| 3–4 | 2.0 |
+| 5+ | 1.5 |
+
+The threshold resets to 2.5 only if the wallet pair scores below 1.5 for two consecutive epochs — meaning near-zero correlated behavior. An operator tuning to stay at 1.8 will accumulate consecutive soft flags and eventually trigger the declaration prompt despite never crossing the static threshold. To reset, they must suppress all detectable correlation, which constrains extraction more than the static system does.
+
+**Cross-epoch behavioral fingerprint accumulation**
+
+Heuristics H2 (artifact similarity) and H4 (memo n-gram analysis) are computed on a cumulative corpus, not per-epoch snapshots. The minimum corpus for scoring grows with tenure:
+
+| Wallet age | Minimum corpus for H2/H4 scoring |
+|------------|----------------------------------|
+| Epoch 1–2 | 500 tokens (per-epoch minimum) |
+| Epoch 3–5 | 1,500 tokens (rolling) |
+| Epoch 6+ | 3,000 tokens (rolling, capped) |
+
+Similarity scores computed on larger corpora are more reliable and harder to game through surface variation. An operator who varies their writing style slightly each epoch will still converge toward their underlying stylistic signature over a 3,000-token window. Per-epoch variation becomes noise on top of a persistent signal.
+
+**Peer-group percentile scoring**
+
+In addition to absolute thresholds, the linking layer computes a population-relative percentile for each wallet pair's composite score within the same epoch. A pair that ranks in the top 5% of all wallet pair scores in a given epoch is elevated to the next threshold tier regardless of absolute score.
+
+This is adaptive by design: the operator cannot tune to a published number because the effective threshold moves with the population. If all operators attempt to stay at 1.8, the 95th percentile of scores drops to ~1.8, and every soft-flag wallet pair gets elevated anyway.
+
+Percentile elevation does not apply to the high-confidence tier (≥ 4.5) — that tier requires absolute evidence. It applies only to the soft-flag → declaration prompt and declaration prompt → manual review transitions.
+
+#### 12.1.6 Composite Linking Score
 
 Each heuristic produces a binary flag (0 or 1) per wallet pair per epoch. The composite linking score for a wallet pair is:
 
@@ -661,7 +699,7 @@ Stakes are slashed (partially or fully forfeited to the protocol treasury) under
 | Wallet suspension for Founder's Pledge violation | 100% of stake | Core team |
 | Wallet declared false information in control graph declaration (proven) | 100% of stake + 90-day registration ban | Core team |
 
-Slashing is transparent: the on-chain transaction includes the reason and the linking score at time of determination. Slashed wallets can appeal (see Section 12.3.3).
+Slashing is transparent: the on-chain transaction includes the reason and the linking score at time of determination. Slashed wallets can appeal (see Section 12.3.4).
 
 #### 12.2.3 Sybil Economics
 
@@ -790,9 +828,7 @@ System response: The linking layer marks the correlation as explained by declara
 
 The team earns as a single control graph, capped at 15% combined — exactly as intended.
 
-**The key distinction:** The difference between Example A and Example B is not the behavioral signals (both show some correlation) — it is the *declaration*. Example A's operator lied in five Founder's Pledges by claiming no affiliation. Example B's team was honest. The linking layer catches the lie; it does not punish the truth.
-
-Example A shows correlation inconsistent with an independent-wallet claim. Example B shows correlation consistent with a declared team entity. The linking layer is calibrated to flag the *gap between declared and observed*, not correlation per se.
+**The key distinction:** The difference between Example A and Example B is not the behavioral signals (both show some correlation) — it is the *declaration*. Example A shows correlation inconsistent with an independent-wallet claim. Example B shows correlation consistent with a declared team entity. The linking layer is calibrated to flag the *gap between declared and observed*, not correlation per se.
 
 This is why the declaration system is foundational: it establishes the expected baseline from which anomalies are measured.
 
@@ -871,6 +907,6 @@ The linking layer is not a standalone component — it feeds into and receives f
 
 ---
 
-*Version 4.1 adds: (1) Network coverage map (domain gap scoring, published at epoch open); gap-filling CGI multiplier (+0.3 boost for ≥60% completions in gap domains, −0.1 drag for saturated); persona-fit task routing (declared preference → demonstrated capability transition at 10 completions). The core design principle: make the optimal adversarial strategy (distribute wallets across gaps) indistinguishable from the optimal cooperative strategy. (2) Sybil-Resistant Control Graph Linking Layer (Section 12): four behavioral fingerprinting heuristics (cadence clustering, artifact similarity, withdrawal pattern correlation, memo n-gram analysis) with composite linking score and per-tier thresholds; staking-based identity binding with slashing conditions; three-tier escalation workflow (soft flag → manual review → high-confidence grouping); two adversarial worked examples (sybil farm vs. legitimate team); five integration points with Authorization Gate state machine and Task Node scoring pipeline.*
+*Version 4.1 adds: (1) Network coverage map (domain gap scoring, published at epoch open); gap-filling CGI multiplier (+0.3 boost for ≥60% completions in gap domains, −0.1 drag for saturated); persona-fit task routing (declared preference → demonstrated capability transition at 10 completions). The core design principle: make the optimal adversarial strategy (distribute wallets across gaps) indistinguishable from the optimal cooperative strategy. (2) Sybil-Resistant Control Graph Linking Layer (Section 12): four behavioral fingerprinting heuristics (cadence clustering, artifact similarity, withdrawal pattern correlation, memo n-gram analysis) with composite linking score and per-tier thresholds; staking-based identity binding with slashing conditions; three-tier escalation workflow (soft flag → manual review → high-confidence grouping); two adversarial worked examples (sybil farm vs. legitimate team); five integration points with Authorization Gate state machine and Task Node scoring pipeline. Rev 2 adds Section 12.1.5 anti-evasion properties: threshold decay under sustained soft flagging (2.5→2.0→1.5 after 3/5 consecutive soft-flag epochs); cross-epoch behavioral fingerprint accumulation (corpus grows to 3,000 tokens rolling by epoch 6+); peer-group percentile scoring (top 5% of wallet pairs elevated to next tier regardless of absolute score). Addresses slow-bleed extraction via static threshold gaming.*
 
 *Version 4.0 incorporates: three separated ledgers (eligibility, rewards, trust); vesting mechanics by authorization state; extraction detection at all tiers not just entry; extractor typology (I/II/III/IV) with differentiated responses; per-epoch concentration cap (15% per control graph); task-tier classification governance with challenge rights; exploration allowance (5% epoch budget for roadmap-divergent work); declared control graph replacing "one identity"; automation stack treatment; constitutional hierarchy for conflicting signals; range decomposition for real-time epoch visibility; and operating rules appendix paired with Founder's Pledge.*

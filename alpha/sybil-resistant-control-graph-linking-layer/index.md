@@ -52,6 +52,11 @@ Four behavioral fingerprinting heuristics produce a **composite linking score** 
 - Score ≥ 3.5 → Provisional cap grouping + manual review
 - Score ≥ 4.5 or destination overlap → Immediate grouping + expedited review
 
+**Anti-evasion properties (rev 2):** Static thresholds are gameable. Three adaptive mechanisms prevent slow-bleed extraction:
+- **Threshold decay** — 3 consecutive soft-flag epochs drops prompt threshold from 2.5 → 2.0 → 1.5
+- **Corpus accumulation** — H2/H4 roll up to 3,000-token window by epoch 6; surface variation becomes noise
+- **Percentile scoring** — top 5% of wallet pairs elevated regardless of absolute score
+
 **Registration stakes** (10–200 PFT equivalent by state) make undeclared wallet creation economically costly. Stakes are slashed for confirmed undeclared control graph membership.
 
 The 15% concentration cap is enforced against **both declared and provisionally-detected control graphs**.
