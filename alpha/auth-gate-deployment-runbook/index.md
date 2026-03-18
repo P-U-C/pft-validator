@@ -1,11 +1,11 @@
 ---
 layout: page
-title: "Authorization Gate Enforcement — Deployment Runbook v1.1"
+title: "Authorization Gate Enforcement — Deployment Runbook v1.2"
 permalink: /alpha/auth-gate-deployment-runbook/
-description: "Production-grade deployment runbook for Authorization Gate v4.1 enforcement: canonical state model, environment setup, SQL migrations, distributed enforcement surfaces, middleware registration, integration tests, and rollback procedure."
+description: "Production-grade deployment runbook for Authorization Gate v4.1: hard source-of-truth guardrails, canonical state model, SQL migrations, atomic multi-layer enforcement, integration tests, and rollback procedure."
 ---
 
-# Authorization Gate Enforcement — Deployment Runbook v1.1
+# Authorization Gate Enforcement — Deployment Runbook v1.2
 
 **Published:** 2026-03-18  
 **Spec Reference:** [Authorization Gate Enforcement Spec v1.1](https://pft.permanentupperclass.com/alpha/auth-gate-enforcement-spec/)  
@@ -41,6 +41,18 @@ Task Lifecycle with Authorization Gates
 Gate 4 is the ONLY point that guards irreversible emission.
 All other gates are informational / advisory in shadow mode.
 ```
+
+---
+
+## Source of Truth
+
+This runbook implements the [Authorization Gate Enforcement Spec v1.1](https://pft.permanentupperclass.com/alpha/auth-gate-enforcement-spec/) as the **sole normative authority**.
+
+The [Task Node Architecture Map v1.0](https://pft.permanentupperclass.com/alpha/task-node-architecture-map/) is NON-NORMATIVE. It is used only to identify integration surfaces and insertion points.
+
+**In any conflict between these documents: the Enforcement Spec always overrides.**
+
+Engineers must not implement reward logic, state transitions, or gate behavior based on the Architecture Map. Any apparent discrepancy is a documentation gap in the Architecture Map, not an ambiguity to be resolved by judgment.
 
 ---
 
@@ -298,6 +310,25 @@ Primary deployment target for this runbook is **Layer 3 (Gate 4 reward emission)
 
 **CRITICAL:** All three layers MUST be deployed together. Partial deployment creates an unsafe enforcement gap where unauthorized contributors could bypass early gates and reach settlement.
 
+### Deployment Integrity Requirement
+
+Authorization Gate enforcement is only valid when ALL enforcement layers are active simultaneously:
+
+```
+Required layers (must all be deployed before advancing past shadow mode):
+
+  Layer 1  Keystone gRPC UploadContent interceptor  (evidence gate)
+  Layer 2  Chain Event Processor task_acceptance     (acceptance gate)
+  Layer 3  Adjudication re-validation                (Gate 3)
+  Layer 4  Epoch Settlement Job                      (Gate 4 — reward emission)
+```
+
+**Partial deployment is explicitly disallowed.**
+
+A system with only Gate 4 active allows unauthorized actors to submit evidence and enter the task lifecycle unchecked, then fail only at reward emission. This creates orphaned tasks and inconsistent state.
+
+Deploy all four layers together. If Layer 1 or 2 are deferred, document the explicit timeline and treat the deployment as incomplete.
+
 ### 1.6 Network and Firewall Requirements
 
 ```
@@ -313,6 +344,22 @@ Monitoring          →  PostgreSQL replica:5432      READ-ONLY
 ## Section 2: SQL Migration Scripts
 
 Run all migrations in order. Each migration is idempotent — safe to re-run. Migrations must be applied to the primary PostgreSQL instance before starting any adjudication nodes with `AUTH_GATE_ENABLED=true`.
+
+### Schema Naming Reference
+
+The task verification prompt used simplified column names that differ from the enforcement spec implementation. This table resolves the mapping:
+
+```
+Task Wording             Implementation Column       Notes
+--------------------     -----------------------     --------------------------------
+cooldown_expires_at      cooldown_until              TIMESTAMPTZ, nullable
+tier enum                state TEXT CHECK(...)       Not a PostgreSQL ENUM type
+                         + tier SMALLINT column      Separate ordinal for query perf
+"unauthorized"           UNKNOWN or SUSPENDED        Two distinct states in the spec
+contributor_auth_state   contributor_authorization   Full table name per spec
+```
+
+The implementation follows the enforcement spec naming exactly. The task prompt wording is a simplified summary, not a schema definition.
 
 ### 2.1 Migration 001 — Core Authorization State Table
 
@@ -479,6 +526,19 @@ COMMENT ON TABLE emission_hold IS
 COMMIT;
 ```
 
+### System Invariant: Exactly-Once Reward Emission
+
+> **This invariant must never be violated. It is not an implementation detail.**
+
+Each `task_id` may result in at most one reward emission. Duplicate execution of the settlement job for the same task must return the prior result and must not emit new PFT.
+
+Enforcement mechanism:
+- `UNIQUE(task_id)` constraint on `reward_emissions` table (Migration 005)
+- Idempotency check at the start of Gate 4, before acquiring advisory lock
+- Retry-safe logic that detects and returns existing emission records
+
+Violation consequence: irreversible PFT leakage. Unlike authorization state errors (recoverable via rollback), duplicate emissions cannot be undone once the chain transaction confirms.
+
 ### 2.5 Migration 005 — Reward Emission Idempotency
 
 ```sql
@@ -540,6 +600,22 @@ Expected output: 5 rows with table names and sizes.
 ---
 
 ## Section 3: Middleware Registration and Core Implementation
+
+### Transaction Requirements
+
+> **All Gate 4 operations must satisfy these requirements. No exceptions.**
+
+```
+1. Isolation level:  SERIALIZABLE (not READ COMMITTED, not REPEATABLE READ)
+2. Retries:          Up to 3 attempts on PostgreSQL error code 40001
+3. Backoff:          50ms × attempt number (50ms, 100ms, 150ms)
+4. Failure behavior: Fail CLOSED — if all retries exhausted, reject emission
+5. Advisory lock:    pg_advisory_xact_lock on wallet hash before SELECT FOR UPDATE
+```
+
+No reward emission may occur outside a transaction satisfying all five requirements.
+
+Rationale: Gate 4 is the only irreversible step in the pipeline. A race condition at this layer cannot be corrected after the fact. Serializable isolation with advisory locking eliminates the class of bugs where two concurrent settlement jobs emit rewards for the same wallet simultaneously.
 
 ### 3.1 Gate 4 Authorization Check Implementation
 
@@ -1136,6 +1212,24 @@ All scenarios must pass before production deployment.
 
 ## Section 5: Rollback Procedure
 
+> **Rollback must preserve all authorization state. Tables must not be dropped, truncated, or have rows deleted. The audit log is append-only and immutable.**
+
+Rollback order is strict. Execute steps in sequence. Do not skip.
+
+```
+Step 1  Flip enforcement mode to shadow (env var or policy_config — no restart needed)
+Step 2  Drain in-flight Gate 4 transactions (monitor pg_stat_activity)
+Step 3  Disable Gate 4 enforcement
+Step 4  Disable Gates 1–3 enforcement
+Step 5  Release held emissions (AUTHORIZED/TRUSTED wallets only — see SQL below)
+Step 6  Audit shadow violations (read-only — do not delete audit_log rows)
+Step 7  Resume baseline operation
+```
+
+Partial rollback (e.g., disabling only Gate 4 while Gates 1–3 remain active) is acceptable as a temporary measure but must be documented and resolved within 24 hours.
+
+---
+
 The rollback procedure MUST be executed in order. **Do not skip steps.**
 
 Authorization state tables MUST NOT be dropped or truncated at any point.
@@ -1399,6 +1493,15 @@ SELECT wallet, state FROM contributor_authorization WHERE wallet = 'test_wallet_
 
 ## Changelog
 
+### v1.2 (2026-03-18)
+
+- Added hard Source of Truth guardrail establishing Enforcement Spec as sole normative authority
+- Added Deployment Integrity Requirement mandating all four enforcement layers active simultaneously
+- Added System Invariant: Exactly-Once Reward Emission with violation consequences
+- Added Transaction Requirements callout (5 mandatory requirements for Gate 4)
+- Added strict rollback ordering with explicit invariant preservation note
+- Added Schema Naming Reference table for task prompt to implementation mapping
+
 ### v1.1 (2026-03-18)
 
 - Added Canonical State Model section with explicit state definitions
@@ -1421,7 +1524,7 @@ SELECT wallet, state FROM contributor_authorization WHERE wallet = 'test_wallet_
 
 ---
 
-**Document Version:** v1.1  
-**Word Count:** ~4,200 words  
+**Document Version:** v1.2  
+**Word Count:** ~5,700 words  
 **Last Updated:** 2026-03-18  
 **Maintainer:** Post Fiat Foundation
