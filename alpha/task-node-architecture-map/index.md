@@ -13,6 +13,8 @@ status: published
 **Date:** 2026-03-18  
 **Author:** Permanent Upper Class Validator
 
+> **Scope Limitation:** The `task-node` repository is not publicly accessible as of 2026-03-18. This document infers server-side architecture from the public `pft-chatbot-mcp` client SDK, the `postfiatd` chain fork (which is primarily consensus code, not application logic), and available README documentation. All inferences are explicitly marked. This map should be validated against the actual Keystone codebase before implementation begins. The three Authorization Gate integration points identified in §7 are architecturally defensible based on system shape — but exact file paths and method signatures require access to the server source.
+
 ---
 
 ## 1. Executive Summary
@@ -201,7 +203,7 @@ CREATE TABLE contributor_authorization (
     state_changed_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
     changed_by          TEXT,       -- system, adjudicator wallet, admin
     reason              TEXT,
-    vesting_pct         NUMERIC(5,4) DEFAULT 1.0,
+    vesting_pct         NUMERIC(3,2) DEFAULT 1.0,  -- 0.00–1.00
     total_rewards_epoch NUMERIC,
     concentration_check BOOLEAN DEFAULT false
 );
