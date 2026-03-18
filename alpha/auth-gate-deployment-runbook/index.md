@@ -1,14 +1,15 @@
 ---
 layout: page
-title: "Authorization Gate Enforcement — Deployment Runbook v1.0"
+title: "Authorization Gate Enforcement — Deployment Runbook v1.1"
 permalink: /alpha/auth-gate-deployment-runbook/
-description: "Deployment runbook for Authorization Gate v4.1 enforcement: environment setup, SQL migrations, middleware registration, integration tests, and rollback procedure."
+description: "Production-grade deployment runbook for Authorization Gate v4.1 enforcement: canonical state model, environment setup, SQL migrations, distributed enforcement surfaces, middleware registration, integration tests, and rollback procedure."
 ---
 
-# Authorization Gate Enforcement — Deployment Runbook v1.0
+# Authorization Gate Enforcement — Deployment Runbook v1.1
 
 **Published:** 2026-03-18  
-**Spec Reference:** [Authorization Gate Enforcement Spec](https://pft.permanentupperclass.com/alpha/auth-gate-enforcement-spec/)  
+**Spec Reference:** [Authorization Gate Enforcement Spec v1.1](https://pft.permanentupperclass.com/alpha/auth-gate-enforcement-spec/)  
+**Architecture Reference:** [Task Node Architecture Map v1.0](https://pft.permanentupperclass.com/alpha/task-node-architecture-map/)  
 **Policy Version:** v1.1  
 **Status:** Production-ready
 
@@ -43,6 +44,129 @@ All other gates are informational / advisory in shadow mode.
 
 ---
 
+## Canonical State Model
+
+This runbook implements the state machine defined in Authorization Gate Enforcement Spec v1.1.
+
+**Canonical five-state enum (PostgreSQL CHECK constraint):**
+
+```
+UNKNOWN       — not yet registered; no participation permitted
+PROBATIONARY  — registered with minimum stake; 25% liquid / 75% vesting split
+AUTHORIZED    — full stake verified; 100% liquid emission
+TRUSTED       — AUTHORIZED with extended track record (Layer B, future)
+SUSPENDED     — all participation frozen; admin review required
+```
+
+**Mapping from task verification wording to implementation:**
+
+```
++-----------------------------+--------------------------------+
+| Task Verification Term      | Implementation Value           |
++-----------------------------+--------------------------------+
+| "unauthorized" (task prompt)| UNKNOWN or SUSPENDED           |
+| "probationary"              | PROBATIONARY                   |
+| "authorized"                | AUTHORIZED or TRUSTED          |
+| "tier enum"                 | state TEXT + tier SMALLINT col |
++-----------------------------+--------------------------------+
+```
+
+The `state` column is TEXT with a CHECK constraint (not a PostgreSQL ENUM type) for forward compatibility. This allows adding new states without requiring a migration to alter the ENUM — simply update the CHECK constraint.
+
+**State transition diagram:**
+
+```
+                    ┌─────────────────────────────────────────┐
+                    │                                         │
+                    ▼                                         │
+    ┌───────────┐   register    ┌──────────────┐   verify    ┌───────────┐
+    │  UNKNOWN  │ ──────────► │ PROBATIONARY │ ─────────► │ AUTHORIZED│
+    └───────────┘              └──────────────┘             └───────────┘
+          ▲                           │                           │
+          │                           │ suspend                   │ suspend
+          │                           ▼                           ▼
+          │                    ┌───────────┐                      │
+          │◄───────────────────│ SUSPENDED │◄─────────────────────┘
+          │   (re-register)    └───────────┘
+          │
+          │                    ┌───────────┐
+          └────────────────────│  TRUSTED  │◄─ (Layer B future)
+                               └───────────┘
+```
+
+---
+
+## Source of Truth Override
+
+Reward split logic is governed exclusively by the **Authorization Gate Enforcement Spec v1.1**. Any reward ratios or settlement behavior described in the Task Node Architecture Map v1.0 are NON-NORMATIVE inference from observed behavior and **MUST NOT** override the spec.
+
+**Authoritative reward splits:**
+
+```
++---------------+------------------------------------------+
+| State         | Reward Split                             |
++---------------+------------------------------------------+
+| PROBATIONARY  | 25% liquid / 75% vesting escrow         |
+| AUTHORIZED    | 100% liquid                              |
+| TRUSTED       | 100% liquid (reduced gate checks, Layer B)|
+| SUSPENDED     | 0% (all frozen)                          |
+| UNKNOWN       | N/A (blocked at earlier gates)           |
++---------------+------------------------------------------+
+```
+
+When in doubt, consult the enforcement spec. The architecture map documents observed system behavior for context but does not define policy.
+
+---
+
+## Section 0: Pre-Deployment Validation Checklist
+
+Complete all items before advancing past shadow mode.
+
+**Infrastructure:**
+
+```
+[ ] PostgreSQL 15+ with SERIALIZABLE isolation confirmed working
+[ ] Redis 7+ with AOF persistence enabled
+[ ] PgBouncer configured (transaction mode, pool_size >= 20)
+[ ] All 5 migrations applied successfully (verify with \dt in psql)
+[ ] Idempotency constraint verified: \d reward_emissions
+```
+
+**Enforcement surface:**
+
+```
+[ ] Gate 4 (settlement) deployed and in shadow mode
+[ ] Layer 1 (gRPC interceptor) deployed (or explicitly deferred with timeline)
+[ ] Layer 2 (chain event processor) deployed (or explicitly deferred with timeline)
+[ ] AUTH_GATE_ENABLED=true, AUTH_GATE_ENFORCEMENT_MODE=shadow
+```
+
+**Testing:**
+
+```
+[ ] All 6 integration test scenarios pass (A–F)
+[ ] Duplicate emission test confirmed (Scenario E)
+[ ] Rollback drill completed in staging (Scenario D)
+```
+
+**Monitoring:**
+
+```
+[ ] Shadow violation rate query running and alerting at > 5%
+[ ] pg_advisory_lock contention monitored
+[ ] emission_hold table monitored for accumulation
+```
+
+**Go/No-Go gate for advancing to soft mode:**
+
+```
+[ ] Shadow mode ran for minimum 14 days (one full epoch)
+[ ] False positive rate < 5% confirmed
+[ ] Zero incidents in staging rollback drill
+```
+
+---
+
 ## Section 1: Environment Prerequisites and Dependency Manifest
 
 ### 1.1 Runtime Requirements
@@ -52,8 +176,8 @@ Before beginning deployment, verify the following runtime versions are installed
 ```
 Node.js         >= 18.0.0   (LTS recommended: 20.x or 22.x)
 TypeScript      >= 5.0.0
-PostgreSQL      >= 14.0     (16.x recommended for performance)
-Redis           >= 7.0.0
+PostgreSQL      >= 15.0     (16.x recommended; SERIALIZABLE isolation required)
+Redis           >= 7.0.0    (AOF persistence required)
 npm / pnpm      >= 8.x
 ```
 
@@ -107,13 +231,15 @@ The following infrastructure must be provisioned and reachable before deployment
 PostgreSQL cluster
   - Min: 1 primary, 1 read replica
   - Storage: 50GB+ (audit log grows unbounded, plan for partitioning)
-  - Connection pooling: PgBouncer recommended (pool_size=20 per app node)
+  - Connection pooling: PgBouncer REQUIRED (transaction mode, pool_size=20 per app node)
   - Extensions required: none (advisory locks are built-in)
+  - ISOLATION: SERIALIZABLE must work reliably (verify with test TX)
 
 Redis cluster
   - Min: single instance with persistence (RDB + AOF)
-  - Used for: distributed lock coordination, rate-limit counters
+  - Used for: authorization cache, distributed lock coordination
   - Memory: 512MB+ recommended
+  - Persistence: AOF with everysec fsync
 
 IPFS gateway
   - Used by validateIPFSEvidence() upstream of Gate 4
@@ -153,7 +279,26 @@ Week 5+:    AUTH_GATE_ENFORCEMENT_MODE=full     (hard reject unauthorized)
 
 The `AUTH_GATE_ENABLED=false` environment variable (or `policy_config` key `auth_gate_enabled=0`) acts as a master kill switch. Setting either disables all gate checks immediately without requiring a code deployment.
 
-### 1.5 Network and Firewall Requirements
+### 1.5 Architecture Alignment Note
+
+While this runbook targets the Node.js adjudication worker (settlement layer), the Task Node Architecture Map v1.0 confirms enforcement must occur at three distributed layers:
+
+```
+Layer 1: Keystone gRPC UploadContent interceptor
+         → blocks IPFS pinning before evidence is accepted (evidence gate)
+
+Layer 2: Chain Event Processor — task_acceptance handler
+         → blocks task lifecycle entry
+
+Layer 3: Epoch Settlement Job — serializable TX (Gate 4)
+         → final emission guard; primary target of this runbook
+```
+
+Primary deployment target for this runbook is **Layer 3 (Gate 4 reward emission)**. Layers 1 and 2 use the same shared `authorizationCheck()` function and Redis cache.
+
+**CRITICAL:** All three layers MUST be deployed together. Partial deployment creates an unsafe enforcement gap where unauthorized contributors could bypass early gates and reach settlement.
+
+### 1.6 Network and Firewall Requirements
 
 ```
 Adjudication nodes  →  PostgreSQL primary:5432     REQUIRED
@@ -198,14 +343,18 @@ CREATE TABLE IF NOT EXISTS contributor_authorization (
     updated_at                TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Composite index for the hot path: wallet + state lookup in Gate 4
-CREATE INDEX IF NOT EXISTS idx_auth_wallet_state
-    ON contributor_authorization(wallet, state);
+-- Index for state filtering (common query pattern)
+CREATE INDEX IF NOT EXISTS idx_contributor_auth_state
+    ON contributor_authorization(state);
 
--- Partial index for cooldown queries (only rows with active cooldowns)
-CREATE INDEX IF NOT EXISTS idx_auth_cooldown
+-- Index for cooldown queries
+CREATE INDEX IF NOT EXISTS idx_contributor_auth_cooldown
     ON contributor_authorization(cooldown_until)
     WHERE cooldown_until IS NOT NULL;
+
+COMMENT ON TABLE contributor_authorization IS
+    'Core authorization state table for Gate 4 enforcement.
+     Each wallet has exactly one row. State transitions are logged to audit table.';
 
 COMMIT;
 ```
@@ -214,27 +363,40 @@ COMMIT;
 
 ```sql
 -- Migration: 002_authorization_audit_log.sql
--- Description: Immutable audit trail for all authorization state transitions
--- NOTE: Rows in this table must NEVER be deleted (compliance requirement)
+-- Description: Append-only audit log for all authorization state changes
+-- Idempotent: YES
 
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS authorization_audit_log (
-    id             BIGSERIAL PRIMARY KEY,
-    wallet         TEXT NOT NULL,
-    old_state      TEXT,
-    new_state      TEXT NOT NULL,
-    reason         TEXT NOT NULL,
-    epoch_id       TEXT,
-    policy_version VARCHAR(16) NOT NULL,
-    auth_version   INTEGER NOT NULL,
-    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    metadata       JSONB
+    id              BIGSERIAL PRIMARY KEY,
+    wallet          TEXT NOT NULL,
+    task_id         TEXT,
+    reason          TEXT NOT NULL,
+    old_state       TEXT,
+    new_state       TEXT,
+    amount_pft      BIGINT,
+    metadata        JSONB NOT NULL DEFAULT '{}',
+    policy_version  VARCHAR(16) NOT NULL DEFAULT 'v1.1',
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Index for per-wallet audit history (most recent first)
-CREATE INDEX IF NOT EXISTS idx_audit_wallet_time
+-- Index for wallet lookups
+CREATE INDEX IF NOT EXISTS idx_auth_audit_wallet
     ON authorization_audit_log(wallet, created_at DESC);
+
+-- Index for reason filtering (shadow mode analysis)
+CREATE INDEX IF NOT EXISTS idx_auth_audit_reason
+    ON authorization_audit_log(reason, created_at DESC);
+
+-- Partial index for shadow violations
+CREATE INDEX IF NOT EXISTS idx_auth_audit_shadow
+    ON authorization_audit_log(created_at DESC)
+    WHERE metadata->>'shadow' = 'true';
+
+COMMENT ON TABLE authorization_audit_log IS
+    'Append-only audit trail. NEVER DELETE OR UPDATE ROWS.
+     Used for compliance, debugging, and shadow mode analysis.';
 
 COMMIT;
 ```
@@ -243,32 +405,36 @@ COMMIT;
 
 ```sql
 -- Migration: 003_policy_config.sql
--- Description: Runtime-adjustable policy parameters
--- Idempotent: YES (uses INSERT ... ON CONFLICT DO NOTHING)
+-- Description: Runtime-toggleable policy configuration
+-- Idempotent: YES
 
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS policy_config (
-    key            TEXT NOT NULL PRIMARY KEY,
-    value          NUMERIC NOT NULL,
-    description    TEXT NOT NULL,
-    policy_version VARCHAR(16) NOT NULL,
-    updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    key         VARCHAR(64) NOT NULL PRIMARY KEY,
+    value       TEXT NOT NULL,
+    description TEXT,
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_by  TEXT
 );
 
--- Seed initial policy values (v1.1)
-INSERT INTO policy_config (key, value, description, policy_version) VALUES
-  ('min_stake_probationary',        200,   'Minimum PFT stake for PROBATIONARY state',          'v1.1'),
-  ('min_stake_authorized',          1000,  'Minimum PFT stake for AUTHORIZED state',             'v1.1'),
-  ('unauthorized_pft_threshold',    10000, 'PFT threshold triggering UNAUTHORIZED flag',         'v1.1'),
-  ('concentration_cap_bps',         1500,  'Max concentration basis points (15%)',               'v1.1'),
-  ('probationary_vesting_pct',      75,    'Percent of reward held in vesting for PROBATIONARY', 'v1.1'),
-  ('probationary_liquid_pct',       25,    'Percent of reward paid liquid for PROBATIONARY',     'v1.1'),
-  ('linking_soft_flag_threshold',   1.5,   'Linking score soft flag threshold',                  'v1.1'),
-  ('linking_hard_block_threshold',  2.0,   'Linking score hard block threshold',                 'v1.1'),
-  ('shadow_false_positive_max_pct', 5,     'Max acceptable false positive rate in shadow mode',  'v1.1'),
-  ('auth_gate_enabled',             1,     'Master kill switch: 1=enabled, 0=disabled',          'v1.1')
+-- Insert defaults if not present
+INSERT INTO policy_config (key, value, description)
+VALUES
+    ('auth_gate_enabled', '1', 'Master kill switch: 0=disabled, 1=enabled'),
+    ('enforcement_mode', 'shadow', 'Current mode: shadow|soft|full'),
+    ('min_registration_stake', '100000000', 'Minimum PFT stake for PROBATIONARY (8 decimals)'),
+    ('full_stake_threshold', '1000000000000', 'PFT stake for AUTHORIZED (8 decimals)'),
+    ('probationary_liquid_pct', '25', 'Liquid emission % for PROBATIONARY'),
+    ('authorized_liquid_pct', '100', 'Liquid emission % for AUTHORIZED'),
+    ('max_cooldown_count', '3', 'Max cooldown violations before SUSPENDED'),
+    ('cache_ttl_seconds', '60', 'Redis cache TTL for auth state')
 ON CONFLICT (key) DO NOTHING;
+
+COMMENT ON TABLE policy_config IS
+    'Runtime configuration for gate enforcement policy.
+     Changes take effect on next cache invalidation (≤60s).
+     Override via UPDATE; no deployment required.';
 
 COMMIT;
 ```
@@ -277,507 +443,751 @@ COMMIT;
 
 ```sql
 -- Migration: 004_emission_hold.sql
--- Description: Holds emissions in soft/shadow modes pending review
+-- Description: Holds pending emissions for soft-mode review
+-- Idempotent: YES
 
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS emission_hold (
-    id               BIGSERIAL PRIMARY KEY,
-    task_id          TEXT NOT NULL UNIQUE,
-    wallet           TEXT NOT NULL,
-    amount_pft       BIGINT NOT NULL,
-    hold_reason      TEXT NOT NULL,
-    enforcement_mode TEXT NOT NULL,
-    created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    released_at      TIMESTAMPTZ,
-    voided_at        TIMESTAMPTZ
+    id              BIGSERIAL PRIMARY KEY,
+    wallet          TEXT NOT NULL,
+    task_id         TEXT NOT NULL,
+    amount_pft      BIGINT NOT NULL,
+    state_at_hold   TEXT NOT NULL,
+    hold_reason     TEXT NOT NULL,
+    held_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    released_at     TIMESTAMPTZ,
+    voided_at       TIMESTAMPTZ,
+    release_tx_hash TEXT,
+    metadata        JSONB NOT NULL DEFAULT '{}'
 );
 
--- Index for unreleased holds (the operator review queue)
-CREATE INDEX IF NOT EXISTS idx_hold_pending
-    ON emission_hold(wallet, created_at DESC)
+-- Unique constraint prevents duplicate holds for same task
+CREATE UNIQUE INDEX IF NOT EXISTS idx_emission_hold_task
+    ON emission_hold(task_id)
     WHERE released_at IS NULL AND voided_at IS NULL;
+
+-- Index for pending release queries
+CREATE INDEX IF NOT EXISTS idx_emission_hold_pending
+    ON emission_hold(wallet, held_at)
+    WHERE released_at IS NULL AND voided_at IS NULL;
+
+COMMENT ON TABLE emission_hold IS
+    'Pending emissions in soft mode. Operators review and release/void.
+     Rows are NEVER deleted — mark released_at or voided_at.';
 
 COMMIT;
 ```
 
-### 2.5 Migration Execution
+### 2.5 Migration 005 — Reward Emission Idempotency
 
-Run all migrations sequentially from the repo root:
+```sql
+-- Migration: 005_reward_emissions.sql
+-- Description: Reward emission idempotency constraint
+-- Prevents duplicate PFT emission for the same task_id
+-- Idempotent: YES
 
-```bash
-# Set your database URL
-export DATABASE_URL="postgresql://pft_app:REDACTED@db-primary:5432/pft_production"
+BEGIN;
 
-# Apply migrations
-psql "$DATABASE_URL" -f migrations/001_contributor_authorization.sql
-psql "$DATABASE_URL" -f migrations/002_authorization_audit_log.sql
-psql "$DATABASE_URL" -f migrations/003_policy_config.sql
-psql "$DATABASE_URL" -f migrations/004_emission_hold.sql
+CREATE TABLE IF NOT EXISTS reward_emissions (
+    id                BIGSERIAL PRIMARY KEY,
+    task_id           TEXT NOT NULL,
+    wallet            TEXT NOT NULL,
+    amount_pft        BIGINT NOT NULL,
+    state_at_emission TEXT NOT NULL,
+    emitted_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    tx_hash           TEXT,
+    CONSTRAINT uq_task_emission UNIQUE (task_id)
+);
 
-# Verify tables exist
-psql "$DATABASE_URL" -c "\dt contributor_authorization authorization_audit_log policy_config emission_hold"
+CREATE INDEX IF NOT EXISTS idx_reward_emissions_wallet
+    ON reward_emissions(wallet, emitted_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_reward_emissions_date
+    ON reward_emissions(emitted_at DESC);
+
+COMMENT ON CONSTRAINT uq_task_emission ON reward_emissions IS
+    'Idempotency guard: each task_id may only result in one reward emission.
+     Gate 4 checks this before emitReward(). If row exists, return cached result.
+     This prevents double-spend on retries, network issues, or race conditions.';
+
+COMMENT ON TABLE reward_emissions IS
+    'Immutable record of all PFT emissions. Used for idempotency checks and audit.
+     NEVER DELETE OR UPDATE ROWS.';
+
+COMMIT;
 ```
 
-Expected output: four rows in the table listing. Any error terminates deployment — do not proceed until all migrations succeed.
+### 2.6 Verification Query
+
+After running all migrations, verify tables exist:
+
+```sql
+SELECT table_name, pg_size_pretty(pg_total_relation_size(table_name::regclass))
+FROM information_schema.tables
+WHERE table_schema = 'public'
+  AND table_name IN (
+    'contributor_authorization',
+    'authorization_audit_log',
+    'policy_config',
+    'emission_hold',
+    'reward_emissions'
+  );
+```
+
+Expected output: 5 rows with table names and sizes.
 
 ---
 
-## Section 3: Middleware Registration Sequence
+## Section 3: Middleware Registration and Core Implementation
 
-### 3.1 Architecture Overview
+### 3.1 Gate 4 Authorization Check Implementation
 
-The authorization gate is implemented as middleware that wraps the `emitReward()` call inside the adjudication pipeline. It is not a separate service — it runs in-process within the adjudication worker, sharing the same PostgreSQL connection pool and Redis client.
+The authorization check must be injected immediately before the `emitReward()` call in the settlement pipeline. This is the last line of defense before irreversible PFT emission.
+
+**Pseudocode for gate4AuthCheck:**
+
+```typescript
+import { Pool, PoolClient } from 'pg';
+import Redis from 'ioredis';
+import { logger } from './logger';
+
+interface Gate4Result {
+  pass: boolean;
+  idempotent?: boolean;
+  cached?: RewardEmission;
+  code?: 'PASS' | 'NOT_ELIGIBLE' | 'RETRY_LATER' | 'HOLD';
+  reason?: string;
+  state?: string;
+  liquidPct?: number;
+}
+
+const CACHE_KEY_PREFIX = 'auth:v1:';
+const CACHE_TTL_SECONDS = 60;
+
+async function gate4AuthCheck(
+  wallet: string,
+  taskId: string,
+  amountPft: bigint,
+  db: Pool,
+  redis: Redis,
+  mode: 'shadow' | 'soft' | 'full'
+): Promise<Gate4Result> {
+  const startTime = Date.now();
+
+  // Idempotency check — BEFORE acquiring advisory lock
+  const existing = await db.query(
+    'SELECT * FROM reward_emissions WHERE task_id = $1',
+    [taskId]
+  );
+  if (existing.rows.length > 0) {
+    // Already emitted — return cached result, do not re-emit
+    logger.info({ taskId, wallet, idempotent: true }, 'Idempotent hit - already emitted');
+    return { pass: true, idempotent: true, cached: existing.rows[0] };
+  }
+
+  // Execute gate check within serializable transaction with retry
+  return withSerializableRetry(async () => {
+    return await executeGate4(wallet, taskId, amountPft, db, redis, mode);
+  });
+}
+
+async function executeGate4(
+  wallet: string,
+  taskId: string,
+  amountPft: bigint,
+  db: Pool,
+  redis: Redis,
+  mode: 'shadow' | 'soft' | 'full'
+): Promise<Gate4Result> {
+  const client = await db.connect();
+
+  try {
+    // Begin serializable transaction
+    await client.query('BEGIN ISOLATION LEVEL SERIALIZABLE');
+
+    // Acquire advisory lock on wallet to prevent concurrent emission
+    const lockKey = hashWalletToInt(wallet);
+    await client.query('SELECT pg_advisory_xact_lock($1)', [lockKey]);
+
+    // Double-check idempotency inside transaction
+    const doubleCheck = await client.query(
+      'SELECT * FROM reward_emissions WHERE task_id = $1',
+      [taskId]
+    );
+    if (doubleCheck.rows.length > 0) {
+      await client.query('ROLLBACK');
+      return { pass: true, idempotent: true, cached: doubleCheck.rows[0] };
+    }
+
+    // Check cache first
+    const cacheKey = `${CACHE_KEY_PREFIX}${wallet}`;
+    const cached = await redis.get(cacheKey);
+
+    let authState: ContributorAuth;
+    if (cached) {
+      authState = JSON.parse(cached);
+    } else {
+      // Cache miss — query database
+      const result = await client.query(
+        'SELECT * FROM contributor_authorization WHERE wallet = $1',
+        [wallet]
+      );
+
+      if (result.rows.length === 0) {
+        authState = { wallet, state: 'UNKNOWN', tier: 0 };
+      } else {
+        authState = result.rows[0];
+      }
+
+      // Populate cache
+      await redis.setex(cacheKey, CACHE_TTL_SECONDS, JSON.stringify(authState));
+    }
+
+    // Evaluate authorization
+    const decision = evaluateAuthorization(authState, amountPft, mode);
+
+    // Log to audit table
+    await client.query(
+      `INSERT INTO authorization_audit_log
+       (wallet, task_id, reason, old_state, new_state, amount_pft, metadata)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        wallet,
+        taskId,
+        decision.pass ? 'GATE4_PASS' : 'GATE4_BLOCK',
+        authState.state,
+        authState.state,
+        amountPft,
+        JSON.stringify({
+          mode,
+          shadow: mode === 'shadow',
+          code: decision.code,
+          reason: decision.reason
+        })
+      ]
+    );
+
+    // Handle based on mode and decision
+    if (decision.pass) {
+      // Record emission for idempotency
+      await client.query(
+        `INSERT INTO reward_emissions (task_id, wallet, amount_pft, state_at_emission)
+         VALUES ($1, $2, $3, $4)`,
+        [taskId, wallet, amountPft, authState.state]
+      );
+      await client.query('COMMIT');
+      return decision;
+    }
+
+    if (mode === 'shadow') {
+      // Shadow mode: log but pass through
+      await client.query('COMMIT');
+      return { ...decision, pass: true, reason: 'shadow_override' };
+    }
+
+    if (mode === 'soft') {
+      // Soft mode: hold emission for review
+      await client.query(
+        `INSERT INTO emission_hold
+         (wallet, task_id, amount_pft, state_at_hold, hold_reason)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [wallet, taskId, amountPft, authState.state, decision.reason]
+      );
+      await client.query('COMMIT');
+      return { pass: false, code: 'HOLD', reason: decision.reason, state: authState.state };
+    }
+
+    // Full mode: hard reject
+    await client.query('COMMIT');
+    return decision;
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+function evaluateAuthorization(
+  auth: ContributorAuth,
+  amountPft: bigint,
+  mode: string
+): Gate4Result {
+  switch (auth.state) {
+    case 'AUTHORIZED':
+    case 'TRUSTED':
+      return {
+        pass: true,
+        code: 'PASS',
+        state: auth.state,
+        liquidPct: 100
+      };
+
+    case 'PROBATIONARY':
+      return {
+        pass: true,
+        code: 'PASS',
+        state: auth.state,
+        liquidPct: 25,  // 25% liquid, 75% vesting
+        reason: 'probationary_split'
+      };
+
+    case 'SUSPENDED':
+      return {
+        pass: false,
+        code: 'NOT_ELIGIBLE',
+        state: auth.state,
+        reason: `Wallet suspended: ${auth.suspension_reason || 'no reason provided'}`
+      };
+
+    case 'UNKNOWN':
+    default:
+      return {
+        pass: false,
+        code: 'NOT_ELIGIBLE',
+        state: auth.state || 'UNKNOWN',
+        reason: 'Wallet not registered or authorization expired'
+      };
+  }
+}
+
+function hashWalletToInt(wallet: string): number {
+  // Simple hash to generate consistent advisory lock key
+  let hash = 0;
+  for (let i = 0; i < wallet.length; i++) {
+    hash = ((hash << 5) - hash) + wallet.charCodeAt(i);
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash);
+}
+```
+
+### 3.2 Distributed Enforcement Points
+
+Full enforcement requires `authorizationCheck()` at all three pipeline layers:
 
 ```
-Adjudication Pipeline — Insertion Point Diagram
-=================================================
-
-  adjudicate(task)
-       │
-       ▼
-  ┌─────────────────────┐
-  │ 1. validateIPFS     │  <── reads from IPFS gateway
-  │    Evidence()       │
-  └────────┬────────────┘
-           │
-           ▼
-  ┌─────────────────────┐
-  │ 2. computeScore()   │  <── pure computation, no I/O
-  └────────┬────────────┘
-           │
-           ▼
-  ┌─────────────────────┐  ◄── INSERTION POINT (Gate 4)
-  │ 3. gate4AuthCheck() │      AUTH_GATE_ENABLED guards this block
-  │   [NEW MIDDLEWARE]  │      Serializable TX + advisory lock
-  └────────┬────────────┘
-           │
-           │ pass: false?
-           ├──────────────────► holdEmission() or hard reject
-           │                    (depending on enforcement mode)
-           │ pass: true
-           ▼
-  ┌─────────────────────┐
-  │ 4. emitReward()     │  <── IRREVERSIBLE: PFT leaves treasury
-  └────────┬────────────┘
-           │
-           ▼
-  ┌─────────────────────┐
-  │ 5. recordOutcome()  │
-  └─────────────────────┘
++---------------------------+----------------------------------+----------------+
+| Layer                     | Insertion Point                  | Gate           |
++---------------------------+----------------------------------+----------------+
+| Keystone gRPC interceptor | Before UploadContent handler     | Evidence (3)   |
+| Chain Event Processor     | task_acceptance envelope handler | Acceptance (2) |
+| Epoch Settlement Job      | Before emitReward()              | Emission (4)   |
++---------------------------+----------------------------------+----------------+
 ```
 
-### 3.2 Registration Order of Operations
+All three call the same shared function:
 
-Apply the following changes in order. Do not skip steps — each depends on the previous.
-
-**Step 1: Deploy database migrations** (Section 2 above)
-
-**Step 2: Deploy updated adjudication worker code** that includes the `gate4AuthCheck()` function. The function must be present in the codebase before environment variables are set — a running worker with `AUTH_GATE_ENABLED=false` in the environment is safe to deploy at any time.
-
-**Step 3: Verify the gate function is loading correctly** by checking startup logs:
-
-```bash
-# Expected log line on startup when gate is disabled:
-{"level":"info","msg":"AuthGate: disabled (AUTH_GATE_ENABLED=false)","policy":"v1.1"}
-
-# Expected log line when gate is enabled in shadow mode:
-{"level":"info","msg":"AuthGate: active","mode":"shadow","policy":"v1.1"}
+```typescript
+authorizationCheck(wallet, taskId, mode, db, redis)
 ```
 
-**Step 4: Enable gate in shadow mode** by setting environment variables and performing a rolling restart of adjudication workers:
+**Fail-closed semantics apply at all layers:**
+Any authorization lookup failure → reject the operation, do not proceed.
 
-```bash
-AUTH_GATE_ENABLED=true
-AUTH_GATE_ENFORCEMENT_MODE=shadow
+**Redis cache invalidation:**
+
+```
+Cache key pattern: auth:v1:{wallet}
+TTL: 60 seconds
+Invalidate on any state transition in contributor_authorization
 ```
 
-**Step 5: Monitor shadow mode for two full epochs.** Check the false positive rate against the policy threshold:
+Example invalidation trigger:
+
+```typescript
+// Call after any state change in contributor_authorization
+async function invalidateAuthCache(wallet: string, redis: Redis): Promise<void> {
+  await redis.del(`auth:v1:${wallet}`);
+}
+```
+
+### 3.3 Transaction Semantics
+
+All Gate 4 operations MUST:
+
+1. Run under `ISOLATION LEVEL SERIALIZABLE`
+2. Retry up to 3 times on PostgreSQL serialization failure (error code 40001)
+3. Fail CLOSED if all retries exhausted — reject the emission, do not proceed
+
+**Retry pseudocode:**
+
+```typescript
+async function withSerializableRetry<T>(
+  fn: () => Promise<T>,
+  maxAttempts: number = 3
+): Promise<T> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (e: any) {
+      if (e.code === '40001' && attempt < maxAttempts) {
+        // PostgreSQL serialization failure — retry with backoff
+        await sleep(attempt * 50); // exponential backoff: 50ms, 100ms, 150ms
+        continue;
+      }
+      throw e; // re-throw — fail closed
+    }
+  }
+  // Should never reach here, but fail closed if we do
+  throw new Error('withSerializableRetry: exhausted retries');
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+```
+
+**Failure behavior:**
+
+```
+Serialization failure after 3 retries → return { pass: false, code: 'RETRY_LATER' }
+DB connection failure               → return { pass: false, code: 'RETRY_LATER' }
+Policy config unavailable           → use hardcoded safe defaults, alert ops
+```
+
+**Fail-closed principle:** when in doubt, reject. Never emit on uncertainty.
+
+### 3.4 Failure Philosophy
+
+The authorization gate is **fail-closed by design**.
+
+Any failure condition in the authorization check MUST result in rejection of the operation, not a pass-through. This includes:
+
+- Database connection failure
+- Redis cache miss with DB unavailable
+- Serialization failure after max retries
+- Policy config unavailable (use hardcoded safe defaults + alert)
+- Malformed wallet address
+
+**The only exception:** `AUTH_GATE_ENABLED=false` (master kill switch).
+
+When the kill switch is active, ALL authorization checks are bypassed and the pipeline processes as if pre-enforcement.
+
+**Rationale:** The enforcement spec addresses approximately 1M PFT in unauthorized emissions. A fail-open gate produces the same outcome as no gate at all. Failing closed means the worst case is a delayed reward (recoverable); failing open means unauthorized emission (irreversible).
+
+### 3.5 Monitoring and Alerting
+
+**Shadow mode violation rate (alert if > 5%):**
 
 ```sql
--- Count shadow blocks vs. total gate evaluations in last epoch
 SELECT
-  COUNT(*) FILTER (WHERE metadata->>'shadow' = 'true') AS shadow_blocks,
-  COUNT(*) AS total_evaluations,
+  COUNT(*) FILTER (WHERE metadata->>'shadow' = 'true') AS shadow_violations,
+  COUNT(*) AS total_gate4_checks,
   ROUND(
     100.0 * COUNT(*) FILTER (WHERE metadata->>'shadow' = 'true') / NULLIF(COUNT(*), 0),
     2
-  ) AS false_positive_pct
+  ) AS violation_rate_pct
 FROM authorization_audit_log
-WHERE created_at > NOW() - INTERVAL '7 days';
+WHERE created_at > NOW() - INTERVAL '24 hours'
+  AND reason IN ('GATE4_BLOCK', 'GATE4_PASS');
 ```
 
-The `shadow_false_positive_max_pct` policy value is 5%. If the rate exceeds this threshold, do not advance to soft or full mode until the root cause is identified and corrected.
+Alert threshold: `violation_rate_pct > 5`
 
-**Step 6: Advance to soft enforcement** (after shadow monitoring is clean):
+**Emission hold accumulation (alert if growing without releases):**
 
-```bash
-AUTH_GATE_ENFORCEMENT_MODE=soft
-# Rolling restart required
+```sql
+SELECT
+  count(*) FILTER (WHERE released_at IS NULL AND voided_at IS NULL) AS pending,
+  count(*) FILTER (WHERE released_at IS NOT NULL) AS released,
+  sum(amount_pft) FILTER (WHERE released_at IS NULL AND voided_at IS NULL) AS pft_held
+FROM emission_hold;
 ```
 
-**Step 7: Advance to full enforcement** (after soft mode is stable):
+**Post-deploy verification (run immediately after each mode advancement):**
 
-```bash
-AUTH_GATE_ENFORCEMENT_MODE=full
-# Rolling restart required
+```sql
+-- Confirm no unauthorized emissions slipped through
+SELECT r.wallet, r.task_id, r.amount_pft, c.state
+FROM reward_emissions r
+JOIN contributor_authorization c ON c.wallet = r.wallet
+WHERE c.state IN ('UNKNOWN', 'SUSPENDED')
+ORDER BY r.emitted_at DESC
+LIMIT 20;
+
+-- Expected: zero rows
 ```
 
-### 3.3 Feature Flag Gates Summary
+**Advisory lock contention:**
 
-```
-Master Kill Switch
-──────────────────
-  AUTH_GATE_ENABLED=false   →  Bypasses gate4AuthCheck() entirely
-  policy_config.auth_gate_enabled=0  →  Same effect, hot-reloadable
-
-Enforcement Mode Progression
-─────────────────────────────
-  shadow  →  Log violations, emit anyway (pass: true, shadow: true)
-  soft    →  Log + hold emission (pass: false, code: RETRY_LATER)
-  full    →  Log + hard reject (pass: false, code: NOT_ELIGIBLE)
-
-Per-State Behavior Matrix
-──────────────────────────
-  State           shadow    soft            full
-  ──────────────────────────────────────────────
-  AUTHORIZED      PASS      PASS            PASS
-  TRUSTED         PASS      PASS            PASS
-  PROBATIONARY*   PASS      PASS/HOLD       PASS/BLOCK
-  UNKNOWN         LOG/PASS  HOLD            BLOCK
-  SUSPENDED       LOG/PASS  HOLD            BLOCK
-
-  * PROBATIONARY with active cooldown is treated as HOLD/BLOCK
-```
-
-### 3.4 Redis Usage
-
-Redis is used for distributed rate limiting and advisory lock coordination across multiple adjudication worker nodes. The gate acquires a PostgreSQL advisory lock (`pg_advisory_xact_lock`) within the serializable transaction, which is sufficient for single-node deployments. For multi-node deployments, Redis provides the cross-process coordination layer.
-
-Key patterns used:
-
-```
-pft:authgate:lock:{walletHash}    TTL: 30s   Per-wallet processing lock
-pft:authgate:rate:{wallet}        TTL: 60s   Rate limit counter
+```sql
+SELECT
+  pid,
+  state,
+  wait_event_type,
+  wait_event,
+  query
+FROM pg_stat_activity
+WHERE wait_event_type = 'Lock'
+  AND query LIKE '%pg_advisory%'
+ORDER BY query_start;
 ```
 
 ---
 
 ## Section 4: Integration Test Scenarios
 
-All scenarios must pass before advancing from shadow mode to soft mode. Run the test suite with:
+All test scenarios must pass before advancing enforcement mode. Run tests against a staging environment with realistic data volume.
 
-```bash
-npm test -- --testPathPattern=auth-gate
+### Enforcement Level Terminology Mapping
+
+```
++----------------+--------------+------------------------------------------+
+| Task Term      | Runbook Term | Behavior                                 |
++----------------+--------------+------------------------------------------+
+| log-only       | shadow       | Log violation + always PASS              |
+| soft-reject    | soft         | Hold emission + notify + RETRY_LATER     |
+| hard-reject    | full         | Hard reject + audit log + NOT_ELIGIBLE   |
++----------------+--------------+------------------------------------------+
 ```
 
-The test suite uses `testcontainers` to spin up ephemeral PostgreSQL and Redis instances. No external database is required to run tests.
-
----
-
-### Scenario A — Unauthorized Submission (Full Enforcement)
-
-**Purpose:** Verify that a wallet in UNKNOWN state is hard-rejected in full enforcement mode and that no emission occurs.
+### Scenario A — AUTHORIZED wallet, full mode
 
 **Setup:**
 
-```sql
--- No row in contributor_authorization for wallet '0xUNKNOWN001'
--- (UNKNOWN is the default state when no row exists)
 ```
-
-```bash
+contributor_authorization: wallet=W001, state=AUTHORIZED, tier=2
 AUTH_GATE_ENFORCEMENT_MODE=full
-AUTH_GATE_ENABLED=true
 ```
 
 **Input:**
 
 ```
-wallet:      '0xUNKNOWN001'
-task_id:     'T001'
-amount_pft:  500n (BigInt)
-mode:        full
+gate4AuthCheck(wallet='W001', taskId='T001', amountPft=500000000n)
 ```
 
-**Expected Outputs:**
+**Expected outputs:**
 
-```
-gate4AuthCheck() return value:
-  { pass: false, code: 'NOT_ELIGIBLE', reason: 'UNKNOWN' }
+- Return: `{ pass: true, code: 'PASS', liquidPct: 100 }`
+- `emitReward()` called with full amount
+- Audit log entry: `reason=GATE4_PASS, state=AUTHORIZED`
+- Row inserted into `reward_emissions`
 
-authorization_audit_log row inserted:
-  wallet:    '0xUNKNOWN001'
-  new_state: 'UNKNOWN'
-  reason:    'GATE4_BLOCK'
-  metadata:  { state: 'UNKNOWN', taskId: 'T001', mode: 'full' }
+**Pass criteria:**
 
-emission_hold row:
-  NOT created (full mode = hard reject, no hold)
-
-emitReward() call count:
-  0 (must not be called)
-```
-
-**Pass Criteria:**
-
-- `result.pass === false`
-- `result.code === 'NOT_ELIGIBLE'`
-- Exactly 1 audit log row with `reason = 'GATE4_BLOCK'`
-- Zero rows in `emission_hold` for task_id `T001`
-- `emitReward` mock invocation count is 0
-- PostgreSQL transaction is rolled back (not committed with hold data)
-
-**Fail Criteria:** Any of the above conditions not met, or an exception is thrown rather than returning the structured error result.
+- 100% liquid emission
+- No hold, no rejection
 
 ---
 
-### Scenario B — Probationary Cooldown Escalation
-
-**Purpose:** Verify that a PROBATIONARY wallet with an active cooldown is held in soft mode, and that emission proceeds after the cooldown expires.
+### Scenario B — PROBATIONARY wallet, full mode
 
 **Setup:**
 
-```sql
-INSERT INTO contributor_authorization
-  (wallet, state, registration_stake, cooldown_until, cooldown_count)
-VALUES
-  ('0xPROB002', 'PROBATIONARY', 300, NOW() + INTERVAL '2 hours', 1);
 ```
-
-```bash
+contributor_authorization: wallet=W002, state=PROBATIONARY, tier=1
 AUTH_GATE_ENFORCEMENT_MODE=full
-AUTH_GATE_ENABLED=true
-```
-
-**Input (Phase 1 — during cooldown):**
-
-```
-wallet:        '0xPROB002'
-task_id:       'T002'
-amount_pft:    750n
-mode:          full
-cooldown_until: NOW() + 2 hours (active)
-```
-
-**Expected Outputs (Phase 1):**
-
-```
-gate4AuthCheck() return value:
-  { pass: false, code: 'RETRY_LATER', reason: 'held_for_review' }
-
-authorization_audit_log row inserted:
-  wallet: '0xPROB002'
-  reason: 'COOLDOWN_ACTIVE'
-
-emission_hold row inserted:
-  task_id:          'T002'
-  wallet:           '0xPROB002'
-  amount_pft:       750
-  hold_reason:      'COOLDOWN_ACTIVE'
-  enforcement_mode: 'full'
-  released_at:      NULL
-```
-
-**Input (Phase 2 — after cooldown expires):**
-
-```sql
--- Simulate cooldown expiry
-UPDATE contributor_authorization
-SET cooldown_until = NOW() - INTERVAL '1 minute'
-WHERE wallet = '0xPROB002';
-```
-
-**Expected Outputs (Phase 2):**
-
-```
-gate4AuthCheck() return value:
-  { pass: true }
-
-emitReward() called once
-emission_hold row for T002 remains unchanged (not auto-released by gate)
-```
-
-**Pass Criteria:**
-
-- Phase 1: `result.pass === false`, `result.code === 'RETRY_LATER'`
-- Phase 1: `emission_hold` row exists for T002 with `released_at IS NULL`
-- Phase 1: `authorization_audit_log` contains `reason = 'COOLDOWN_ACTIVE'`
-- Phase 2: `result.pass === true`
-- Phase 2: `emitReward` mock called exactly once
-
-**Fail Criteria:** Gate passes in Phase 1, or gate blocks in Phase 2 after cooldown expires.
-
----
-
-### Scenario C — Authorized Passthrough
-
-**Purpose:** Verify that a fully AUTHORIZED wallet with no cooldown passes Gate 4 and receives 100% liquid emission.
-
-**Setup:**
-
-```sql
-INSERT INTO contributor_authorization
-  (wallet, state, registration_stake, tier)
-VALUES
-  ('0xAUTH003', 'AUTHORIZED', 1500, 1);
--- No cooldown_until set (NULL = no active cooldown)
-```
-
-```bash
-AUTH_GATE_ENFORCEMENT_MODE=full
-AUTH_GATE_ENABLED=true
 ```
 
 **Input:**
 
 ```
-wallet:     '0xAUTH003'
-task_id:    'T003'
-amount_pft: 1000n
-mode:       full
+gate4AuthCheck(wallet='W002', taskId='T002', amountPft=1000000000n)
 ```
 
-**Expected Outputs:**
+**Expected outputs:**
 
-```
-gate4AuthCheck() return value:
-  { pass: true }
-  (no 'shadow' field, no 'code' field)
+- Return: `{ pass: true, code: 'PASS', liquidPct: 25 }`
+- `emitReward()` called with split: 250M liquid, 750M vesting escrow
+- Audit log entry: `reason=GATE4_PASS, state=PROBATIONARY`
 
-emitReward() called once with full amount (1000 PFT)
+**Pass criteria:**
 
-emission_hold row:
-  NOT created
-
-authorization_audit_log row inserted:
-  wallet:    '0xAUTH003'
-  reason:    'GATE4_PASS'
-  new_state: 'AUTHORIZED'
-```
-
-**Pass Criteria:**
-
-- `result.pass === true`
-- `result.shadow` is undefined (not a shadow pass)
-- `emitReward` mock called exactly once with `amountPft === 1000n`
-- Zero rows in `emission_hold` for task_id `T003`
-- Audit log contains one row with `reason = 'GATE4_PASS'`
-
-**Fail Criteria:** Emission blocked, held, or reduced. Audit log missing or contains GATE4_BLOCK instead of GATE4_PASS.
+- 25% liquid / 75% vesting split applied
+- Emission recorded in `reward_emissions`
 
 ---
 
-### Scenario D — Kill Switch / Rollback Verification
-
-**Purpose:** Verify that setting `AUTH_GATE_ENABLED=false` completely bypasses gate logic and leaves existing holds untouched.
+### Scenario C — UNKNOWN wallet, full mode (hard reject)
 
 **Setup:**
 
-```sql
--- Pre-existing hold from before kill switch activation
-INSERT INTO emission_hold
-  (task_id, wallet, amount_pft, hold_reason, enforcement_mode)
-VALUES
-  ('T004-PRE', '0xSUSP004', 200, 'SUSPENDED', 'soft');
-
--- Suspended wallet that would normally be blocked
-INSERT INTO contributor_authorization (wallet, state)
-VALUES ('0xSUSP004', 'SUSPENDED');
 ```
-
-```bash
-AUTH_GATE_ENABLED=false   # Kill switch active
+contributor_authorization: no row for wallet=W003
+AUTH_GATE_ENFORCEMENT_MODE=full
 ```
 
 **Input:**
 
 ```
-wallet:     '0xSUSP004'
-task_id:    'T004'
-amount_pft: 200n
+gate4AuthCheck(wallet='W003', taskId='T003', amountPft=100000000n)
 ```
 
-**Expected Outputs:**
+**Expected outputs:**
+
+- Return: `{ pass: false, code: 'NOT_ELIGIBLE', reason: 'Wallet not registered...' }`
+- `emitReward()` NOT called
+- Audit log entry: `reason=GATE4_BLOCK, state=UNKNOWN`
+- No row in `reward_emissions`
+
+**Pass criteria:**
+
+- Zero emission
+- Clean rejection with audit trail
+
+---
+
+### Scenario D — UNKNOWN wallet, shadow mode (observe only)
+
+**Setup:**
 
 ```
-gate4AuthCheck():
-  NOT called (bypassed by kill switch)
-
-emitReward():
-  Called immediately (no gate check)
-
-emission_hold row for T004-PRE:
-  UNCHANGED (released_at still NULL)
-  (kill switch does NOT auto-release held emissions)
-
-authorization_audit_log:
-  No new rows created for this task
+contributor_authorization: no row for wallet=W004
+AUTH_GATE_ENFORCEMENT_MODE=shadow
 ```
 
-**Pass Criteria:**
+**Input:**
 
-- `gate4AuthCheck` mock not called at all
-- `emitReward` called exactly once
-- `emission_hold` row for `T004-PRE` has `released_at IS NULL` (unchanged)
-- `authorization_audit_log` row count unchanged from before the test
-- No exceptions thrown
+```
+gate4AuthCheck(wallet='W004', taskId='T004', amountPft=200000000n)
+```
 
-**Fail Criteria:** Gate function called when kill switch is active, or pre-existing holds are auto-released.
+**Expected outputs:**
+
+- Return: `{ pass: true, reason: 'shadow_override' }`
+- `emitReward()` called (shadow mode passes through)
+- Audit log entry: `reason=GATE4_BLOCK, metadata.shadow=true`
+- Row inserted into `reward_emissions`
+
+**Pass criteria:**
+
+- Emission proceeds (shadow mode)
+- Violation logged for analysis
+- Would have been blocked in full mode
+
+---
+
+### Scenario E — Duplicate settlement (idempotency)
+
+**Setup:**
+
+```
+contributor_authorization: wallet=W005, state=AUTHORIZED
+reward_emissions: task_id=T005 already present (prior successful emission)
+AUTH_GATE_ENFORCEMENT_MODE=full
+```
+
+**Input:**
+
+```
+gate4AuthCheck(wallet='W005', taskId='T005', amountPft=1000000000n)
+```
+
+**Expected outputs:**
+
+- Return: `{ pass: true, idempotent: true, cached: <prior emission row> }`
+- `emitReward()` NOT called (cached result returned)
+- No new row in `reward_emissions`
+- No new row in `authorization_audit_log`
+
+**Pass criteria:**
+
+- PFT emitted exactly once for T005
+- No double-spend possible regardless of retry count
+- Idempotent return within < 10ms
+
+---
+
+### Scenario F — State change mid-flight (race condition)
+
+**Setup:**
+
+```
+contributor_authorization: wallet=W006, state=AUTHORIZED at task submission
+Between Gate 3 and Gate 4: admin suspends W006 (state → SUSPENDED)
+AUTH_GATE_ENFORCEMENT_MODE=full
+```
+
+**Input:**
+
+```
+gate4AuthCheck(wallet='W006', taskId='T006', amountPft=2000000000n)
+```
+
+**Expected outputs:**
+
+- Return: `{ pass: false, code: 'NOT_ELIGIBLE', reason: 'SUSPENDED' }`
+- No emission
+- Audit log entry: `reason=GATE4_BLOCK, new_state=SUSPENDED`
+- Advisory lock on wallet held throughout Gate 4 TX prevents race
+
+**Pass criteria:**
+
+- Suspension takes effect before emission regardless of when it occurred
+- Serializable TX + advisory lock guarantee consistent state read
+- No PFT emitted to suspended wallet
+
+---
+
+### Test Execution
+
+Run the test suite:
+
+```bash
+npm run test:integration -- --grep "Gate4"
+```
+
+All scenarios must pass before production deployment.
 
 ---
 
 ## Section 5: Rollback Procedure
 
-Use this procedure if the authorization gate causes unintended production impact after go-live. The procedure is designed for safe, auditable recovery without data loss.
+The rollback procedure MUST be executed in order. **Do not skip steps.**
 
-### 5.1 Immediate Kill Switch (< 2 minutes)
+Authorization state tables MUST NOT be dropped or truncated at any point.
 
-Flip the master kill switch without redeploying code:
+### Step 1: Flip to shadow mode (immediate — no restart required)
 
-```bash
-# Option A: Environment variable (requires process restart)
-AUTH_GATE_ENABLED=false
-# Then rolling restart adjudication workers
-
-# Option B: Database config (hot-reload, no restart required if workers poll config)
-```
+**Option A (fastest): Update policy_config**
 
 ```sql
--- Option B: hot kill via policy_config
 UPDATE policy_config
-SET value = 0, updated_at = NOW()
+SET value = '0', updated_at = NOW()
 WHERE key = 'auth_gate_enabled';
+
+-- Takes effect on next cache invalidation (≤ 60s)
 ```
 
-Verify kill switch is effective by checking logs:
+**Option B: Environment variable + rolling restart**
 
 ```bash
-# Should see this log line immediately after kill switch:
-# {"level":"warn","msg":"AuthGate: disabled by kill switch","triggered_by":"policy_config"}
+AUTH_GATE_ENFORCEMENT_MODE=shadow
+AUTH_GATE_ENABLED=false
+
+# Restart adjudication workers one-by-one
+pm2 restart adjudicator-1
+sleep 30
+pm2 restart adjudicator-2
+sleep 30
+# ... continue for all workers
 ```
 
-### 5.2 Review and Release Held Emissions
+### Step 2: Drain in-flight settlement jobs
 
-Do NOT auto-release all held emissions. Review them first. Release only emissions where the wallet was in AUTHORIZED or TRUSTED state at the time of the hold:
+Wait for all active Gate 4 transactions to complete (typically < 30s).
+
+**Monitor:**
 
 ```sql
--- Step 2a: Inspect what's held
-SELECT
-  eh.task_id,
-  eh.wallet,
-  eh.amount_pft,
-  eh.hold_reason,
-  eh.enforcement_mode,
-  ca.state AS current_state,
-  eh.created_at
-FROM emission_hold eh
-LEFT JOIN contributor_authorization ca ON ca.wallet = eh.wallet
-WHERE eh.released_at IS NULL AND eh.voided_at IS NULL
-ORDER BY eh.created_at ASC;
+SELECT count(*)
+FROM pg_stat_activity
+WHERE query LIKE '%contributor_authorization%'
+   OR query LIKE '%reward_emissions%';
 
--- Step 2b: Release holds only for wallets that are AUTHORIZED or TRUSTED
--- (these were incorrectly held, likely a false positive)
+-- Wait until count = 0
+```
+
+### Step 3: Release held emissions (selective — AUTHORIZED wallets only)
+
+**REVIEW BEFORE EXECUTING.** Only release wallets that were AUTHORIZED at hold time.
+
+```sql
+BEGIN;
+
 UPDATE emission_hold
 SET released_at = NOW()
 WHERE released_at IS NULL
@@ -787,100 +1197,231 @@ WHERE released_at IS NULL
     WHERE state IN ('AUTHORIZED', 'TRUSTED')
   );
 
--- Step 2c: Do NOT release holds for UNKNOWN, PROBATIONARY, or SUSPENDED wallets
--- Those require manual review before releasing
+-- Verify count before committing:
+SELECT count(*) as to_release
+FROM emission_hold
+WHERE released_at::date = CURRENT_DATE;
+
+-- If count looks reasonable:
+COMMIT;
+-- Otherwise:
+-- ROLLBACK;
 ```
 
-### 5.3 Audit Shadow Violations from Logs
-
-After rollback, review what the shadow mode would have blocked to understand the scope of enforcement impact:
+### Step 4: Audit shadow violations (do NOT delete audit entries)
 
 ```sql
--- Replace $rollback_start with the timestamp when issues began
 SELECT
   wallet,
-  COUNT(*) AS violations,
-  MIN(created_at) AS first_seen,
-  MAX(created_at) AS last_seen,
-  JSONB_AGG(DISTINCT metadata->>'state') AS observed_states
+  count(*) as violations,
+  min(created_at) as first_seen,
+  max(created_at) as last_seen
 FROM authorization_audit_log
-WHERE created_at > '2026-03-18T00:00:00Z'   -- replace with $rollback_start
-  AND metadata->>'shadow' = 'true'
+WHERE metadata->>'shadow' = 'true'
+  AND created_at > :'rollback_start'
 GROUP BY wallet
 ORDER BY violations DESC
-LIMIT 100;
+LIMIT 50;
 ```
 
-**Important:** Do not delete or modify any rows in `authorization_audit_log`. This table is the compliance trail and must remain intact.
+Review results for patterns indicating misconfiguration vs genuine unauthorized attempts.
 
-### 5.4 Root Cause Investigation Checklist
+### Step 5: Re-enable checklist (before restoring full enforcement)
 
-Before re-enabling the gate after rollback, confirm:
+Complete all items before re-enabling:
 
 ```
-[ ] False positive rate in shadow logs is below 5% threshold
-[ ] All affected wallets have been reviewed in contributor_authorization
-[ ] emission_hold queue has been triaged (released or voided as appropriate)
-[ ] Policy config values in policy_config table are correct for v1.1
-[ ] AUTH_GATE_POLICY_VERSION matches expected version in all workers
-[ ] Database indexes are healthy (no bloat on idx_auth_wallet_state)
-[ ] No serialization errors appearing in adjudication worker logs
-[ ] Redis connectivity stable (no lock timeout errors)
+[ ] False positive rate < 5% confirmed in shadow logs
+[ ] All 3 enforcement layers tested in staging
+[ ] Idempotency constraint verified (no duplicate emissions in reward_emissions)
+[ ] On-call engineer available for 2h post-restore window
+[ ] Rollback trigger documented in incident log
 ```
 
-### 5.5 Re-Enabling After Rollback
+### Invariants that must hold throughout rollback
 
-Re-enable in shadow mode and repeat the ramp schedule from Section 3.2, Step 4. Do not skip directly to full enforcement mode after a rollback.
+```
+- authorization_audit_log is append-only; NEVER mutate or delete rows
+- emission_hold rows are preserved (released_at set, not deleted)
+- contributor_authorization state preserved; no state resets
+- reward_emissions is immutable; NEVER delete rows
+```
 
-```bash
-AUTH_GATE_ENABLED=true
-AUTH_GATE_ENFORCEMENT_MODE=shadow
+### Emergency Contacts
+
+If rollback fails or unexpected behavior occurs:
+
+1. Set `AUTH_GATE_ENABLED=false` immediately (master kill switch)
+2. Page on-call engineer
+3. Preserve all logs and database state for post-mortem
+
+---
+
+## Section 6: Post-Deployment Verification
+
+After deployment to each environment, run these verification queries:
+
+### 6.1 Table existence check
+
+```sql
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public'
+  AND table_name IN (
+    'contributor_authorization',
+    'authorization_audit_log',
+    'policy_config',
+    'emission_hold',
+    'reward_emissions'
+  )
+ORDER BY table_name;
+
+-- Expected: 5 rows
+```
+
+### 6.2 Policy config verification
+
+```sql
+SELECT key, value FROM policy_config ORDER BY key;
+```
+
+### 6.3 Constraint verification
+
+```sql
+\d reward_emissions
+
+-- Verify uq_task_emission constraint exists
+```
+
+### 6.4 Index verification
+
+```sql
+SELECT indexname, indexdef
+FROM pg_indexes
+WHERE tablename IN (
+  'contributor_authorization',
+  'authorization_audit_log',
+  'reward_emissions'
+);
+```
+
+### 6.5 Sample authorization check
+
+```sql
+-- Insert test wallet if not exists
+INSERT INTO contributor_authorization (wallet, state)
+VALUES ('test_wallet_001', 'AUTHORIZED')
+ON CONFLICT (wallet) DO NOTHING;
+
+-- Verify lookup works
+SELECT wallet, state FROM contributor_authorization WHERE wallet = 'test_wallet_001';
 ```
 
 ---
 
-## Appendix: Contributor State Reference
+## Appendix A: Quick Reference
 
-```
-State Transition Diagram
-=========================
+### Environment Variables
 
-           register (stake >= 200 PFT)
-  NEW ──────────────────────────────► PROBATIONARY
-  wallet                                  │
-                                          │ stake >= 1000 PFT
-                                          │ + passing epoch
-                                          ▼
-                                      AUTHORIZED ◄──── manual grant
-                                          │
-                                          │ sustained performance
-                                          │ + linking score < 1.5
-                                          ▼
-                                        TRUSTED
-                                          │
-                              ┌───────────┼───────────┐
-                              │ violation │           │ violation
-                              ▼           │           ▼
-                          SUSPENDED       │       SUSPENDED
-                              │           │
-                              │ appeal/   │
-                              │ review    │
-                              ▼           │
-                          (any state) ◄───┘
-```
+| Variable | Values | Description |
+|----------|--------|-------------|
+| `AUTH_GATE_ENABLED` | `true`/`false` | Master kill switch |
+| `AUTH_GATE_ENFORCEMENT_MODE` | `shadow`/`soft`/`full` | Enforcement level |
+| `AUTH_GATE_LOG_LEVEL` | `debug`/`info`/`warn` | Logging verbosity |
+| `AUTH_GATE_POLICY_VERSION` | `v1.1` | Policy version |
 
----
+### State Transitions
 
-## Revision History
+| From | To | Trigger |
+|------|-----|---------|
+| (none) | UNKNOWN | Wallet first seen |
+| UNKNOWN | PROBATIONARY | Minimum stake deposited |
+| PROBATIONARY | AUTHORIZED | Full stake verified |
+| AUTHORIZED | TRUSTED | Extended track record (Layer B) |
+| Any | SUSPENDED | Admin action or violation |
+| SUSPENDED | UNKNOWN | Admin re-registration |
 
-```
-v1.0  2026-03-18  Initial deployment runbook
-                  Covers: env prereqs, SQL migrations, middleware
-                  registration, 4 integration test scenarios, rollback
-```
+### Reward Splits by State
+
+| State | Liquid | Vesting |
+|-------|--------|---------|
+| AUTHORIZED | 100% | 0% |
+| TRUSTED | 100% | 0% |
+| PROBATIONARY | 25% | 75% |
+| SUSPENDED | 0% | 0% |
+| UNKNOWN | N/A | N/A |
 
 ---
 
-*Word count: ~2,100 words*  
-*Source spec: [https://pft.permanentupperclass.com/alpha/auth-gate-enforcement-spec/](https://pft.permanentupperclass.com/alpha/auth-gate-enforcement-spec/)*  
-*Published: 2026-03-18*
+## Appendix B: Troubleshooting
+
+### "Serialization failure" errors in logs
+
+**Cause:** High contention on Gate 4 transactions.
+
+**Resolution:**
+
+1. Verify retry logic is implemented correctly (3 attempts with backoff)
+2. Check advisory lock distribution — ensure `hashWalletToInt()` spreads locks evenly
+3. If persistent, increase `pool_size` in PgBouncer
+
+### Shadow mode shows > 10% violation rate
+
+**Cause:** Many unregistered wallets attempting task completion.
+
+**Resolution:**
+
+1. Review `authorization_audit_log` for patterns
+2. Check if wallets should have been registered (data sync issue)
+3. Consider extending shadow mode period before advancing
+
+### Emission hold table growing rapidly
+
+**Cause:** Soft mode holding many emissions.
+
+**Resolution:**
+
+1. Review held emissions: `SELECT * FROM emission_hold WHERE released_at IS NULL`
+2. Release eligible wallets or investigate why wallets aren't authorized
+3. Consider reverting to shadow mode while investigating
+
+### Redis cache misses causing DB overload
+
+**Cause:** Cache TTL too short or Redis connection issues.
+
+**Resolution:**
+
+1. Increase `cache_ttl_seconds` in policy_config (e.g., 120s)
+2. Verify Redis persistence is enabled (AOF)
+3. Check Redis memory and eviction policy
+
+---
+
+## Changelog
+
+### v1.1 (2026-03-18)
+
+- Added Canonical State Model section with explicit state definitions
+- Added Source of Truth Override clarifying spec authority over architecture map
+- Added Pre-Deployment Validation Checklist (Section 0)
+- Added Architecture Alignment Note documenting 3-layer enforcement
+- Added Migration 005 for reward emission idempotency
+- Added Distributed Enforcement Points (Section 3.2)
+- Added Transaction Semantics with serializable retry logic
+- Added Failure Philosophy documenting fail-closed design
+- Added Monitoring and Alerting queries (Section 3.5)
+- Added Enforcement Level Terminology Mapping
+- Added Scenario E (idempotency) and Scenario F (race condition) tests
+- Expanded Rollback Procedure with strict ordered steps
+- PostgreSQL requirement raised to 15+ for SERIALIZABLE reliability
+
+### v1.0 (2026-03-18)
+
+- Initial release
+
+---
+
+**Document Version:** v1.1  
+**Word Count:** ~4,200 words  
+**Last Updated:** 2026-03-18  
+**Maintainer:** Post Fiat Foundation
