@@ -1,19 +1,21 @@
 ---
 layout: default
-title: "Post Fiat Task Node Architecture Map"
+title: "Post Fiat Task Node — Public Architecture Inference Map v1.0"
 date: 2026-03-18
 category: spec
 status: published
 ---
 
-# Post Fiat Task Node — Architecture Map v1.0
+# Post Fiat Task Node — Public Architecture Inference Map v1.0
 
 **Status:** PUBLISHED  
 **Version:** v1.0  
 **Date:** 2026-03-18  
 **Author:** Permanent Upper Class Validator
 
-> **Scope Limitation:** The `task-node` repository is not publicly accessible as of 2026-03-18. This document infers server-side architecture from the public `pft-chatbot-mcp` client SDK, the `postfiatd` chain fork (which is primarily consensus code, not application logic), and available README documentation. All inferences are explicitly marked. This map should be validated against the actual Keystone codebase before implementation begins. The three Authorization Gate integration points identified in §7 are architecturally defensible based on system shape — but exact file paths and method signatures require access to the server source.
+> **Scope Limitation:** No publicly accessible Task Node server repository was available at the time of writing. Server internals below are inferred from public client code (`pft-chatbot-mcp`), public protocol artifacts, and public documentation. This document does not claim direct visibility into the private Keystone backend. It is a public-artifact survey intended to identify the most plausible enforcement surfaces for Authorization Gate implementation and to bound what must be validated once internal Keystone / Task Node code is available.
+>
+> **Evidence grades used throughout:** 🟢 Publicly evidenced (confirmed from public repo/README) | 🟡 Strongly inferred (logical from client shape) | 🟠 Weakly inferred (architecturally plausible, not verifiable from public code) | 🔴 Speculative (design recommendation, not archaeology)
 
 ---
 
@@ -254,6 +256,8 @@ The wrapped key shards are included in the Keystone v1 envelope alongside the IP
 
 ## 7. Three Authorization Gate Integration Points
 
+> The hooks below are **recommended enforcement attachment points** based on inferred system shape — not confirmed current middleware insertion sites. The left column describes the observable/inferable enforcement surface; the right column describes the recommended Authorization Gate hook at that surface.
+
 ### Integration Point 1: Keystone gRPC Write Gate
 
 **Where (inferred):** `KeystoneService.UploadContent()` gRPC method — the authenticated endpoint that accepts encrypted evidence blobs for IPFS pinning.
@@ -342,3 +346,7 @@ Honest accounting of what we cannot determine from public repositories:
 ---
 
 *This document represents the state of public knowledge as of 2026-03-18. All inferences are marked as such. The architecture map should be updated when Keystone gRPC proto definitions or internal documentation become available.*
+
+---
+
+*Architecture map v1.0 — ~2,550 words. Published 2026-03-18. Sources: [postfiatorg/pft-chatbot-mcp](https://github.com/postfiatorg/pft-chatbot-mcp) (README + src/{chain,grpc,crypto}), [postfiatorg/postfiatd](https://github.com/postfiatorg/postfiatd). No task-node server repo exists publicly in the org (9 repos total as of 2026-03-18).*
