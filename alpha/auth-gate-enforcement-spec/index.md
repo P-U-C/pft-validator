@@ -1,6 +1,6 @@
 ---
 layout: default
-title: "Authorization Gate Enforcement: Task Node Integration Specification"
+title: "Authorization Gate Enforcement: Task Node Integration Specification v1.1"
 date: 2026-03-18
 category: spec
 status: published
@@ -8,115 +8,187 @@ status: published
 
 # Authorization Gate Enforcement: Task Node Integration Specification
 
-**Status:** PUBLISHED  
-**Version:** v1.0  
-**Date:** 2026-03-18  
+**Status:** PUBLISHED
+**Version:** v1.1
+**Date:** 2026-03-18
 **Author:** Permanent Upper Class Validator
+**Review:** Three-panel review incorporated — protocol designer, implementation engineer, mechanism design lens
 
 ---
 
 ## Abstract
 
-The Authorization Gate v4.1 design defines four contributor states (UNAUTHORIZED, PROBATIONARY, AUTHORIZED, SUSPENDED), concentration caps, linking score thresholds, registration stakes, and vesting rules. This specification maps those rules into enforceable code at every decision point in the Task Node pipeline. The gap being closed: approximately 1M PFT in unauthorized emissions that flowed without identity verification or sybil resistance.
+The Authorization Gate v4.1 design defines five contributor states (UNKNOWN, PROBATIONARY, AUTHORIZED, TRUSTED, SUSPENDED), concentration caps, linking score thresholds, registration stakes, and vesting rules. This specification maps those rules into enforceable code at every decision point in the Task Node pipeline, closing approximately 1M PFT in unauthorized emissions that flowed without identity verification or sybil resistance.
 
-The Task Node runs TypeScript/Node.js with PostgreSQL for state and IPFS for evidence hashing. The task lifecycle is: proposal → acceptance → evidence submission → adjudication → reward emission. Every transition is now gated.
+The Task Node runs TypeScript/Node.js with PostgreSQL for state, Redis for hot-path caching, and IPFS for evidence hashing. The task lifecycle is: registration → proposal → acceptance → evidence submission → adjudication → reward emission. Every transition is gated.
+
+This spec is structured in two layers:
+
+- **Layer A (ship now):** Gate 4 hard enforcement, transaction boundaries, auth state table, probation split, audit log, shadow/soft/full rollout, grandfathering, rollback + replay. Closes the exploit.
+- **Layer B (phase 2):** Linking score declaration flows, concentration graph dynamics, grouped wallet treatment, advanced cooldown escalation, clawback workflows, stake slashing integration.
 
 ---
 
-## 1. Pipeline Integration Points
+## System Invariants
 
-Every decision point in the task lifecycle calls `authorizationCheck()` before proceeding. The check is synchronous and blocking — no task progresses without a PASS result.
+These are non-negotiable. Any implementation that violates these is broken.
+
+1. **No unauthorized rewards.** No contributor in UNAUTHORIZED or SUSPENDED state may receive newly committed liquid reward in full enforcement mode.
+2. **Exactly-once emission.** Reward emission is idempotent. Duplicate emission for the same task_id is impossible.
+3. **Replayable decisions.** Authorization decisions must be replayable from audit logs alone.
+4. **Monotonic gate evaluation.** Within a transaction, earlier gates do not create rights that later gates must honor. Each gate evaluates independently against current state.
+5. **No silent degradation.** Hold states do not silently degrade to pass states. A HELD result stays HELD until explicitly resolved.
+6. **Atomic emission.** No reward emission may be committed unless the authorization decision and the emission write occur in the same DB transaction boundary.
+7. **Decision provenance.** Every authorization decision must reference: `auth_version`, `ledger_height`, `epoch_id`, `policy_version`.
+
+---
+
+## 1. Contributor State Machine
+
+Five states with explicit transition rules:
+
+```
+                    ┌──────────┐
+                    │  UNKNOWN  │  ← wallet seen, no registration
+                    └─────┬────┘
+                          │ register + post stake
+                          ▼
+                    ┌──────────────┐
+        ┌──────────│ PROBATIONARY  │◄─────────────────┐
+        │          └──────┬───────┘                    │
+        │                 │ stake verified +            │ unfreeze /
+        │                 │ KYC clear +                 │ admin restore
+        │                 │ linking < 2.5               │
+        │                 ▼                             │
+        │          ┌──────────────┐              ┌─────┴──────┐
+        │          │  AUTHORIZED  │──────────────│  SUSPENDED  │
+        │          └──────┬───────┘  sybil /     └─────┬──────┘
+        │                 │          3rd offense        │
+        │                 │ sustained good              │ permanent ban
+        │                 │ standing (Layer B)          ▼
+        │                 ▼                        [terminal]
+        │          ┌──────────┐
+        │          │  TRUSTED  │  (Layer B — reduced checks)
+        │          └──────────┘
+        │                │
+        └────────────────┘  linking hold / stake breach
+```
+
+### State Definitions
+
+| State | Can Propose | Can Accept Tasks | Reward Treatment | Retriable |
+|-------|-------------|------------------|------------------|-----------|
+| UNKNOWN | Yes | No | None | Yes — register |
+| PROBATIONARY | Yes | Yes | 25% liquid / 75% vesting | Yes — clear conditions |
+| AUTHORIZED | Yes | Yes | 100% liquid | N/A |
+| TRUSTED | Yes | Yes | 100% liquid, reduced gates (Layer B) | N/A |
+| SUSPENDED | No | No | All frozen | Requires admin review |
+
+---
+
+## 2. Decision Outcome States
+
+Gate checks return one of these outcomes per task:
+
+| Outcome | Meaning | Retriable | Next Action |
+|---------|---------|-----------|-------------|
+| PASS | Proceed | N/A | Continue pipeline |
+| REJECTED | Final for this task | No | Contributor may submit new task |
+| HELD | Pending review | No (blocked) | No new tasks until resolved |
+| FROZEN | Emission held | Yes (can submit tasks) | Awaiting admin unfreeze |
+| SUSPENDED | No participation | No | Admin review required |
+| VOIDED | Task cancelled | No | No credit, resubmit allowed |
+| RETRIABLE | Temporary block | Yes | Retry after `Retry-After` |
+
+---
+
+## 3. Pipeline Integration Points
+
+Every decision point calls `authorizationCheck()` before proceeding. The check is synchronous and blocking.
 
 ### Flow Diagram
 
 ```
-  ┌─────────────────────────────────────────────────────────┐
-  │                    TASK PROPOSAL                         │
-  │              (no auth check — anyone proposes)           │
-  └──────────────────────┬──────────────────────────────────┘
+  ┌──────────────────────────────────────────────────────────┐
+  │  GATE 0: REGISTRATION (integration point)                │
+  │                                                           │
+  │  State: UNKNOWN → PROBATIONARY                            │
+  │  Requires: wallet signature + minimum stake deposit       │
+  │  Creates: contributor_authorization row                   │
+  │  Emits: audit log entry                                   │
+  └──────────────────────┬────────────────────────────────────┘
                          │
                          ▼
-  ┌─────────────────────────────────────────────────────────┐
-  │  GATE 1: TASK ACCEPTANCE                                 │
-  │                                                          │
-  │  Check: state ∈ {AUTHORIZED, PROBATIONARY}               │
-  │         + concentration_cap(control_graph, epoch)        │
-  │         + cooldown_expired(wallet)                       │
-  │         + linking_score < 4.5                            │
-  │                                                          │
-  │  PASS → accept task, log audit entry                     │
-  │  FAIL → reject with error code:                          │
-  │    UNAUTHORIZED        → 403, prompt registration        │
-  │    SUSPENDED           → 403, no retry                   │
-  │    COOLDOWN_ACTIVE     → 429, Retry-After header         │
-  │    CONCENTRATION_CAP   → 403, try different graph        │
-  │    LINKING_FLAG_HOLD   → 403, declaration required       │
-  └──────────────────────┬──────────────────────────────────┘
+  ┌──────────────────────────────────────────────────────────┐
+  │  TASK PROPOSAL (no auth check — anyone proposes)          │
+  └──────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+  ┌──────────────────────────────────────────────────────────┐
+  │  GATE 1: TASK ACCEPTANCE                                  │
+  │                                                           │
+  │  Check: state ∈ {AUTHORIZED, PROBATIONARY, TRUSTED}       │
+  │         + concentration_cap(control_graph, epoch)         │
+  │         + cooldown_expired(wallet)                        │
+  │         + linking_score < 4.5                             │
+  │                                                           │
+  │  PASS → accept task, log audit entry                      │
+  │  FAIL → reject with external error code                   │
+  └──────────────────────┬────────────────────────────────────┘
                          │ PASS
                          ▼
-  ┌─────────────────────────────────────────────────────────┐
-  │  GATE 2: EVIDENCE SUBMISSION                             │
-  │                                                          │
-  │  Check: state ∈ {AUTHORIZED, PROBATIONARY}               │
-  │         + wallet matches accepted contributor            │
-  │         + cooldown_expired(wallet)                       │
-  │         + linking_score < 4.5                            │
-  │                                                          │
-  │  PASS → hash evidence to IPFS, store reference           │
-  │  FAIL → reject submission:                               │
-  │    SUSPENDED           → 403, freeze in-progress tasks   │
-  │    COOLDOWN_ACTIVE     → 429, Retry-After                │
-  │    LINKING_FLAG_HOLD   → 403, pending declaration        │
-  └──────────────────────┬──────────────────────────────────┘
+  ┌──────────────────────────────────────────────────────────┐
+  │  GATE 2: EVIDENCE SUBMISSION                              │
+  │                                                           │
+  │  Check: state ∈ {AUTHORIZED, PROBATIONARY, TRUSTED}       │
+  │         + wallet matches accepted contributor             │
+  │         + cooldown_expired(wallet)                        │
+  │         + linking_score < 4.5                             │
+  │         + IPFS available (hard requirement)               │
+  │                                                           │
+  │  PASS → hash evidence to IPFS, store reference            │
+  │  FAIL → reject submission                                 │
+  └──────────────────────┬────────────────────────────────────┘
                          │ PASS
                          ▼
-  ┌─────────────────────────────────────────────────────────┐
-  │  GATE 3: ADJUDICATION                                    │
-  │                                                          │
-  │  Check: re-validate state (may have changed since        │
-  │         submission). If state degraded to SUSPENDED      │
-  │         during adjudication window → auto-reject task.   │
-  │         Check linking_score for provisional cap.         │
-  │                                                          │
-  │  PASS → adjudicator proceeds                             │
-  │  FAIL → task marked REJECTED_AUTH, PFT not emitted       │
-  │    SUSPENDED           → task voided, stake review       │
-  │    LINKING_FLAG_HOLD   → hold adjudication 48h           │
-  └──────────────────────┬──────────────────────────────────┘
+  ┌──────────────────────────────────────────────────────────┐
+  │  GATE 3: ADJUDICATION                                     │
+  │                                                           │
+  │  Check: re-validate state (may have changed since         │
+  │         submission). If degraded → auto-reject task.      │
+  │         Check linking_score for provisional cap.          │
+  │                                                           │
+  │  PASS → adjudicator proceeds                              │
+  │  FAIL → REJECTED_AUTH or HELD (48h for linking flag)      │
+  └──────────────────────┬────────────────────────────────────┘
                          │ PASS
                          ▼
-  ┌─────────────────────────────────────────────────────────┐
-  │  GATE 4: REWARD EMISSION                                 │
-  │                                                          │
-  │  Check: final state verification                         │
-  │         + cumulative PFT vs unauthorized threshold       │
-  │         + concentration_cap re-check (epoch may shift)   │
-  │         + PROBATIONARY vesting split enforcement         │
-  │                                                          │
-  │  PASS (AUTHORIZED) → 100% liquid emission                │
-  │  PASS (PROBATIONARY) → 25% liquid / 75% vesting escrow  │
-  │  FAIL → hold emission, trigger escalation:               │
-  │    UNAUTHORIZED        → clawback review                 │
-  │    CONCENTRATION_CAP   → defer to next epoch             │
-  │    PROBATIONARY_LIMIT  → cap at probationary max         │
-  └─────────────────────────────────────────────────────────┘
+  ┌──────────────────────────────────────────────────────────┐
+  │  GATE 4: REWARD EMISSION (transactional — see §4)         │
+  │                                                           │
+  │  Check: final state verification                          │
+  │         + cumulative PFT vs threshold                     │
+  │         + concentration_cap re-check                      │
+  │         + PROBATIONARY vesting split enforcement          │
+  │                                                           │
+  │  PASS (AUTHORIZED/TRUSTED) → 100% liquid emission         │
+  │  PASS (PROBATIONARY) → 25% liquid / 75% vesting escrow   │
+  │  FAIL → hold emission, trigger escalation                 │
+  └──────────────────────────────────────────────────────────┘
 ```
 
 ### State Transition Side Effects
 
-When a gate check fails due to state degradation detected mid-pipeline:
-
 ```
-  State degraded during pipeline:
-  
   AUTHORIZED → PROBATIONARY (linking_score hit)
     → In-flight tasks: complete normally
     → New emissions: apply 25/75 split going forward
-  
+
   AUTHORIZED → SUSPENDED (sybil confirmed)
-    → In-flight tasks: void all, freeze evidence
-    → Pending emissions: freeze, stake slashed
-  
+    → In-flight tasks at Gate 2+: complete (honest work gets credit)
+    → In-flight tasks before Gate 2: VOIDED
+    → Pending emissions: FROZEN, stake slashed
+
   PROBATIONARY → SUSPENDED
     → 75% vesting balance: forfeited
     → 25% liquid already emitted: clawback review
@@ -124,56 +196,168 @@ When a gate check fails due to state degradation detected mid-pipeline:
 
 ---
 
-## 2. PostgreSQL Schema
+## 4. Gate 4 Transaction Boundary
+
+Gate 4 is the critical path. All state reads and writes execute within a single serializable transaction:
+
+```sql
+BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+
+  -- Lock rows to prevent concurrent emission
+  SELECT * FROM contributor_authorization
+    WHERE wallet = $1 FOR UPDATE;
+
+  SELECT * FROM control_graph_cap_state
+    WHERE control_graph_id = $2 AND epoch_id = $3 FOR UPDATE;
+
+  -- Assert reward not already emitted (exactly-once)
+  SELECT 1 FROM emission_log
+    WHERE task_id = $4;
+  -- If found: ROLLBACK, return cached result
+
+  -- Re-run authorization decision using locked rows
+  -- (full gate check logic against locked state)
+
+  -- Write reward decision
+  INSERT INTO emission_log (task_id, wallet, pft_amount, liquid, vesting,
+    auth_version, ledger_height, epoch_id, policy_version, idempotency_key)
+  VALUES ($4, $1, ...);
+
+  -- Update cap counters
+  UPDATE control_graph_cap_state
+    SET pft_emitted = pft_emitted + $5,
+        contributor_count = contributor_count + 1
+    WHERE control_graph_id = $2 AND epoch_id = $3;
+
+  -- Update contributor counters
+  UPDATE contributor_authorization
+    SET total_pft_emitted_lifetime = total_pft_emitted_lifetime + $5,
+        total_pft_emitted_epoch = total_pft_emitted_epoch + $5,
+        auth_version = auth_version + 1,
+        updated_at = NOW()
+    WHERE wallet = $1;
+
+  -- Append audit log
+  INSERT INTO authorization_audit_log (...) VALUES (...);
+
+COMMIT;
+```
+
+### Retry Policy on Serialization Failure
+
+- **Max retries:** 3
+- **Backoff:** Exponential — 100ms, 400ms, 1600ms
+- **After 3 failures:** Fail-closed (reject emission, alert ops)
+
+---
+
+## 5. Idempotency and Replay
+
+### Authorization Check Idempotency
+
+```
+idempotency_key = sha256(contributor_wallet + task_id + check_type + epoch_id)
+```
+
+- If key exists in `authorization_check_cache`: return cached result, do not re-execute
+- Cache TTL: 5 minutes (short — state can change)
+
+### Emission Idempotency
+
+- Before writing to `emission_log`: check `WHERE task_id = $task_id`
+- If found: return previous result, do not double-emit
+- This check happens inside the Gate 4 transaction (§4)
+
+---
+
+## 6. PostgreSQL Schema
+
+### Three-Ledger Architecture
+
+1. **Authorization Ledger** — contributor state, scores, stakes
+2. **Emission Ledger** — every PFT emission with full provenance
+3. **Audit Ledger** — immutable decision log for replay
 
 ```sql
 -- ============================================================
--- contributor_authorization
--- Core state table. One row per contributor wallet.
+-- contributor_authorization (Authorization Ledger)
+-- One row per contributor. Source of truth for gate checks.
 -- ============================================================
 CREATE TABLE contributor_authorization (
-    wallet              VARCHAR(44) PRIMARY KEY,  -- solana pubkey
-    state               VARCHAR(20) NOT NULL DEFAULT 'UNAUTHORIZED'
-                        CHECK (state IN ('UNAUTHORIZED','PROBATIONARY','AUTHORIZED','SUSPENDED')),
-    tier                SMALLINT NOT NULL DEFAULT 0,
-    registration_stake  BIGINT NOT NULL DEFAULT 0,        -- lamports of PFT staked
-    linking_score       NUMERIC(4,2) NOT NULL DEFAULT 0.0,
-    cooldown_until      TIMESTAMPTZ,
-    cooldown_count      SMALLINT NOT NULL DEFAULT 0,       -- escalation counter
-    cooldown_epoch      VARCHAR(32),                       -- epoch of last cooldown
-    total_pft_earned    BIGINT NOT NULL DEFAULT 0,         -- lifetime PFT (liquid)
-    vesting_pft_held    BIGINT NOT NULL DEFAULT 0,         -- locked 75% portion
-    control_graph_id    VARCHAR(64),
-    declaration_prompted_at TIMESTAMPTZ,
-    declaration_deadline    TIMESTAMPTZ,
-    grandfathered       BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    wallet                    TEXT PRIMARY KEY,  -- contributor address (chain-agnostic)
+    state                     VARCHAR(20) NOT NULL DEFAULT 'UNKNOWN'
+                              CHECK (state IN (
+                                'UNKNOWN','PROBATIONARY','AUTHORIZED',
+                                'TRUSTED','SUSPENDED'
+                              )),
+    auth_version              BIGINT NOT NULL DEFAULT 0,  -- optimistic concurrency, increment on every mutation
+    tier                      SMALLINT NOT NULL DEFAULT 0,
+    registration_stake        BIGINT NOT NULL DEFAULT 0,
+    linking_score             NUMERIC(4,2) NOT NULL DEFAULT 0.0,
+    cooldown_until            TIMESTAMPTZ,
+    cooldown_count            SMALLINT NOT NULL DEFAULT 0,
+    cooldown_epoch            VARCHAR(32),
+    total_pft_emitted_lifetime BIGINT NOT NULL DEFAULT 0,
+    total_pft_emitted_epoch   BIGINT NOT NULL DEFAULT 0,  -- reset each epoch
+    total_pft_frozen          BIGINT NOT NULL DEFAULT 0,
+    total_pft_vested          BIGINT NOT NULL DEFAULT 0,
+    total_pft_clawed_back     BIGINT NOT NULL DEFAULT 0,
+    control_graph_id          VARCHAR(64),
+    declaration_prompted_at   TIMESTAMPTZ,
+    declaration_deadline      TIMESTAMPTZ,
+    grandfathered             BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at                TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Hot path: every gate check queries by wallet + state
 CREATE INDEX idx_auth_wallet_state ON contributor_authorization(wallet, state);
--- Linking score monitoring batch job
-CREATE INDEX idx_auth_linking_score ON contributor_authorization(linking_score) WHERE linking_score >= 1.5;
--- Cooldown queries
+CREATE INDEX idx_auth_linking ON contributor_authorization(linking_score) WHERE linking_score >= 1.5;
 CREATE INDEX idx_auth_cooldown ON contributor_authorization(cooldown_until) WHERE cooldown_until IS NOT NULL;
 
 -- ============================================================
--- authorization_audit_log
+-- emission_log (Emission Ledger)
+-- Exactly-once emission record. Source of truth for payouts.
+-- ============================================================
+CREATE TABLE emission_log (
+    id                BIGSERIAL PRIMARY KEY,
+    task_id           VARCHAR(64) NOT NULL UNIQUE,  -- enforces exactly-once
+    wallet            TEXT NOT NULL,
+    pft_amount        BIGINT NOT NULL,
+    liquid_amount     BIGINT NOT NULL,
+    vesting_amount    BIGINT NOT NULL,
+    auth_version      BIGINT NOT NULL,
+    ledger_height     BIGINT NOT NULL,
+    epoch_id          VARCHAR(32) NOT NULL,
+    policy_version    VARCHAR(20) NOT NULL,
+    idempotency_key   VARCHAR(128) NOT NULL UNIQUE,
+    contributor_state VARCHAR(20) NOT NULL,
+    cgi_boost         NUMERIC(3,1) DEFAULT 0.0,
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_emission_wallet ON emission_log(wallet);
+CREATE INDEX idx_emission_epoch ON emission_log(epoch_id);
+
+-- ============================================================
+-- authorization_audit_log (Audit Ledger)
 -- Immutable append-only. Never UPDATE or DELETE.
 -- ============================================================
 CREATE TABLE authorization_audit_log (
-    id                  BIGSERIAL PRIMARY KEY,
-    wallet              VARCHAR(44) NOT NULL,
-    old_state           VARCHAR(20),
-    new_state           VARCHAR(20) NOT NULL,
-    reason              TEXT NOT NULL,
-    triggered_by        VARCHAR(64) NOT NULL,   -- 'gate_1','gate_4','linking_monitor','admin','escalation'
-    task_id             VARCHAR(64),
-    epoch_id            VARCHAR(32),
-    pft_amount          BIGINT,
-    metadata            JSONB,
-    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id                BIGSERIAL PRIMARY KEY,
+    wallet            TEXT NOT NULL,
+    old_state         VARCHAR(20),
+    new_state         VARCHAR(20) NOT NULL,
+    reason            TEXT NOT NULL,
+    reason_code       VARCHAR(64),       -- machine-readable
+    triggered_by      VARCHAR(64) NOT NULL,
+    task_id           VARCHAR(64),
+    epoch_id          VARCHAR(32),
+    auth_version      BIGINT,
+    ledger_height     BIGINT,
+    policy_version    VARCHAR(20),
+    pft_amount        BIGINT,
+    metadata          JSONB,
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_audit_wallet_time ON authorization_audit_log(wallet, created_at DESC);
@@ -181,99 +365,115 @@ CREATE INDEX idx_audit_epoch ON authorization_audit_log(epoch_id);
 
 -- ============================================================
 -- cooldown_escalation_log
--- Tracks every offense for escalation ladder
 -- ============================================================
 CREATE TABLE cooldown_escalation_log (
-    id                  BIGSERIAL PRIMARY KEY,
-    wallet              VARCHAR(44) NOT NULL,
-    incident_type       VARCHAR(40) NOT NULL,   -- 'unauthorized_emission','linking_flag','stake_breach'
-    offense_number      SMALLINT NOT NULL,
-    epoch_id            VARCHAR(32) NOT NULL,
-    cooldown_hours      INT NOT NULL,
-    action_taken        VARCHAR(40) NOT NULL,   -- 'warning','probation','suspension_review'
-    pft_frozen          BIGINT DEFAULT 0,
-    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id                BIGSERIAL PRIMARY KEY,
+    wallet            TEXT NOT NULL,
+    incident_type     VARCHAR(40) NOT NULL,
+    offense_number    SMALLINT NOT NULL,
+    epoch_id          VARCHAR(32) NOT NULL,
+    cooldown_hours    INT NOT NULL,
+    action_taken      VARCHAR(40) NOT NULL,
+    pft_frozen        BIGINT DEFAULT 0,
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_cooldown_wallet_epoch ON cooldown_escalation_log(wallet, epoch_id);
 
 -- ============================================================
 -- control_graph_cap_state
--- Per-epoch budget tracking for 15% concentration cap
+-- Per-epoch budget tracking for concentration cap
 -- ============================================================
 CREATE TABLE control_graph_cap_state (
-    control_graph_id    VARCHAR(64) NOT NULL,
-    epoch_id            VARCHAR(32) NOT NULL,
-    total_pft_budget    BIGINT NOT NULL,          -- 15% of epoch total
-    pft_emitted         BIGINT NOT NULL DEFAULT 0,
-    contributor_count   INT NOT NULL DEFAULT 0,
-    cgi_boost           NUMERIC(3,1) NOT NULL DEFAULT 0.0, -- +0.3 underserved, -0.1 saturated
+    control_graph_id  VARCHAR(64) NOT NULL,
+    epoch_id          VARCHAR(32) NOT NULL,
+    total_pft_budget  BIGINT NOT NULL,
+    pft_emitted       BIGINT NOT NULL DEFAULT 0,
+    contributor_count INT NOT NULL DEFAULT 0,
+    cgi_boost         NUMERIC(3,1) NOT NULL DEFAULT 0.0,
     PRIMARY KEY (control_graph_id, epoch_id)
 );
 
-CREATE INDEX idx_cg_epoch ON control_graph_cap_state(epoch_id);
+-- ============================================================
+-- policy_config
+-- All magic constants. No hardcoded values in application code.
+-- ============================================================
+CREATE TABLE policy_config (
+    key               VARCHAR(64) PRIMARY KEY,
+    value             NUMERIC NOT NULL,
+    description       TEXT,
+    policy_version    VARCHAR(20),
+    updated_at        TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Seed values:
+INSERT INTO policy_config (key, value, description, policy_version) VALUES
+  ('unauthorized_pft_threshold',         10000,   'PFT threshold triggering suspension for UNAUTHORIZED wallets', 'v1.1'),
+  ('probation_liquid_bps',               2500,    '25% liquid portion for PROBATIONARY emissions', 'v1.1'),
+  ('probation_vesting_bps',              7500,    '75% vesting portion for PROBATIONARY emissions', 'v1.1'),
+  ('declaration_window_seconds',         1209600, '14 days to respond to linking declaration', 'v1.1'),
+  ('linking_soft_flag_threshold',        1.5,     'Linking score: soft flag (log only)', 'v1.1'),
+  ('linking_declaration_threshold',      2.5,     'Linking score: declaration prompt', 'v1.1'),
+  ('linking_provisional_cap_threshold',  3.5,     'Linking score: provisional task cap', 'v1.1'),
+  ('linking_immediate_group_threshold',  4.5,     'Linking score: immediate grouping', 'v1.1'),
+  ('concentration_cap_bps',             1500,     '15% epoch concentration cap', 'v1.1'),
+  ('grandfathering_grace_days',         30,       'Days before grandfathered wallets must stake', 'v1.1'),
+  ('shadow_mode_false_positive_max_pct', 5,       'Max acceptable false positive rate in shadow mode', 'v1.1'),
+  ('cooldown_first_offense_hours',      24,       '1st offense: 24h cooldown', 'v1.1'),
+  ('cooldown_second_offense_days',       7,       '2nd offense: 7d cooldown', 'v1.1'),
+  ('cooldown_third_offense_action',      0,       'suspension_review (0 = enum placeholder)', 'v1.1');
 ```
 
 ---
 
-## 3. API Contract
+## 7. Redis Cache Spec
 
-### Request
+Hot-path caching for contributor_authorization:
 
-```typescript
-interface AuthorizationCheckRequest {
-  contributor_wallet: string;   // 44-char base58 solana pubkey
-  check_type: 'task_accept' | 'evidence_submit' | 'adjudicate' | 'reward_emit';
-  task_id: string;
-  epoch_id: string;
-  pft_amount?: number;          // required for reward_emit
-  control_graph_id?: string;    // required for task_accept and reward_emit
-}
+```
+Key:    auth:{wallet}
+Value:  JSON serialization of contributor_authorization row
+TTL:    30 seconds
 ```
 
-### Response
+**Read path:** Gate checks read Redis first → on miss, read Postgres → populate cache.
 
-```typescript
-interface AuthorizationCheckResponse {
-  allowed: boolean;
-  contributor_state: 'UNAUTHORIZED' | 'PROBATIONARY' | 'AUTHORIZED' | 'SUSPENDED';
-  error_code?: AuthErrorCode;
-  error_message?: string;
-  retry_after_seconds?: number;           // present when COOLDOWN_ACTIVE
-  vesting_split?: { liquid: number; vesting: number }; // present for PROBATIONARY reward_emit
-  cgi_boost?: number;                     // present for reward_emit
-  concentration_remaining_pft?: number;   // budget left in control graph this epoch
-  linking_score?: number;
-  declaration_deadline?: string;          // ISO 8601, present when declaration prompted
-}
+**Invalidation:** Any state write to `contributor_authorization` immediately DELETEs `auth:{wallet}`.
 
-type AuthErrorCode =
-  | 'UNAUTHORIZED'                // wallet not registered, state = UNAUTHORIZED
-  | 'SUSPENDED'                   // confirmed sybil or 3rd offense
-  | 'COOLDOWN_ACTIVE'             // cooldown not expired, check retry_after_seconds
-  | 'CONCENTRATION_CAP_EXCEEDED'  // control graph hit 15% epoch cap
-  | 'PROBATIONARY_LIMIT_EXCEEDED' // probationary contributor hit per-epoch PFT ceiling
-  | 'LINKING_FLAG_HOLD';          // linking_score ≥ 2.5, declaration pending
-```
+**Redis unavailable:** Fall through to Postgres. Log warning. Do not fail.
 
-### HTTP Status Codes
+**Stale detection:** If `updated_at` in cached row is > 30s old on a hot-path check, re-read from Postgres and log staleness metric.
 
-| Code | When | Body |
-|------|------|------|
-| `200` | Check passed (`allowed: true`) | Full response |
-| `403` | UNAUTHORIZED, SUSPENDED, CONCENTRATION_CAP_EXCEEDED, PROBATIONARY_LIMIT_EXCEEDED, LINKING_FLAG_HOLD | Response with `error_code` |
-| `429` | COOLDOWN_ACTIVE | Response with `Retry-After` header (seconds) and `retry_after_seconds` in body |
-| `400` | Malformed request (missing fields, bad wallet format) | Validation error |
-| `500` | Internal failure (DB down, etc.) | Fail-closed: treat as reject |
+---
 
-### Retry-After Semantics
+## 8. Error Codes: External vs Internal
 
-When `error_code === 'COOLDOWN_ACTIVE'`, the response includes:
-- HTTP `Retry-After` header with seconds until cooldown expires
-- `retry_after_seconds` in JSON body (same value)
-- Clients MUST NOT retry before this window. Repeated calls during cooldown do NOT reset the timer but ARE logged.
+### External (client-facing HTTP responses)
 
-### Endpoint
+| Code | HTTP | Meaning |
+|------|------|---------|
+| NOT_ELIGIBLE | 403 | Wallet cannot participate |
+| RETRY_LATER | 429 | Temporary block, check Retry-After |
+| UNDER_REVIEW | 403 | Decision pending human review |
+
+### Internal (audit logs only — never exposed to contributors)
+
+| Code | Meaning |
+|------|---------|
+| UNAUTHORIZED | State is UNKNOWN/UNAUTHORIZED |
+| SUSPENDED | Confirmed sybil or 3rd offense |
+| COOLDOWN_ACTIVE | Cooldown timer running |
+| CONCENTRATION_CAP_EXCEEDED | Control graph hit epoch cap |
+| PROBATIONARY_LIMIT_EXCEEDED | Probationary per-epoch ceiling |
+| LINKING_FLAG_HOLD | Linking score ≥ 2.5, declaration pending |
+| EXTRACTION_FLAG | Suspected extraction pattern |
+| TIER_ACCESS_DENIED | Task tier exceeds contributor tier |
+
+---
+
+## 9. API Contract
+
+### Authorization Check
 
 ```
 POST /api/v1/authorization/check
@@ -281,270 +481,256 @@ Content-Type: application/json
 Authorization: Bearer <service-token>
 ```
 
-Internal service-to-service call. Not exposed to contributors directly. The Task Node calls this at each gate.
+Internal service-to-service only.
+
+```typescript
+interface AuthorizationCheckRequest {
+  contributor_wallet: string;   // contributor address (chain-agnostic)
+  check_type: 'task_accept' | 'evidence_submit' | 'adjudicate' | 'reward_emit';
+  task_id: string;
+  epoch_id: string;
+  pft_amount?: number;          // required for reward_emit
+  control_graph_id?: string;    // required for task_accept and reward_emit
+}
+
+interface AuthorizationCheckResponse {
+  allowed: boolean;
+  contributor_state: string;
+  error_code?: string;           // external codes only
+  error_message?: string;
+  retry_after_seconds?: number;
+  vesting_split?: { liquid_bps: number; vesting_bps: number };
+  concentration_remaining_pft?: number;
+  auth_version: number;
+  policy_version: string;
+}
+```
+
+### Contributor Status (public-facing)
+
+```
+GET /api/v1/authorization/status
+Authorization: Bearer <contributor-token>
+```
+
+Returns:
+```json
+{
+  "state": "PROBATIONARY",
+  "reason": "Linking score above threshold — declaration required",
+  "next_step": "Submit related wallet declaration at /api/v1/declaration",
+  "declaration_deadline": "2026-04-01T00:00:00Z"
+}
+```
+
+No internal diagnostic codes exposed. State transitions above PROBATIONARY severity require signed policy reason codes.
 
 ---
 
-## 4. Cooldown Escalation Logic + Scenarios
+## 10. Failure Mode Matrix
 
-### Pseudocode
+| Failure | Gate 1 | Gate 2 | Gate 3 | Gate 4 |
+|---------|--------|--------|--------|--------|
+| **DB unavailable** | Fail-closed (reject, warn) | Fail-closed | Fail-closed | Fail-closed |
+| **Redis unavailable** | Fall through to DB, warn | Fall through to DB | Fall through to DB | Fall through to DB |
+| **IPFS unavailable** | N/A | Reject (no hash = no evidence) | N/A | N/A |
+| **Stale auth row (>30s)** | Re-read from DB, log | Re-read, log | Re-read, log | Re-read inside txn |
+| **Duplicate request** | Return cached (idempotency key) | Return cached | Return cached | Return cached |
+| **Cap row missing** | Fail-closed (reject, alert) | N/A | N/A | Fail-closed (alert) |
+| **Serialization conflict** | N/A | N/A | N/A | Retry 3x, then fail-closed |
+| **Policy config unavailable** | Use hardcoded safe defaults, alert | Same | Same | Same |
+
+**Hardcoded safe defaults** (used only when policy_config table is unreachable):
+- `unauthorized_pft_threshold`: 10000
+- `probation_liquid_bps`: 2500
+- `concentration_cap_bps`: 1500
+- All linking thresholds: as listed in §6 seed values
+
+---
+
+## 11. Cooldown Escalation Logic
 
 ```
 function escalate_cooldown(wallet, incident_type, current_state, epoch_id):
-    offenses = COUNT cooldown_escalation_log
-                WHERE wallet = wallet AND epoch_id = epoch_id
+    offenses = COUNT(*) FROM cooldown_escalation_log
+               WHERE wallet = $wallet AND epoch_id = $epoch_id
 
-    auth = SELECT * FROM contributor_authorization WHERE wallet = wallet
+    auth = SELECT * FROM contributor_authorization WHERE wallet = $wallet
 
-    // Check PFT threshold breach (immediate escalation)
-    if current_state == 'UNAUTHORIZED' AND auth.total_pft_earned > 10_000:
-        action = 'suspension_review'
-        cooldown_hours = -1  // indefinite until review
-        new_state = 'SUSPENDED'
-        freeze_all_pft(wallet)
-        INSERT cooldown_escalation_log(wallet, incident_type, offenses+1,
-               epoch_id, cooldown_hours, action, auth.total_pft_earned)
-        UPDATE contributor_authorization
-            SET state='SUSPENDED', cooldown_until=NULL, updated_at=NOW()
-        INSERT authorization_audit_log(...)
-        RETURN {action, new_state}
+    // PFT threshold breach — immediate suspension
+    if current_state == 'UNKNOWN'
+       AND auth.total_pft_emitted_lifetime > policy('unauthorized_pft_threshold'):
+        → state = SUSPENDED, freeze all PFT, log, RETURN
 
-    if offenses == 0:
-        // 1st offense this epoch
-        action = 'warning'
-        cooldown_hours = 24
-        new_state = current_state  // no state change
-        UPDATE contributor_authorization
-            SET cooldown_until = NOW() + INTERVAL '24 hours',
-                cooldown_count = cooldown_count + 1,
-                cooldown_epoch = epoch_id,
-                updated_at = NOW()
+    if offenses == 0:  // 1st offense
+        → cooldown = policy('cooldown_first_offense_hours') hours
+        → no state change, just cooldown timer
 
-    else if offenses == 1:
-        // 2nd offense same epoch
-        action = 'probation'
-        cooldown_hours = 168  // 7 days
-        new_state = 'PROBATIONARY'
-        UPDATE contributor_authorization
-            SET state = 'PROBATIONARY',
-                cooldown_until = NOW() + INTERVAL '7 days',
-                cooldown_count = cooldown_count + 1,
-                updated_at = NOW()
-        // Apply 75% vest lock on existing liquid balance
-        vest_amount = auth.total_pft_earned * 0.75
-        UPDATE contributor_authorization
-            SET vesting_pft_held = vesting_pft_held + vest_amount,
-                total_pft_earned = total_pft_earned - vest_amount
+    else if offenses == 1:  // 2nd offense
+        → cooldown = policy('cooldown_second_offense_days') days
+        → state → PROBATIONARY
+        → 75% of emitted PFT moved to vesting
 
-    else:  // offenses >= 2 (3rd+)
-        action = 'suspension_review'
-        cooldown_hours = -1
-        new_state = 'SUSPENDED'
-        freeze_all_pft(wallet)
-        UPDATE contributor_authorization
-            SET state = 'SUSPENDED', cooldown_until = NULL,
-                updated_at = NOW()
+    else:  // 3rd+ offense
+        → state → SUSPENDED
+        → freeze all PFT
+        → indefinite until admin review
 
     INSERT cooldown_escalation_log(...)
     INSERT authorization_audit_log(...)
-    RETURN {action, new_state, cooldown_hours}
-```
-
-### Scenario A: Unauthorized Operator Accumulates 12,000 PFT
-
-Timeline of an operator who begins tasks before registration clears.
-
-```
-Epoch 47, Day 1:
-  Wallet 7xK...mP submits registration (state: UNAUTHORIZED, stake: 0)
-  Registration processing: pending (off-chain KYC queue)
-
-  GATE 1 (task_accept): check_type='task_accept'
-    → state = UNAUTHORIZED
-    → PHASE 1 (shadow mode): LOGGED but not blocked
-    → PHASE 2+: would be BLOCKED with 403 UNAUTHORIZED
-    
-  (In shadow mode, tasks proceed. This is the leak.)
-
-Epoch 47, Days 1-14:
-  Operator completes 8 tasks, accumulating 12,000 PFT
-  Each GATE 4 (reward_emit) logs:
-    → state = UNAUTHORIZED, pft_amount = 1500 avg
-    → Shadow mode: emission proceeds, audit log records violation
-
-  At reward_emit for task #6 (cumulative PFT crosses 10,000):
-    → escalate_cooldown('7xK...mP', 'unauthorized_emission', 'UNAUTHORIZED', 'epoch_47')
-    → PFT threshold breach detected: total_pft_earned = 10,200 > 10,000
-    → ACTION: suspension_review
-    → State: UNAUTHORIZED → SUSPENDED
-    → All pending emissions: FROZEN
-    → Tasks 7, 8 in-flight: VOIDED at next gate check
-    → Audit log entry:
-        old_state=UNAUTHORIZED, new_state=SUSPENDED,
-        reason='PFT threshold breach: 10200 > 10000 while UNAUTHORIZED',
-        triggered_by='gate_4_escalation'
-
-  Clawback procedure:
-    → Total emitted while UNAUTHORIZED: 10,200 PFT
-    → Freeze wallet emissions
-    → Flag for manual review (admin queue)
-    → If registration eventually clears:
-        → Restore to PROBATIONARY (not AUTHORIZED)
-        → 75% of accumulated PFT moved to vesting
-        → Remaining 2,000 PFT (tasks 7-8): not emitted
-    → If sybil confirmed:
-        → All PFT clawed back
-        → Stake (if any posted): slashed
-        → Wallet permanently SUSPENDED
-```
-
-### Scenario B: Authorized Operator's Linking Score Rises to 3.2
-
-Timeline of a legitimate operator whose accounts show correlation.
-
-```
-Epoch 50:
-  Wallet 9aB...cD: state=AUTHORIZED, linking_score=1.2
-  Routine linking analysis runs (batch job, daily)
-  
-  Linking score updated: 1.2 → 1.6
-    → Score ≥ 1.5: SOFT FLAG
-    → Action: log to audit, no user-facing impact
-    → Audit: reason='linking_score_soft_flag: 1.6', triggered_by='linking_monitor'
-
-Epoch 51:
-  Linking score updated: 1.6 → 2.8
-    → Score ≥ 2.5: DECLARATION PROMPT
-    → UPDATE contributor_authorization SET
-        declaration_prompted_at = NOW(),
-        declaration_deadline = NOW() + INTERVAL '14 days'
-    → Notification sent to wallet owner:
-        "Your linking score is 2.8. Declare related accounts within 14 days
-         or face probationary restrictions."
-    → All gate checks still PASS (AUTHORIZED state unchanged)
-    → Audit: reason='linking_declaration_prompt: 2.8', triggered_by='linking_monitor'
-
-  Linking score rises further: 2.8 → 3.2
-    → Score ≥ 3.5? NO (3.2 < 3.5), no provisional cap yet
-    → Declaration deadline still active, 12 days remaining
-    → Gates continue to pass normally
-
-  PATH A — Operator responds within 14 days:
-    → Submits declaration of related wallets
-    → Admin reviews:
-        If legitimate (same person, different use cases):
-          → linking_score recalculated with declared relationships
-          → If new score < 2.5: clear flag, remove deadline
-          → If new score still ≥ 2.5: accounts grouped, concentration
-            cap applied across group (15% shared)
-          → State remains AUTHORIZED
-        If suspicious:
-          → Escalate to sybil review
-
-  PATH B — Operator does NOT respond within 14 days:
-    → declaration_deadline passes
-    → Automated state transition:
-        AUTHORIZED → PROBATIONARY
-    → UPDATE contributor_authorization SET
-        state = 'PROBATIONARY',
-        updated_at = NOW()
-    → Effects:
-        → New emissions: 25% liquid / 75% vesting
-        → Vesting forfeited if later SUSPENDED
-        → Gate checks now return vesting_split in response
-        → Concentration cap applied at group level
-    → Audit: reason='declaration_timeout: linking_score=3.2, no response in 14d',
-             triggered_by='linking_monitor_deadline'
-    
-    → If linking_score later hits 3.5+:
-        → Provisional cap: max 50% of normal task acceptance rate
-    → If linking_score hits 4.5+:
-        → Immediate grouping: all suspected wallets merged
-        → State review for SUSPENDED
+    INVALIDATE Redis auth:{wallet}
 ```
 
 ---
 
-## 5. Migration Path
+## 12. Migration Path
 
 ### Phase 1: Shadow Mode (2 weeks)
 
-- Deploy all gate checks with `enforcement_mode = 'shadow'`
-- Every check runs fully but returns `allowed: true` regardless
-- All violations logged to `authorization_audit_log` with `metadata.shadow = true`
-- Metrics collected:
-  - False positive rate (legitimate AUTHORIZED contributors flagged)
-  - Total would-be rejections per gate
-  - PFT volume that would have been blocked
-  - Concentration cap violations detected
-- Success criteria: false positive rate < 2%
-- Team reviews daily dashboard of shadow violations
+- `enforcement_mode = 'shadow'`
+- All gate checks run fully but always return `allowed: true`
+- Violations logged with `metadata.shadow = true`
+- Metrics: false positive rate, would-be rejections, PFT volume blocked
+- **Success criteria:** false positive rate < 5%
 
 ### Phase 2: Soft Enforcement (2 weeks)
 
 - `enforcement_mode = 'soft'`
-- Gate behavior by state:
-  - **UNAUTHORIZED**: blocked at Gate 1 (task_accept). Cannot begin new tasks. Existing in-flight tasks may complete.
-  - **PROBATIONARY**: warned at each gate (response includes `warning: true`). Vesting split enforced on new emissions. Not blocked.
-  - **AUTHORIZED**: no change. Full pass, no warnings.
-  - **SUSPENDED**: fully blocked at all gates (same as full enforcement).
-- Concentration cap: logged but not enforced (soft warning only)
-- Linking score: flags and prompts active, but no automatic state transitions
-- Metrics: compare soft enforcement rejections vs shadow predictions
+- UNKNOWN: blocked at Gate 1. Existing in-flight tasks may complete.
+- PROBATIONARY: warned, vesting split enforced. Not blocked.
+- AUTHORIZED/TRUSTED: full pass.
+- SUSPENDED: fully blocked at all gates.
+- Concentration cap: logged but not enforced.
+- Linking score: flags and prompts active, no automatic state transitions.
 
 ### Phase 3: Full Enforcement
 
 - `enforcement_mode = 'full'`
-- All gates enforce all checks as specified in Section 1
-- Concentration caps enforced: tasks rejected when 15% epoch budget exhausted
-- Linking score automated transitions active
-- Cooldown escalation fully operational
-- No exceptions without admin override (logged)
+- All gates enforce all checks per this spec.
+- Concentration caps enforced.
+- Linking score automated transitions active.
+- Cooldown escalation fully operational.
 
 ### Rollback Procedure
 
 ```
-IF false_rejection_rate > 5% for any 24-hour window:
-    1. Alert on-call (PagerDuty / Telegram)
-    2. Automatic downgrade: full → soft (if in Phase 3)
-    3. Manual review of rejected wallets
-    4. Root cause analysis on linking_score or concentration_cap logic
-    5. Fix, re-validate against shadow logs, redeploy
-    6. Re-enter Phase 2 for minimum 48 hours before returning to Phase 3
-
-Rollback command (admin-only):
-    POST /api/v1/admin/enforcement-mode
-    { "mode": "soft", "reason": "false rejection spike", "operator": "<admin_wallet>" }
-    → Logged to authorization_audit_log with triggered_by='admin_rollback'
+IF false_rejection_rate > 5% for any 24h window:
+  1. Alert ops (PagerDuty / Telegram)
+  2. Auto downgrade: full → soft
+  3. Manual review of rejected wallets
+  4. Fix, re-validate against shadow logs, redeploy
+  5. Re-enter Phase 2 for minimum 48h
 ```
 
-### 30-Day Grandfathering
+### Rollback Data Safety
 
-Active contributors as of enforcement date who have no stake posted:
-
-- Identified by: `total_pft_earned > 0 AND registration_stake = 0 AND state = 'UNAUTHORIZED'`
-- Grandfathering flag set: `UPDATE contributor_authorization SET grandfathered = TRUE`
-- For 30 days from Phase 3 start:
-  - Grandfathered wallets treated as PROBATIONARY (not UNAUTHORIZED)
-  - 25/75 vesting split applies to new emissions
-  - Must post registration stake within 30 days
-  - Daily reminder notifications sent
-- After 30 days:
-  - If stake posted: transition to PROBATIONARY (normal path to AUTHORIZED)
-  - If no stake: transition to UNAUTHORIZED, gate checks block new tasks
-  - Vesting balance from grandfathering period: held for 90 days, released if stake posted, forfeited if not
+- **Held rewards on rollback to shadow:** Replay held emissions — re-evaluate against shadow rules, emit if would-pass.
+- **Rejected tasks:** Remain VOIDED. Contributor may resubmit. Never auto-re-queue.
+- **False suspensions:** Admin sets `state = 'PROBATIONARY'`, logs reason code. Append correction record — never mutate existing audit rows.
+- **Audit corrections:** Insert new `authorization_audit_log` row with `triggered_by = 'admin_correction'` and reference to original row ID in metadata.
 
 ---
 
-## Appendix: Registration Stake Requirements
+## 13. Grandfathering Semantics
+
+Active contributors as of enforcement date with no stake:
+
+- Identified by: `total_pft_emitted_lifetime > 0 AND registration_stake = 0 AND state = 'UNKNOWN'`
+- Flag set: `grandfathered = TRUE`
+
+### Rules (non-negotiable)
+
+1. `grandfathered = true` overrides UNKNOWN at **Gates 1–3 only**. NOT Gate 4 — Gate 4 always enforces current state.
+2. Grandfathered status does **NOT** survive a linking hold. Linking hold takes precedence.
+3. Grandfathered wallets **CAN** be suspended. Grandfathering is not immunity.
+4. After 30-day grace: grandfathered wallet that has not posted stake becomes UNKNOWN, gates block new tasks.
+5. Vesting from grandfathering period: held 90 days, released if stake posted, forfeited if not.
+
+---
+
+## 14. Appeals and Transparency
+
+- `GET /api/v1/authorization/status` — returns state, human-readable reason, next remediation step. No internal codes.
+- State transitions above PROBATIONARY severity require signed policy reason codes in audit log.
+- **Suspension ≠ forfeiture.** Suspension freezes participation. Forfeiture is a separate admin action requiring its own audit entry.
+- **In-flight tasks on suspension:** Voided only if work was not yet submitted. Completed honest work (Gate 2+ passed) gets credit.
+
+---
+
+## 15. Scenarios
+
+### Scenario A: Unauthorized Operator Accumulates 12,000 PFT
+
+```
+Epoch 47, Day 1:
+  Wallet 0xABC... submits registration (state: UNKNOWN, stake: 0)
+  
+  GATE 1: state = UNKNOWN
+    SHADOW MODE → logged but not blocked (this is the leak)
+    FULL MODE   → blocked with NOT_ELIGIBLE
+
+Epoch 47, Days 1-14 (shadow mode):
+  Operator completes 8 tasks, 12,000 PFT emitted
+  At task #6 (cumulative crosses 10,000):
+    → escalate_cooldown triggered
+    → PFT threshold breach: UNKNOWN + 10,200 > 10,000
+    → State → SUSPENDED
+    → All pending emissions: FROZEN
+    → In-flight tasks before Gate 2: VOIDED
+    → In-flight tasks past Gate 2: complete (honest work credit)
+    
+  Audit: old_state=UNKNOWN, new_state=SUSPENDED,
+         reason='PFT threshold breach: 10200 > 10000',
+         triggered_by='gate_4_escalation'
+```
+
+### Scenario B: Linking Score Rise to 3.2
+
+```
+Epoch 50: wallet 0xDEF..., state=AUTHORIZED, linking=1.2
+
+  Score → 1.6: SOFT FLAG (log only, no user impact)
+  Score → 2.8: DECLARATION PROMPT (14 day deadline)
+  Score → 3.2: still < 3.5, no provisional cap yet
+
+  PATH A — responds within 14 days:
+    Declares related wallets → admin reviews
+    Legitimate: score recalculated, flag cleared
+    Suspicious: escalate to sybil review
+
+  PATH B — no response in 14 days:
+    State: AUTHORIZED → PROBATIONARY
+    New emissions: 25% liquid / 75% vesting
+    If score later hits 3.5+: provisional task cap (50%)
+    If score hits 4.5+: immediate grouping, suspension review
+```
+
+---
+
+## 16. Registration Stake Requirements
 
 | State | Stake (PFT) | Notes |
 |-------|-------------|-------|
-| UNAUTHORIZED | 0 | Cannot participate (post-enforcement) |
-| PROBATIONARY | 10-50 | Slashed on confirmed sybil |
-| AUTHORIZED | 50-200 | Tier-dependent, fully slashable |
+| UNKNOWN | 0 | Cannot participate (post-enforcement) |
+| PROBATIONARY | 10–50 | Slashed on confirmed sybil |
+| AUTHORIZED | 50–200 | Tier-dependent, fully slashable |
+| TRUSTED | 200+ | Layer B — enhanced privileges |
 | SUSPENDED | Frozen | Pending review |
 
 ---
 
-*End of specification. Implementation begins with Phase 1 shadow deployment.*
+## Layer B Items (Phase 2 — not implemented in v1.1)
+
+For tracking. These are designed but not shipped:
+
+- Linking score declaration submission flows
+- Concentration graph dynamics and grouped wallet treatment
+- TRUSTED state promotion criteria and reduced gate checks
+- Advanced cooldown escalation with stake slashing
+- Clawback workflow automation
+- Cross-epoch concentration rebalancing
+- Grouped wallet shared cap enforcement
+
+---
+
+*End of specification v1.1. Implementation begins with Phase 1 shadow deployment targeting Gate 4 transaction boundary as the critical-path deliverable.*
