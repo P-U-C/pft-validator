@@ -9,8 +9,6 @@ task_id: 568c04d0-bb69-4338-bce2-25cdf398705c
 
 # Authorization Review Queue Generator
 
-Generates moderator-ready review queue from contributor authorization records and task history. Each case includes exposure score, operational metadata, machine-readable trigger codes, structured reviewer facts, key dates, action justification, and evidence checklist for rapid reviewer decision.
-
 **Task ID:** `568c04d0-bb69-4338-bce2-25cdf398705c`  
 **Reward:** 4,200 PFT  
 **Verification:** Code artifact  
@@ -18,134 +16,296 @@ Generates moderator-ready review queue from contributor authorization records an
 
 ---
 
-## Key Design Decisions
+## Sample Input/Output
 
-### 1. Explicit Reward History
-Supports both embedded task rewards AND separate reward stream (bonuses, corrections, clawbacks). Net exposure = sum of all rewards, which can be negative after clawbacks.
+### Input
+```json
+{
+  "authorizations": [
+    {
+      "operator_id": "revoked_op",
+      "state": "revoked",
+      "last_reviewed_at": "2026-02-20T09:00:00Z",
+      "review_notes": "Revoked for quality violations"
+    },
+    {
+      "operator_id": "clean_op",
+      "state": "authorized",
+      "last_reviewed_at": "2026-03-15T10:00:00Z"
+    }
+  ],
+  "tasks": [
+    { "task_id": "t1", "operator_id": "revoked_op", "completed_at": "2026-04-01T10:00:00Z", "reward_pft": 5000, "score": 78 },
+    { "task_id": "t2", "operator_id": "revoked_op", "completed_at": "2026-04-03T14:00:00Z", "reward_pft": 4500, "score": 82 },
+    { "task_id": "t3", "operator_id": "clean_op", "completed_at": "2026-04-02T12:00:00Z", "reward_pft": 3000, "score": 92 }
+  ],
+  "refusals": [],
+  "as_of": "2026-04-06T16:00:00Z"
+}
+```
 
-### 2. Refusal Rate Denominator
-Refusal rate uses **total opportunities** (tasks_completed + refusals), not just completed tasks. Explicitly documented as `denominator_type: 'total_opportunities'`.
-
-### 3. Risk Family Classification
-Every case is classified into a risk family:
-- `unauthorized_exposure` — No auth record with rewards
-- `state_anomaly` — Revoked/suspended with recent activity
-- `behavioral_pattern` — High refusal rate
-- `trend_deterioration` — Recent performance worse than historical
-- `stale_review` — High exposure + outdated review
-- `inactivity` — Extended dormancy
-- `low_risk` — Routine confirmation
-
-### 4. Machine-Readable Trigger Codes
-`trigger_codes` array for workflow automation:
-- `MISSING_AUTH`, `HIGH_EXPOSURE_NO_AUTH`
-- `REVOKED_WITH_ACTIVITY`, `SUSPENDED_WITH_ACTIVITY`
-- `HIGH_REFUSAL_RATE`, `ELEVATED_REFUSAL_RATE`
-- `TREND_DETERIORATING`, `STALE_REVIEW`, `CRITICAL_INACTIVITY`
-
-### 5. Trigger Reasons (Human-Readable)
-Each trigger includes threshold vs actual values and severity (`critical`/`warning`/`info`).
-
-### 6. Operational Queue Metadata
-- `priority_band`: critical/high/medium/low
-- `review_sla_hours`: 4/24/72/168 based on priority
-- `decision_due_at`: ISO 8601 timestamp (as_of + SLA)
-- `case_status`: pending/in_review/decided
-- `requires_human`: boolean
-- `requires_human_reason`: explanation
-
-### 7. Action Justification
-- `why_not_lower`: Why not less severe action
-- `why_not_higher`: Why not more severe action
-- `suggested_reviewer_notes`: Pre-written notes for reviewer
-
-### 8. Structured Reviewer Facts
-Not just checklist prompts — actual metrics:
-- `total_pft_rewarded`, `net_pft_after_corrections`
-- `recent_30d_pft`, `recent_30d_tasks`, `recent_30d_refusals`
-- `post_review_tasks`, `post_review_refusals`
-- `refusal_rate_percent`, `avg_task_score`
-
-### 9. Key Dates
-Compact timeline: `first_reward_at`, `last_reward_at`, `first_refusal_at`, `last_refusal_at`, `last_review_at`, `authorized_at`, `state_changed_at`
-
-### 10. Validation Warnings
-Malformed data (duplicate IDs, future dates, conflicting auth records) flagged in `validation_warnings`.
+### Output (ranked queue)
+```json
+{
+  "generated_at": "2026-04-06T16:00:00.000Z",
+  "as_of": "2026-04-06T16:00:00.000Z",
+  "version": "1.0.0",
+  "queue": [
+    {
+      "operator_id": "revoked_op",
+      "exposure_score": 45,
+      "exposure_pft": 9500,
+      "exposure_task_count": 2,
+      "priority_band": "medium",
+      "review_sla_hours": 72,
+      "decision_due_at": "2026-04-09T16:00:00.000Z",
+      "case_status": "pending",
+      "requires_human": true,
+      "requires_human_reason": "Suppress action requires human confirmation",
+      "trigger_codes": ["REVOKED_WITH_ACTIVITY"],
+      "authorization_state": "revoked",
+      "authorization_missing": false,
+      "days_since_last_review": 45,
+      "prior_review_notes": "Revoked for quality violations",
+      "risk_family": "state_anomaly",
+      "trigger_reasons": [
+        {
+          "trigger": "post_revocation_activity",
+          "threshold": "no tasks after revocation",
+          "actual": "2 tasks in last 30 days",
+          "severity": "critical"
+        }
+      ],
+      "recommended_action": "suppress",
+      "action_rationale": "Revoked operator with recent task activity. Immediate block required.",
+      "why_not_lower": "State is revoked. Any task activity in this state indicates enforcement failure.",
+      "suggested_reviewer_notes": "Investigate how tasks were issued to revoked operator. Review task issuance controls.",
+      "facts": {
+        "identity_verified": false,
+        "total_pft_rewarded": 9500,
+        "net_pft_after_corrections": 9500,
+        "task_count": 2,
+        "refusal_count": 0,
+        "refusal_rate_percent": 0,
+        "recent_30d_pft": 9500,
+        "recent_30d_tasks": 2,
+        "recent_30d_refusals": 0,
+        "post_review_tasks": 2,
+        "post_review_refusals": 0,
+        "days_since_first_activity": 5,
+        "days_since_last_activity": 3,
+        "days_since_last_review": 45,
+        "avg_task_score": 80
+      },
+      "key_dates": {
+        "first_reward_at": "2026-04-01T10:00:00.000Z",
+        "last_reward_at": "2026-04-03T14:00:00.000Z",
+        "last_review_at": "2026-02-20T09:00:00Z"
+      },
+      "summary": {
+        "first_task_at": "2026-04-01T10:00:00.000Z",
+        "last_task_at": "2026-04-03T14:00:00.000Z",
+        "days_active": 3,
+        "days_inactive": 3,
+        "refusal_breakdown": {
+          "no_response": 0,
+          "explicit_decline": 0,
+          "wrong_scope": 0,
+          "quality_reject": 0,
+          "cancelled": 0,
+          "total": 0,
+          "denominator": 2,
+          "denominator_type": "total_opportunities"
+        },
+        "avg_task_score": 80,
+        "recent_task_count": 2,
+        "recent_refusal_count": 0,
+        "recent_pft": 9500
+      },
+      "recent_timeline": [
+        { "timestamp": "2026-04-03T14:00:00Z", "type": "task", "description": "Completed task t2 (score: 82)", "pft_delta": 4500 },
+        { "timestamp": "2026-04-01T10:00:00Z", "type": "task", "description": "Completed task t1 (score: 78)", "pft_delta": 5000 },
+        { "timestamp": "2026-02-20T09:00:00Z", "type": "review", "description": "Review: Revoked for quality violations" }
+      ],
+      "evidence_checklist": [
+        { "check": "Verify operator identity matches authorization record", "status": "required", "data_available": true, "value": "revoked" },
+        { "check": "Review total PFT exposure and reward history", "status": "recommended", "data_available": true, "value": 9500 },
+        { "check": "Review average task quality score", "status": "optional", "data_available": true, "value": "80.0" },
+        { "check": "Review recent activity timeline", "status": "optional", "data_available": true, "value": "2 tasks, 0 refusals in last 30 days" },
+        { "check": "Review previous moderation notes", "status": "recommended", "data_available": true, "value": "Revoked for quality violations" }
+      ],
+      "sort_keys": { "exposure_score": 45, "exposure_pft": 9500, "operator_id": "revoked_op" },
+      "validation_warnings": []
+    },
+    {
+      "operator_id": "clean_op",
+      "exposure_score": 5,
+      "exposure_pft": 3000,
+      "exposure_task_count": 1,
+      "priority_band": "low",
+      "review_sla_hours": 168,
+      "decision_due_at": "2026-04-13T16:00:00.000Z",
+      "case_status": "pending",
+      "requires_human": false,
+      "trigger_codes": [],
+      "authorization_state": "authorized",
+      "authorization_missing": false,
+      "days_since_last_review": 22,
+      "risk_family": "low_risk",
+      "trigger_reasons": [],
+      "recommended_action": "confirm",
+      "action_rationale": "Authorization valid. Routine confirmation — no intervention needed.",
+      "why_not_higher": "No risk signals detected. Operator in good standing.",
+      "suggested_reviewer_notes": "Routine review. Confirm and close case.",
+      "facts": {
+        "identity_verified": true,
+        "total_pft_rewarded": 3000,
+        "net_pft_after_corrections": 3000,
+        "task_count": 1,
+        "refusal_count": 0,
+        "refusal_rate_percent": 0,
+        "recent_30d_pft": 3000,
+        "recent_30d_tasks": 1,
+        "recent_30d_refusals": 0,
+        "post_review_tasks": 1,
+        "post_review_refusals": 0,
+        "days_since_first_activity": 4,
+        "days_since_last_activity": 4,
+        "days_since_last_review": 22,
+        "avg_task_score": 92
+      },
+      "key_dates": {
+        "first_reward_at": "2026-04-02T12:00:00.000Z",
+        "last_reward_at": "2026-04-02T12:00:00.000Z",
+        "last_review_at": "2026-03-15T10:00:00Z"
+      },
+      "summary": {
+        "first_task_at": "2026-04-02T12:00:00.000Z",
+        "last_task_at": "2026-04-02T12:00:00.000Z",
+        "days_active": 1,
+        "days_inactive": 4,
+        "refusal_breakdown": {
+          "no_response": 0,
+          "explicit_decline": 0,
+          "wrong_scope": 0,
+          "quality_reject": 0,
+          "cancelled": 0,
+          "total": 0,
+          "denominator": 1,
+          "denominator_type": "total_opportunities"
+        },
+        "avg_task_score": 92,
+        "recent_task_count": 1,
+        "recent_refusal_count": 0,
+        "recent_pft": 3000
+      },
+      "recent_timeline": [
+        { "timestamp": "2026-04-02T12:00:00Z", "type": "task", "description": "Completed task t3 (score: 92)", "pft_delta": 3000 },
+        { "timestamp": "2026-03-15T10:00:00Z", "type": "review", "description": "Review: completed" }
+      ],
+      "evidence_checklist": [
+        { "check": "Verify operator identity matches authorization record", "status": "recommended", "data_available": true, "value": "authorized" },
+        { "check": "Review total PFT exposure and reward history", "status": "recommended", "data_available": true, "value": 3000 },
+        { "check": "Review average task quality score", "status": "optional", "data_available": true, "value": "92.0" },
+        { "check": "Review recent activity timeline", "status": "optional", "data_available": true, "value": "1 tasks, 0 refusals in last 30 days" }
+      ],
+      "sort_keys": { "exposure_score": 5, "exposure_pft": 3000, "operator_id": "clean_op" },
+      "validation_warnings": []
+    }
+  ],
+  "summary": {
+    "total_operators": 2,
+    "total_exposure_pft": 12500,
+    "by_action": { "confirm": 1, "cooldown": 0, "audit": 0, "suppress": 1 },
+    "by_auth_state": { "authorized": 1, "pending": 0, "suspended": 0, "revoked": 1, "unknown": 0 },
+    "missing_auth_count": 0
+  }
+}
+```
 
 ---
 
-## Output Schema
+## Module Code
 
 ```typescript
-interface ReviewPacket {
+/**
+ * Authorization Review Queue Generator
+ * Generates moderator-ready review queue from contributor authorization
+ * and task history. Ranks cases by exposure and risk signals.
+ */
+
+// ============================================================================
+// Types
+// ============================================================================
+
+export type AuthorizationState = 'authorized' | 'pending' | 'suspended' | 'revoked' | 'unknown';
+export type RecommendedAction = 'confirm' | 'cooldown' | 'audit' | 'suppress';
+export type RiskFamily = 'unauthorized_exposure' | 'state_anomaly' | 'behavioral_pattern' | 
+                         'trend_deterioration' | 'stale_review' | 'inactivity' | 'low_risk';
+export type TriggerCode = 'MISSING_AUTH' | 'HIGH_EXPOSURE_NO_AUTH' | 'REVOKED_WITH_ACTIVITY' | 
+                          'SUSPENDED_WITH_ACTIVITY' | 'HIGH_REFUSAL_RATE' | 'ELEVATED_REFUSAL_RATE' |
+                          'TREND_DETERIORATING' | 'STALE_REVIEW' | 'CRITICAL_INACTIVITY';
+export type RefusalType = 'no_response' | 'explicit_decline' | 'wrong_scope' | 'quality_reject' | 'cancelled';
+export type PriorityBand = 'critical' | 'high' | 'medium' | 'low';
+
+export interface TaskRecord {
+  task_id: string;
   operator_id: string;
-  
-  // Exposure scoring
-  exposure_score: number;          // 0-100
-  exposure_pft: number;            // Net PFT
-  exposure_task_count: number;
-  
-  // Queue-operational metadata
-  priority_band: 'critical' | 'high' | 'medium' | 'low';
-  review_sla_hours: number;
-  decision_due_at: string;         // ISO 8601
-  case_status: 'pending' | 'in_review' | 'decided';
-  requires_human: boolean;
-  requires_human_reason?: string;
-  
-  // Machine-readable triggers
-  trigger_codes: TriggerCode[];
-  
-  // Authorization state
-  authorization_state: AuthorizationState;
-  authorization_missing: boolean;
-  days_since_last_review?: number;
-  prior_review_notes?: string;
-  
-  // Risk classification
-  risk_family: RiskFamily;
-  trigger_reasons: TriggerReason[];
-  
-  // Recommended action with justification
-  recommended_action: 'confirm' | 'cooldown' | 'audit' | 'suppress';
-  action_rationale: string;
-  why_not_lower?: string;
-  why_not_higher?: string;
-  suggested_reviewer_notes?: string;
-  
-  // Structured reviewer facts
-  facts: ReviewerFacts;
-  
-  // Key dates
-  key_dates: KeyDates;
-  
-  // Activity summary
-  summary: {
-    first_task_at?: string;
-    last_task_at?: string;
-    days_active?: number;
-    days_inactive?: number;
-    refusal_breakdown: RefusalBreakdown;
-    avg_task_score?: number;
-    recent_task_count: number;
-    recent_refusal_count: number;
-    recent_pft: number;
-  };
-  
-  // Recent timeline (last 10 events)
-  recent_timeline: TimelineEvent[];
-  
-  // Evidence checklist
-  evidence_checklist: EvidenceChecklistItem[];
-  
-  // Sort keys
-  sort_keys: { exposure_score: number; exposure_pft: number; operator_id: string };
-  
-  // Validation warnings
-  validation_warnings: string[];
+  completed_at: string;
+  reward_pft: number;
+  score?: number;
 }
 
-interface ReviewerFacts {
+export interface RefusalRecord {
+  task_id: string;
+  operator_id: string;
+  type: RefusalType;
+  occurred_at: string;
+  notes?: string;
+}
+
+export interface AuthorizationRecord {
+  operator_id: string;
+  state: AuthorizationState;
+  authorized_at?: string;
+  last_reviewed_at?: string;
+  review_notes?: string;
+}
+
+export interface ReviewQueueInput {
+  authorizations: AuthorizationRecord[];
+  tasks: TaskRecord[];
+  refusals: RefusalRecord[];
+  rewards?: RewardRecord[];
+  as_of?: string;
+}
+
+export interface TriggerReason {
+  trigger: string;
+  threshold: string;
+  actual: string;
+  severity: 'critical' | 'warning' | 'info';
+}
+
+export interface RefusalBreakdown {
+  no_response: number;
+  explicit_decline: number;
+  wrong_scope: number;
+  quality_reject: number;
+  cancelled: number;
+  total: number;
+  denominator: number;
+  denominator_type: 'total_opportunities';
+}
+
+export interface EvidenceChecklistItem {
+  check: string;
+  status: 'required' | 'recommended' | 'optional';
+  data_available: boolean;
+  value: string | number;
+}
+
+export interface ReviewerFacts {
   identity_verified: boolean | null;
   total_pft_rewarded: number;
   net_pft_after_corrections: number;
@@ -163,38 +323,188 @@ interface ReviewerFacts {
   avg_task_score: number | null;
 }
 
-interface KeyDates {
-  first_reward_at?: string;
-  last_reward_at?: string;
-  first_refusal_at?: string;
-  last_refusal_at?: string;
-  last_review_at?: string;
-  authorized_at?: string;
-  state_changed_at?: string;
+export interface ReviewPacket {
+  operator_id: string;
+  exposure_score: number;
+  exposure_pft: number;
+  exposure_task_count: number;
+  priority_band: PriorityBand;
+  review_sla_hours: number;
+  decision_due_at: string;
+  case_status: 'pending' | 'in_review' | 'decided';
+  requires_human: boolean;
+  requires_human_reason?: string;
+  trigger_codes: TriggerCode[];
+  authorization_state: AuthorizationState;
+  authorization_missing: boolean;
+  days_since_last_review?: number;
+  prior_review_notes?: string;
+  risk_family: RiskFamily;
+  trigger_reasons: TriggerReason[];
+  recommended_action: RecommendedAction;
+  action_rationale: string;
+  why_not_lower?: string;
+  why_not_higher?: string;
+  suggested_reviewer_notes?: string;
+  facts: ReviewerFacts;
+  key_dates: KeyDates;
+  summary: ActivitySummary;
+  recent_timeline: TimelineEvent[];
+  evidence_checklist: EvidenceChecklistItem[];
+  sort_keys: { exposure_score: number; exposure_pft: number; operator_id: string };
+  validation_warnings: string[];
 }
 
-interface RefusalBreakdown {
-  no_response: number;
-  wrong_scope: number;
-  quality_reject: number;
-  cancelled: number;
-  explicit_decline: number;
-  total: number;
-  denominator: number;
-  denominator_type: 'total_opportunities';
+export const DEFAULT_THRESHOLDS = {
+  refusal_rate_audit: 0.25,
+  refusal_rate_suppress: 0.50,
+  exposure_pft_audit: 50000,
+  exposure_pft_critical: 100000,
+  inactivity_days_critical: 90,
+  review_stale_days: 90,
+  min_tasks_for_patterns: 4,
+};
+
+// ============================================================================
+// Core Implementation
+// ============================================================================
+
+function classifyRisk(agg, asOf, thresholds) {
+  const triggers = [];
+  const codes = [];
+  const refusalRate = agg.refusal_breakdown.denominator > 0
+    ? agg.refusal_breakdown.total / agg.refusal_breakdown.denominator : 0;
+  
+  // Unauthorized exposure
+  if (!agg.auth && agg.total_pft > 0) {
+    codes.push(agg.total_pft >= thresholds.exposure_pft_audit ? 'HIGH_EXPOSURE_NO_AUTH' : 'MISSING_AUTH');
+    triggers.push({
+      trigger: 'missing_authorization',
+      threshold: 'authorization record required',
+      actual: `none found, ${agg.total_pft.toLocaleString()} PFT rewarded`,
+      severity: agg.total_pft >= thresholds.exposure_pft_audit ? 'critical' : 'warning',
+    });
+    return { family: 'unauthorized_exposure', triggers, codes };
+  }
+  
+  // State anomaly
+  if (agg.auth?.state === 'revoked' && agg.recent_tasks.length > 0) {
+    codes.push('REVOKED_WITH_ACTIVITY');
+    triggers.push({
+      trigger: 'post_revocation_activity',
+      threshold: 'no tasks after revocation',
+      actual: `${agg.recent_tasks.length} tasks in last 30 days`,
+      severity: 'critical',
+    });
+    return { family: 'state_anomaly', triggers, codes };
+  }
+  
+  // Behavioral pattern
+  if (agg.refusal_breakdown.denominator >= thresholds.min_tasks_for_patterns) {
+    if (refusalRate >= thresholds.refusal_rate_suppress) {
+      codes.push('HIGH_REFUSAL_RATE');
+      triggers.push({
+        trigger: 'high_refusal_rate',
+        threshold: `≥${thresholds.refusal_rate_suppress * 100}%`,
+        actual: `${(refusalRate * 100).toFixed(0)}%`,
+        severity: 'critical',
+      });
+      return { family: 'behavioral_pattern', triggers, codes };
+    }
+    if (refusalRate >= thresholds.refusal_rate_audit) {
+      codes.push('ELEVATED_REFUSAL_RATE');
+      triggers.push({
+        trigger: 'elevated_refusal_rate',
+        threshold: `≥${thresholds.refusal_rate_audit * 100}%`,
+        actual: `${(refusalRate * 100).toFixed(0)}%`,
+        severity: 'warning',
+      });
+    }
+  }
+  
+  if (triggers.length > 0) return { family: 'behavioral_pattern', triggers, codes };
+  return { family: 'low_risk', triggers: [], codes: [] };
 }
 
-interface TriggerReason {
-  trigger: string;
-  threshold: string;
-  actual: string;
-  severity: 'critical' | 'warning' | 'info';
+function calculateExposureScore(agg, riskFamily, triggers, thresholds) {
+  let score = 0;
+  
+  // PFT exposure (0-40 points)
+  if (agg.total_pft >= thresholds.exposure_pft_critical) score += 40;
+  else if (agg.total_pft >= thresholds.exposure_pft_audit) score += 25;
+  else if (agg.total_pft >= 10000) score += 15;
+  else if (agg.total_pft >= 1000) score += 5;
+  
+  // Risk family (0-30 points)
+  const familyScores = {
+    unauthorized_exposure: 30, state_anomaly: 30, behavioral_pattern: 20,
+    trend_deterioration: 15, stale_review: 10, inactivity: 8, low_risk: 0,
+  };
+  score += familyScores[riskFamily];
+  
+  // Trigger severity (0-20 points)
+  const criticalCount = triggers.filter(t => t.severity === 'critical').length;
+  score += Math.min(criticalCount * 10, 20);
+  
+  return Math.min(score, 100);
+}
+
+function determineAction(agg, riskFamily, triggers, thresholds) {
+  const refusalRate = agg.refusal_breakdown.denominator > 0
+    ? agg.refusal_breakdown.total / agg.refusal_breakdown.denominator : 0;
+  
+  if (riskFamily === 'unauthorized_exposure' && agg.total_pft >= thresholds.exposure_pft_audit) {
+    return {
+      action: 'suppress',
+      rationale: `No authorization record. ${agg.total_pft.toLocaleString()} PFT already rewarded without verification.`,
+      whyNotLower: `Exposure exceeds audit threshold. Cannot issue more tasks without identity verification.`,
+    };
+  }
+  
+  if (riskFamily === 'state_anomaly') {
+    return {
+      action: 'suppress',
+      rationale: `${agg.auth?.state} operator with recent task activity. Immediate block required.`,
+      whyNotLower: `State is ${agg.auth?.state}. Any task activity indicates enforcement failure.`,
+    };
+  }
+  
+  if (riskFamily === 'behavioral_pattern' && refusalRate >= thresholds.refusal_rate_audit) {
+    return {
+      action: 'audit',
+      rationale: `Refusal rate ${(refusalRate * 100).toFixed(0)}% elevated. Review task history.`,
+      whyNotHigher: `Rate below ${thresholds.refusal_rate_suppress * 100}% suppress threshold.`,
+      whyNotLower: `Rate exceeds ${thresholds.refusal_rate_audit * 100}% audit threshold.`,
+    };
+  }
+  
+  return {
+    action: 'confirm',
+    rationale: `Authorization valid. Routine confirmation — no intervention needed.`,
+    whyNotHigher: `No risk signals detected. Operator in good standing.`,
+  };
+}
+
+export function generateReviewQueue(input, thresholds = DEFAULT_THRESHOLDS) {
+  const asOf = input.as_of ? new Date(input.as_of) : new Date();
+  
+  // Aggregate by operator, classify risk, generate packets
+  // [Full implementation in source files]
+  
+  // Sort by exposure_score (desc), exposure_pft (desc), operator_id (asc)
+  packets.sort((a, b) => {
+    if (a.exposure_score !== b.exposure_score) return b.exposure_score - a.exposure_score;
+    if (a.exposure_pft !== b.exposure_pft) return b.exposure_pft - a.exposure_pft;
+    return a.operator_id.localeCompare(b.operator_id);
+  });
+  
+  return { generated_at, as_of, version: '1.0.0', queue: packets, summary };
 }
 ```
 
 ---
 
-## Test Execution
+## Unit Tests (26 passing)
 
 ```bash
 $ npm test -- --reporter=verbose
@@ -235,106 +545,9 @@ $ npm test -- --reporter=verbose
 
 ---
 
-## Sample Cases
+## Source Repository
 
-### Case 1: Revoked with Post-Revocation Activity
-```json
-{
-  "operator_id": "revoked_active_001",
-  "exposure_score": 85,
-  "priority_band": "critical",
-  "review_sla_hours": 4,
-  "requires_human": true,
-  "requires_human_reason": "State anomaly requires investigation",
-  "trigger_codes": ["REVOKED_WITH_ACTIVITY"],
-  "risk_family": "state_anomaly",
-  "recommended_action": "suppress",
-  "why_not_lower": "State is revoked. Any task activity indicates enforcement failure."
-}
-```
-
-### Case 2: Missing Auth with High Exposure
-```json
-{
-  "operator_id": "unknown_high_exposure",
-  "exposure_score": 70,
-  "exposure_pft": 95000,
-  "priority_band": "critical",
-  "trigger_codes": ["HIGH_EXPOSURE_NO_AUTH"],
-  "risk_family": "unauthorized_exposure",
-  "recommended_action": "suppress",
-  "why_not_lower": "Exposure exceeds audit threshold (50,000 PFT)."
-}
-```
-
-### Case 3: Elevated Refusal Rate
-```json
-{
-  "operator_id": "elevated_refusals",
-  "exposure_score": 55,
-  "priority_band": "high",
-  "trigger_codes": ["ELEVATED_REFUSAL_RATE"],
-  "risk_family": "behavioral_pattern",
-  "recommended_action": "audit",
-  "why_not_higher": "Rate is 36%, below 50% suppress threshold.",
-  "why_not_lower": "Rate exceeds 25% audit threshold."
-}
-```
-
-### Case 4: Recovered Operator (Clean)
-```json
-{
-  "operator_id": "recovered_clean",
-  "exposure_score": 15,
-  "priority_band": "low",
-  "trigger_codes": [],
-  "risk_family": "low_risk",
-  "recommended_action": "confirm",
-  "why_not_higher": "No risk signals detected. Operator in good standing."
-}
-```
-
-### Case 5: Stale Review + High Exposure
-```json
-{
-  "operator_id": "stale_review_high",
-  "exposure_score": 48,
-  "exposure_pft": 180000,
-  "priority_band": "medium",
-  "trigger_codes": ["STALE_REVIEW"],
-  "risk_family": "stale_review",
-  "recommended_action": "audit",
-  "why_not_lower": "Exposure ≥50,000 PFT requires 90-day review cadence."
-}
-```
-
----
-
-## Integration Example
-
-```typescript
-import { generateReviewQueue } from './review-queue.js';
-
-const output = generateReviewQueue(input);
-
-// Filter to urgent cases only
-const urgentCases = output.queue.filter(p => 
-  p.priority_band === 'critical' || p.priority_band === 'high'
-);
-
-// Map to moderation dashboard
-const dashboard = urgentCases.map(p => ({
-  id: p.operator_id,
-  priority: p.priority_band,
-  sla: p.decision_due_at,
-  action: p.recommended_action,
-  codes: p.trigger_codes,
-  rationale: p.action_rationale,
-  whyNotLower: p.why_not_lower,
-  facts: p.facts,
-  notes: p.suggested_reviewer_notes,
-}));
-```
+Full implementation: [pft-audit/tasks/2026-04-06_authorization-review-queue-generator/](https://github.com/P-U-C/pft-audit)
 
 ---
 
