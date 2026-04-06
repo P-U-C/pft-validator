@@ -9,7 +9,7 @@ task_id: 568c04d0-bb69-4338-bce2-25cdf398705c
 
 # Authorization Review Queue Generator
 
-Generates moderator-ready review queue from contributor authorization records and task history. Each case includes exposure score, recommended action, and evidence checklist for reviewer decision.
+Generates moderator-ready review queue from contributor authorization records and task history. Each case includes exposure score, recommended action, risk classification, trigger reasons, timeline, and evidence checklist for rapid reviewer decision.
 
 **Task ID:** `568c04d0-bb69-4338-bce2-25cdf398705c`  
 **Reward:** 4,200 PFT  
@@ -18,16 +18,32 @@ Generates moderator-ready review queue from contributor authorization records an
 
 ---
 
-## Overview
+## Key Design Decisions
 
-This module complements the Engagement Guardrail Policy Generator by converting authorization and task signals into an actionable review backlog for human moderators.
+### 1. Explicit Reward History
+Supports both embedded task rewards AND separate reward stream (bonuses, corrections, clawbacks). Net exposure = sum of all rewards, which can be negative after clawbacks.
 
-**Key features:**
-- Ranks cases by exposure score (0-100)
-- Recommends action: `confirm`, `cooldown`, `audit`, or `suppress`
-- Provides evidence checklist for each case
-- Deterministic sorting and tie-breaking
-- Handles missing authorization records
+### 2. Refusal Rate Denominator
+Refusal rate uses **total opportunities** (tasks_completed + refusals), not just completed tasks. This is explicitly documented in the schema as `denominator_type: 'total_opportunities'`.
+
+### 3. Risk Family Classification
+Every case is classified into a risk family with explicit trigger reasons:
+- `unauthorized_exposure` — No auth record with rewards
+- `state_anomaly` — Revoked/suspended with recent activity
+- `behavioral_pattern` — High refusal rate
+- `trend_deterioration` — Recent performance worse than historical
+- `stale_review` — High exposure + outdated review
+- `inactivity` — Extended dormancy
+- `low_risk` — Routine confirmation
+
+### 4. Trigger Reasons
+Each packet includes explicit `trigger_reasons` with threshold vs actual values and severity levels (`critical`/`warning`/`info`), so reviewers see exactly what fired.
+
+### 5. Recent Timeline
+Last 10 events (tasks, refusals, rewards, auth changes, reviews) for quick scan without re-derivation.
+
+### 6. Validation Warnings
+Malformed data (duplicate IDs, future dates, conflicting auth records) is flagged in `validation_warnings` rather than silently dropped.
 
 ---
 
@@ -39,13 +55,18 @@ interface ReviewPacket {
   
   // Exposure scoring
   exposure_score: number;          // 0-100, higher = more urgent
-  exposure_pft: number;            // Total PFT rewarded
-  exposure_task_count: number;     // Total tasks completed
+  exposure_pft: number;            // Net PFT (can be negative after clawbacks)
+  exposure_task_count: number;
   
   // Authorization state
-  authorization_state: 'authorized' | 'pending' | 'suspended' | 'revoked' | 'unknown';
+  authorization_state: AuthorizationState;
   authorization_missing: boolean;
   days_since_last_review?: number;
+  prior_review_notes?: string;     // Surfaced for quick reference
+  
+  // Risk classification
+  risk_family: RiskFamily;
+  trigger_reasons: TriggerReason[];  // What fired, with threshold vs actual
   
   // Recommended action
   recommended_action: 'confirm' | 'cooldown' | 'audit' | 'suppress';
@@ -57,20 +78,48 @@ interface ReviewPacket {
     last_task_at?: string;
     days_active?: number;
     days_inactive?: number;
-    refusal_count: number;
-    refusal_rate: number;
+    refusal_breakdown: RefusalBreakdown;  // By type with explicit denominator
     avg_task_score?: number;
+    recent_task_count: number;     // Last 30 days
+    recent_refusal_count: number;
   };
   
-  // Evidence checklist for reviewer
+  // Recent timeline (last 10 events)
+  recent_timeline: TimelineEvent[];
+  
+  // Evidence checklist
   evidence_checklist: EvidenceChecklistItem[];
   
   // Deterministic sort keys
-  sort_keys: {
-    exposure_score: number;
-    exposure_pft: number;
-    operator_id: string;
-  };
+  sort_keys: { exposure_score: number; exposure_pft: number; operator_id: string };
+  
+  // Validation warnings
+  validation_warnings: string[];
+}
+
+interface RefusalBreakdown {
+  no_response: number;
+  wrong_scope: number;
+  quality_reject: number;
+  cancelled: number;
+  explicit_decline: number;
+  total: number;
+  denominator: number;  // tasks + refusals
+  denominator_type: 'total_opportunities';
+}
+
+interface TriggerReason {
+  trigger: string;
+  threshold: string;
+  actual: string;
+  severity: 'critical' | 'warning' | 'info';
+}
+
+interface TimelineEvent {
+  timestamp: string;
+  type: 'task' | 'refusal' | 'reward' | 'auth_change' | 'review';
+  description: string;
+  pft_delta?: number;
 }
 ```
 
@@ -217,30 +266,46 @@ $ npm test -- --reporter=verbose
  RUN  v2.1.9
 
  ✓ Empty Input > returns empty queue for empty input
+ ✓ Empty Input > includes all required output fields
  ✓ Missing Authorization Records > flags operators with tasks but no auth record
  ✓ Missing Authorization Records > recommends suppress for missing auth with high exposure
- ✓ Aggregation Correctness > correctly aggregates tasks and refusals per operator
- ✓ Aggregation Correctness > calculates average task score correctly
+ ✓ Aggregation Correctness > correctly aggregates tasks and refusals with breakdown
+ ✓ Aggregation Correctness > uses explicit rewards when provided
+ ✓ Risk Family Classification > classifies state anomaly for revoked with recent activity
+ ✓ Risk Family Classification > classifies trend deterioration when recent is worse than historical
  ✓ Action Threshold Boundaries > triggers audit at exactly 25% refusal rate
  ✓ Action Threshold Boundaries > triggers suppress at 50%+ refusal rate
  ✓ Deterministic Tie-Breaking > produces identical output for same input
- ✓ Deterministic Tie-Breaking > breaks ties by exposure_pft then operator_id alphabetically
- ✓ Inactivity Escalation > recommends cooldown for critical inactivity (90+ days)
- ✓ Inactivity Escalation > calculates days_inactive correctly
- ✓ Stable Sort Order > sorts by exposure_score desc, then exposure_pft desc, then operator_id asc
- ✓ Exposure Score Calculation > scores missing auth higher than authorized
- ✓ Exposure Score Calculation > caps exposure score at 100
- ✓ Evidence Checklist > generates checklist with required items for high-risk cases
- ✓ Evidence Checklist > includes refusal analysis when refusals exist
+ ✓ Deterministic Tie-Breaking > breaks ties alphabetically by operator_id
+ ✓ Inactivity Escalation > recommends cooldown for critical inactivity
+ ✓ Timeline Generation > generates recent timeline with events
+ ✓ Timeline Generation > limits timeline to 10 most recent events
+ ✓ Adversarial Cases > handles duplicate task IDs with warning
+ ✓ Adversarial Cases > handles future-dated events with warning
+ ✓ Adversarial Cases > handles malformed timestamps with warning
+ ✓ Adversarial Cases > handles negative rewards (corrections/clawbacks)
+ ✓ Adversarial Cases > handles operator with only refusals (no completed tasks)
+ ✓ Adversarial Cases > handles conflicting authorization records with warning
+ ✓ Adversarial Cases > handles revoked user with post-revocation rewards
  ✓ Sample Cases > handles high-risk case correctly
  ✓ Sample Cases > handles recovered case correctly
  ✓ Sample Cases > handles clean authorized case correctly
  ✓ Summary Statistics > correctly aggregates summary by action and auth state
 
  Test Files  1 passed (1)
-      Tests  20 passed (20)
-   Duration  273ms
+      Tests  26 passed (26)
+   Duration  288ms
 ```
+
+### Adversarial Test Coverage
+
+- Duplicate task IDs → warning
+- Future-dated events → warning
+- Malformed timestamps → warning (graceful degradation)
+- Negative rewards (clawbacks) → net exposure calculation
+- Operator with only refusals → correct denominator
+- Conflicting auth records → warning
+- Revoked user with post-revocation rewards → flagged
 
 ---
 
