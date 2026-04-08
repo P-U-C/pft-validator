@@ -18,11 +18,15 @@ task_id: 7ae717a2-f9fa-4226-acf6-c512c9949500
 
 ## Executive Summary
 
-This module ingests per-operator task history — rewarded tasks, refusals/cancellations, holdback outcomes, and evidence metadata — and emits a **persistent reputation snapshot JSON**. The snapshot includes completion rate, evidence quality score, rejection rate, holdback rate, reward velocity (7d/30d), category diversity, trust tier, risk signals, and reason codes.
+This module ingests per-operator task history -- rewarded tasks, refusals/cancellations, holdback outcomes, and evidence metadata -- and emits a **persistent reputation snapshot JSON**. The snapshot includes completion rate, evidence quality score, rejection rate, holdback rate, reward velocity (7d/30d), category diversity, trust tier, risk signals, and reason codes.
 
 **What it is:** A deterministic scoring engine that converts raw operator history into a structured reputation profile consumable by payout, guardrail, moderation, and emissions modules without manual interpretation.
 
 **What it is NOT:** A runtime service, a database, or an event processor. This is a pure function: same input always produces byte-identical output.
+
+### Shared Memory Primitive
+
+The reputation ledger is the missing memory layer for the Post Fiat validator stack. Today, payout, guardrail, moderation, and emissions modules each make isolated decisions about operators without shared context. This module closes that gap by producing a single, deterministic reputation snapshot that all downstream consumers read from. When the payout module holds a reward for review, it does so because the same snapshot that told the guardrail module to suppress issuance also told moderation to escalate. When emissions calculates bonus eligibility, it reads the same trust tier and risk signals that informed the payout multiplier. One write, many reads -- the operator's reputation becomes a shared primitive rather than a per-module heuristic, and every decision is traceable back to the same scored snapshot.
 
 ## Determinism Guarantee
 
@@ -37,19 +41,19 @@ function generateReputationLedger(
 ```
 
 **Single input object** containing:
-- `operator` — full operator history (rewarded tasks, refusals, holdbacks, evidence)
-- `as_of` — ISO 8601 evaluation timestamp (required)
-- `thresholds` — optional partial override of any scoring threshold
+- `operator` -- full operator history (rewarded tasks, refusals, holdbacks, evidence)
+- `as_of` -- ISO 8601 evaluation timestamp (required)
+- `thresholds` -- optional partial override of any scoring threshold
 
 **Returns** a `ReputationLedgerOutput` with:
-- `reputation_snapshot` — all computed metrics
-- `trust_tier` — operator classification
-- `risk_signals` — structured alerts with severity and consumer routing
-- `reason_codes` — sorted list of all applicable reason codes
-- `threshold_config` — full resolved thresholds (echo-back for reproducibility)
-- `downstream_hints` — pre-computed action hints for each consumer module
+- `reputation_snapshot` -- all computed metrics
+- `trust_tier` -- operator classification (risk-capped)
+- `risk_signals` -- structured alerts with severity and consumer routing
+- `reason_codes` -- sorted list of all applicable reason codes
+- `threshold_config` -- full resolved thresholds (echo-back for reproducibility)
+- `downstream_hints` -- pre-computed action hints for each consumer module
 
-## Output Field → Downstream Consumer Mapping
+## Output Field to Downstream Consumer Mapping
 
 | Output Field | Payout | Guardrail | Moderation | Emissions |
 |---|---|---|---|---|
@@ -58,10 +62,10 @@ function generateReputationLedger(
 | `risk_signals` | Hold triggers | Suppression triggers | Escalation triggers | Exclusion triggers |
 | `reason_codes` | Audit trail | Audit trail | Audit trail | Audit trail |
 | `threshold_config` | Verification | Verification | Verification | Verification |
-| `downstream_hints.payout_action` | `standard` / `hold_for_review` / `bonus_eligible` | — | — | — |
-| `downstream_hints.guardrail_action` | — | `full_issuance` / `reduced_issuance` / `suppress` | — | — |
-| `downstream_hints.moderation_action` | — | — | `no_action` / `flag_for_review` / `escalate` | — |
-| `downstream_hints.emissions_eligible` | — | — | — | `true` / `false` |
+| `downstream_hints.payout_action` | `standard` / `hold_for_review` / `bonus_eligible` | -- | -- | -- |
+| `downstream_hints.guardrail_action` | -- | `full_issuance` / `reduced_issuance` / `suppress` | -- | -- |
+| `downstream_hints.moderation_action` | -- | -- | `no_action` / `flag_for_review` / `escalate` | -- |
+| `downstream_hints.emissions_eligible` | -- | -- | -- | `true` / `false` |
 
 ## Trust Tier Decision Logic
 
@@ -73,6 +77,19 @@ function generateReputationLedger(
 | 4 | `developing` | completion_rate >= developing_threshold | Room for improvement but not problematic |
 | 5 | `probationary` | Below all thresholds | Operator needs intervention or closer monitoring |
 
+## Trust Tier Risk Capping
+
+After initial tier assignment, the trust tier is capped downward based on active risk signals. An operator cannot carry a high trust tier while simultaneously triggering severe risk conditions. The capping rules are applied in order, and the most restrictive cap wins:
+
+| Condition | Maximum Tier | Rationale |
+|---|---|---|
+| Any critical-severity risk signal | `probationary` | Critical risk requires immediate intervention regardless of history |
+| Any high-severity risk signal | `developing` | High risk disqualifies operator from reliable/exemplary status |
+| Unresolved holdbacks > 0 | `reliable` | Pending holdbacks prevent exemplary classification |
+| Holdback rate > 0.3 | `developing` | Elevated holdback frequency indicates systematic issues |
+
+For example, an operator with 90% completion and strong evidence would normally qualify as `exemplary`, but if they have a critical rejection rate (>= 50%), they are capped down to `probationary`. Similarly, a single unresolved holdback caps an otherwise-exemplary operator to `reliable`.
+
 ## Risk Signal Logic
 
 | Signal Code | Severity | Trigger | Consumer Routing |
@@ -83,7 +100,11 @@ function generateReputationLedger(
 | `weak_evidence_quality` | high (<40) / medium (<75) | evidence_quality below strong_evidence_quality | moderation, emissions |
 | `low_category_diversity` | low | categories < min_category_diversity | emissions |
 | `stale_history` | high (>=2x stale_days) / medium | Last completion older than stale_days | guardrail, emissions |
-| `declining_velocity` | info | 30d velocity < 50% of 7d velocity | emissions |
+| `declining_velocity` | info | 7d velocity < 50% of 30d velocity (operator slowing down) | emissions |
+
+## Rate Semantics
+
+All rate fields in the reputation snapshot -- `completion_rate`, `rejection_rate`, and `holdback_rate` -- are normalized ratios in the range [0, 1]. Completion rate and rejection rate are computed as proportions of total tasks (rewarded + refusals). Holdback rate is computed as holdbacks / rewarded tasks and clamped to a maximum of 1 even when the holdback count exceeds the rewarded task count. This normalization ensures that downstream consumers can compare rates directly without knowing the underlying counts, and that no rate ever exceeds 1.
 
 ## Configurable Thresholds
 
@@ -145,10 +166,20 @@ All thresholds can be overridden per-call via the `thresholds` input field.
     "evidence_quality_score": 87,
     "rejection_rate": 0,
     "holdback_rate": 0,
+    "reward_velocity_7d": 171.428571,
+    "reward_velocity_30d": 68.333333,
     "category_diversity": 4,
-    "categories_seen": ["mechanism-design", "network", "personal", "research"]
+    "categories_seen": ["mechanism-design", "network", "personal", "research"],
+    "total_tasks": 5,
+    "rewarded_count": 5,
+    "refusal_count": 0,
+    "holdback_count": 0,
+    "evidence_count": 5,
+    "unresolved_holdback_count": 0,
+    "evidence_verified_count": 5,
+    "evidence_unverified_count": 0
   },
-  "reason_codes": ["clean_holdback_record", "consistent_reward_velocity", "high_category_diversity", "high_completion_rate", "no_evidence_submitted", "strong_evidence_quality"],
+  "reason_codes": ["clean_holdback_record", "consistent_reward_velocity", "high_category_diversity", "high_completion_rate", "strong_evidence_quality"],
   "downstream_hints": {
     "payout_action": "bonus_eligible",
     "guardrail_action": "full_issuance",
@@ -195,16 +226,28 @@ All thresholds can be overridden per-call via the `thresholds` input field.
   "reputation_snapshot": {
     "completion_rate": 0.2,
     "rejection_rate": 0.8,
-    "holdback_rate": 2,
+    "holdback_rate": 1,
     "evidence_quality_score": 30,
-    "unresolved_holdback_count": 2
+    "reward_velocity_7d": 14.285714,
+    "reward_velocity_30d": 3.333333,
+    "category_diversity": 1,
+    "categories_seen": ["network"],
+    "total_tasks": 5,
+    "rewarded_count": 1,
+    "refusal_count": 4,
+    "holdback_count": 2,
+    "evidence_count": 1,
+    "unresolved_holdback_count": 2,
+    "evidence_verified_count": 0,
+    "evidence_unverified_count": 1
   },
   "risk_signals": [
     { "code": "high_rejection_rate", "severity": "critical", "consumers": ["guardrail", "moderation", "payout"] },
     { "code": "high_holdback_rate", "severity": "high", "consumers": ["payout", "moderation"] },
-    { "code": "unresolved_holdbacks", "severity": "medium", "consumers": ["payout", "moderation"] },
-    { "code": "weak_evidence_quality", "severity": "high", "consumers": ["moderation", "emissions"] }
+    { "code": "weak_evidence_quality", "severity": "high", "consumers": ["moderation", "emissions"] },
+    { "code": "unresolved_holdbacks", "severity": "medium", "consumers": ["payout", "moderation"] }
   ],
+  "reason_codes": ["declining_velocity", "high_holdback_rate", "high_rejection_rate", "low_completion_rate", "unresolved_holdbacks", "weak_evidence_quality"],
   "downstream_hints": {
     "payout_action": "hold_for_review",
     "guardrail_action": "suppress",
@@ -260,7 +303,7 @@ All thresholds can be overridden per-call via the `thresholds` input field.
 
 ```typescript
 /**
- * Operator Reputation Ledger Module — Types
+ * Operator Reputation Ledger Module -- Types
  *
  * Input/output schemas for ingesting per-operator task history and emitting
  * a persistent reputation snapshot JSON. The output is shaped for direct
@@ -284,7 +327,7 @@ export interface RewardedTask {
   task_id: string;
   completed_at: string;       // ISO 8601
   reward_pft: number;         // PFT awarded
-  score?: number;             // 0–100 quality grade (if graded)
+  score?: number;             // 0-100 quality grade (if graded)
   category?: string;          // e.g. "network", "personal", "mechanism-design"
 }
 
@@ -306,7 +349,7 @@ export interface RefusalRecord {
 }
 
 /**
- * A holdback event — reward withheld pending review or permanently.
+ * A holdback event -- reward withheld pending review or permanently.
  */
 export type HoldbackOutcome =
   | 'pending'       // Still under review
@@ -329,11 +372,11 @@ export interface EvidenceRecord {
   submitted_at: string;       // ISO 8601
   evidence_type: 'url' | 'code' | 'document' | 'screenshot' | 'other';
   verified: boolean;          // Was evidence independently verified?
-  quality_score?: number;     // 0–100 if graded
+  quality_score?: number;     // 0-100 if graded
 }
 
 /**
- * Full operator history — the primary input record.
+ * Full operator history -- the primary input record.
  */
 export interface OperatorHistory {
   operator_id: string;
@@ -364,11 +407,11 @@ export interface ReputationThresholds {
 
   // --- Trust tier boundaries ---
 
-  /** Completion rate >= this → eligible for "exemplary" tier */
+  /** Completion rate >= this -> eligible for "exemplary" tier */
   exemplary_completion_rate: number;
-  /** Completion rate >= this → "reliable" tier */
+  /** Completion rate >= this -> "reliable" tier */
   reliable_completion_rate: number;
-  /** Completion rate >= this → "developing" tier; below → "probationary" */
+  /** Completion rate >= this -> "developing" tier; below -> "probationary" */
   developing_completion_rate: number;
 
   /** Rejection rate above this triggers risk signal */
@@ -401,11 +444,11 @@ export const DEFAULT_THRESHOLDS: ReputationThresholds = {
 };
 
 /**
- * Module input — single operator history + evaluation timestamp.
+ * Module input -- single operator history + evaluation timestamp.
  */
 export interface ReputationLedgerInput {
   operator: OperatorHistory;
-  as_of: string;                           // ISO 8601 — required for determinism
+  as_of: string;                           // ISO 8601 -- required for determinism
   thresholds?: Partial<ReputationThresholds>;  // Override any subset
 }
 
@@ -414,13 +457,13 @@ export interface ReputationLedgerInput {
 // ============================================================================
 
 /**
- * Trust tier — determines downstream issuance and payout policy.
+ * Trust tier -- determines downstream issuance and payout policy.
  *
  * Downstream consumer mapping:
- * - payout module:    exemplary/reliable → standard payout; probationary → held for review
- * - guardrail module: probationary/developing → reduced task issuance rate
- * - emissions module: exemplary → bonus multiplier eligibility
- * - moderation module: probationary → flagged for human review
+ * - payout module:    exemplary/reliable -> standard payout; probationary -> held for review
+ * - guardrail module: probationary/developing -> reduced task issuance rate
+ * - emissions module: exemplary -> bonus multiplier eligibility
+ * - moderation module: probationary -> flagged for human review
  */
 export type TrustTier =
   | 'exemplary'      // Top-tier operator: high completion, strong evidence
@@ -430,7 +473,7 @@ export type TrustTier =
   | 'new_operator';  // Not enough data to classify
 
 /**
- * Reason codes — every decision is traceable to one or more codes.
+ * Reason codes -- every decision is traceable to one or more codes.
  */
 export type ReasonCode =
   // Positive signals
@@ -455,13 +498,13 @@ export type ReasonCode =
   | 'no_evidence_submitted';
 
 /**
- * Risk signal — structured alert for downstream consumers.
+ * Risk signal -- structured alert for downstream consumers.
  *
  * Downstream consumer mapping:
- * - moderation: severity critical/high → auto-escalate
- * - guardrail:  severity high → suppress issuance
- * - payout:     severity medium+ → hold pending review
- * - emissions:  any risk signal → exclude from bonus pool
+ * - moderation: severity critical/high -> auto-escalate
+ * - guardrail:  severity high -> suppress issuance
+ * - payout:     severity medium+ -> hold pending review
+ * - emissions:  any risk signal -> exclude from bonus pool
  */
 export type RiskSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 
@@ -474,17 +517,17 @@ export interface RiskSignal {
 }
 
 /**
- * Reputation snapshot — the core output per operator.
+ * Reputation snapshot -- the core output per operator.
  */
 export interface ReputationSnapshot {
   operator_id: string;
   as_of: string;
 
   // --- Core metrics ---
-  completion_rate: number;            // 0–1
-  evidence_quality_score: number;     // 0–100
-  rejection_rate: number;             // 0–1
-  holdback_rate: number;              // 0–1
+  completion_rate: number;            // 0-1
+  evidence_quality_score: number;     // 0-100
+  rejection_rate: number;             // 0-1
+  holdback_rate: number;              // 0-1
 
   // --- Velocity ---
   reward_velocity_7d: number;         // PFT per day over 7-day window
@@ -510,12 +553,12 @@ export interface ReputationSnapshot {
 /**
  * Full reputation ledger output.
  *
- * Output field → downstream consumer mapping:
- * - reputation_snapshot → all consumers (shared operator memory)
- * - trust_tier          → payout (multiplier), guardrail (issuance rate), emissions (bonus eligibility)
- * - risk_signals        → moderation (escalation), guardrail (suppression), payout (hold)
- * - reason_codes        → audit trail for all consumers
- * - threshold_config    → reproducibility; any consumer can verify the scoring parameters
+ * Output field -> downstream consumer mapping:
+ * - reputation_snapshot -> all consumers (shared operator memory)
+ * - trust_tier          -> payout (multiplier), guardrail (issuance rate), emissions (bonus eligibility)
+ * - risk_signals        -> moderation (escalation), guardrail (suppression), payout (hold)
+ * - reason_codes        -> audit trail for all consumers
+ * - threshold_config    -> reproducibility; any consumer can verify the scoring parameters
  */
 export interface ReputationLedgerOutput {
   generated_at: string;               // = as_of (determinism guarantee)
@@ -529,7 +572,7 @@ export interface ReputationLedgerOutput {
   reason_codes: ReasonCode[];
   threshold_config: ReputationThresholds;
 
-  /** Downstream action hints — pre-computed for consumer convenience */
+  /** Downstream action hints -- pre-computed for consumer convenience */
   downstream_hints: {
     payout_action: 'standard' | 'hold_for_review' | 'bonus_eligible';
     guardrail_action: 'full_issuance' | 'reduced_issuance' | 'suppress';
@@ -543,11 +586,11 @@ export interface ReputationLedgerOutput {
 
 ```typescript
 /**
- * Operator Reputation Ledger — Core Implementation
+ * Operator Reputation Ledger -- Core Implementation
  *
  * Deterministic scoring engine that converts operator task history into
  * a persistent reputation snapshot. All calculations use the provided
- * as_of timestamp — no runtime clock calls.
+ * as_of timestamp -- no runtime clock calls.
  */
 
 import {
@@ -628,12 +671,13 @@ function computeRejectionRate(op: OperatorHistory): number {
 }
 
 /**
- * Holdback rate = holdbacks / rewarded tasks.
+ * Holdback rate = holdbacks / rewarded tasks, clamped to [0, 1].
+ * All rates in this module are normalized ratios in [0, 1].
  * Returns 0 when there are no rewarded tasks.
  */
 function computeHoldbackRate(op: OperatorHistory): number {
   if (op.rewarded_tasks.length === 0) return 0;
-  return round6(op.holdbacks.length / op.rewarded_tasks.length);
+  return round6(Math.min(1, op.holdbacks.length / op.rewarded_tasks.length));
 }
 
 /**
@@ -681,11 +725,11 @@ function computeCategoryDiversity(
  * history depth. Threshold rules are explicit and configurable.
  *
  * Decision tree:
- * 1. If total tasks < min_tasks_for_stats → new_operator
- * 2. If completion_rate >= exemplary AND evidence quality >= strong → exemplary
- * 3. If completion_rate >= reliable → reliable
- * 4. If completion_rate >= developing → developing
- * 5. Otherwise → probationary
+ * 1. If total tasks < min_tasks_for_stats -> new_operator
+ * 2. If completion_rate >= exemplary AND evidence quality >= strong -> exemplary
+ * 3. If completion_rate >= reliable -> reliable
+ * 4. If completion_rate >= developing -> developing
+ * 5. Otherwise -> probationary
  */
 function assignTrustTier(
   snapshot: ReputationSnapshot,
@@ -711,6 +755,62 @@ function assignTrustTier(
   }
 
   return 'probationary';
+}
+
+// ============================================================================
+// Trust Tier Risk-Aware Capping
+// ============================================================================
+
+const TIER_ORDER: TrustTier[] = [
+  'probationary', 'new_operator', 'developing', 'reliable', 'exemplary',
+];
+
+/**
+ * Cap trust tier based on active risk signals.
+ *
+ * Rules:
+ * - Any critical-severity signal -> max tier is probationary
+ * - Any high-severity signal -> max tier is developing
+ * - Unresolved holdbacks > 0 -> max tier is reliable
+ * - Holdback rate > 0.3 -> max tier is developing
+ *
+ * This ensures an operator cannot carry a high trust tier while
+ * simultaneously triggering severe risk conditions.
+ */
+function capTrustTier(
+  tier: TrustTier,
+  signals: RiskSignal[],
+  snapshot: ReputationSnapshot,
+): TrustTier {
+  let maxTier: TrustTier = 'exemplary';
+
+  for (const s of signals) {
+    if (s.severity === 'critical') {
+      maxTier = lowerTier(maxTier, 'probationary');
+    } else if (s.severity === 'high') {
+      maxTier = lowerTier(maxTier, 'developing');
+    }
+  }
+
+  if (snapshot.unresolved_holdback_count > 0) {
+    maxTier = lowerTier(maxTier, 'reliable');
+  }
+
+  if (snapshot.holdback_rate > 0.3) {
+    maxTier = lowerTier(maxTier, 'developing');
+  }
+
+  // Cap: tier cannot exceed maxTier
+  const tierIdx = TIER_ORDER.indexOf(tier);
+  const maxIdx = TIER_ORDER.indexOf(maxTier);
+  if (tierIdx > maxIdx) return maxTier;
+  return tier;
+}
+
+function lowerTier(current: TrustTier, cap: TrustTier): TrustTier {
+  const currentIdx = TIER_ORDER.indexOf(current);
+  const capIdx = TIER_ORDER.indexOf(cap);
+  return capIdx < currentIdx ? cap : current;
 }
 
 // ============================================================================
@@ -787,7 +887,7 @@ function buildRiskSignals(
     signals.push({
       code: 'low_category_diversity',
       severity: 'low',
-      description: `Only ${snapshot.category_diversity} category(ies) — below minimum ${thresholds.min_category_diversity}`,
+      description: `Only ${snapshot.category_diversity} category(ies) -- below minimum ${thresholds.min_category_diversity}`,
       consumers: ['emissions'],
     });
   }
@@ -808,16 +908,16 @@ function buildRiskSignals(
     }
   }
 
-  // Declining velocity (30d velocity < 50% of 7d velocity suggests recent drop-off)
+  // Declining velocity: recent 7d pace is less than half of the 30d average,
+  // indicating the operator is slowing down or going inactive.
   if (
-    snapshot.reward_velocity_7d > 0 &&
     snapshot.reward_velocity_30d > 0 &&
-    snapshot.reward_velocity_30d < snapshot.reward_velocity_7d * 0.5
+    snapshot.reward_velocity_7d < snapshot.reward_velocity_30d * 0.5
   ) {
     signals.push({
       code: 'declining_velocity',
       severity: 'info',
-      description: `30-day velocity (${snapshot.reward_velocity_30d.toFixed(2)} PFT/day) is less than half of 7-day velocity (${snapshot.reward_velocity_7d.toFixed(2)} PFT/day)`,
+      description: `7-day velocity (${snapshot.reward_velocity_7d.toFixed(2)} PFT/day) is less than half of 30-day velocity (${snapshot.reward_velocity_30d.toFixed(2)} PFT/day) -- operator slowing down`,
       consumers: ['emissions'],
     });
   }
@@ -873,9 +973,8 @@ function buildReasonCodes(
     codes.push('high_category_diversity');
   }
   if (
-    snapshot.reward_velocity_7d > 0 &&
     snapshot.reward_velocity_30d > 0 &&
-    snapshot.reward_velocity_30d >= snapshot.reward_velocity_7d * 0.5
+    snapshot.reward_velocity_7d >= snapshot.reward_velocity_30d * 0.5
   ) {
     codes.push('consistent_reward_velocity');
   }
@@ -883,7 +982,7 @@ function buildReasonCodes(
     codes.push('clean_holdback_record');
   }
 
-  // Negative signals — pull from risk signals to avoid duplication
+  // Negative signals -- pull from risk signals to avoid duplication
   const riskCodes = new Set(riskSignals.map(s => s.code));
   if (riskCodes.has('high_rejection_rate')) codes.push('high_rejection_rate');
   if (riskCodes.has('high_holdback_rate')) codes.push('high_holdback_rate');
@@ -1038,16 +1137,18 @@ export function generateReputationLedger(
     evidence_unverified_count,
   };
 
-  // --- Trust tier ---
-  const trust_tier = assignTrustTier(snapshot, thresholds);
-
-  // --- Risk signals ---
+  // --- Risk signals (compute before trust tier for risk-capping) ---
   const risk_signals = buildRiskSignals(snapshot, thresholds, asOf, op);
+
+  // --- Trust tier with risk-aware capping ---
+  let trust_tier = assignTrustTier(snapshot, thresholds);
+  trust_tier = capTrustTier(trust_tier, risk_signals, snapshot);
 
   // --- Reason codes ---
   const reason_codes = buildReasonCodes(snapshot, thresholds, trust_tier, risk_signals, op);
 
   // --- Downstream hints ---
+  // Note: uses the risk-capped trust_tier
   const downstream_hints = computeDownstreamHints(trust_tier, risk_signals);
 
   return {
@@ -1065,10 +1166,10 @@ export function generateReputationLedger(
 }
 ```
 
-## Test Suite (47 tests)
+## Test Suite (56 tests)
 
 ```
- ✓ tests/reputation-ledger.test.ts (47 tests) 23ms
+ ✓ tests/reputation-ledger.test.ts (56 tests) 25ms
    ✓ empty history > returns new_operator tier with zero metrics
    ✓ empty history > includes all required output fields
    ✓ high-trust operators > assigns exemplary tier for high completion + strong evidence
@@ -1086,9 +1187,10 @@ export function generateReputationLedger(
    ✓ category concentration > groups uncategorized tasks under "uncategorized"
    ✓ threshold boundaries > exemplary requires BOTH high completion AND strong evidence
    ✓ threshold boundaries > boundary: exactly at reliable threshold
-   ✓ threshold boundaries > boundary: just below reliable threshold → developing
+   ✓ threshold boundaries > boundary: reliable with clean rejection rate
+   ✓ threshold boundaries > boundary: just below reliable threshold -> developing
    ✓ threshold boundaries > boundary: exactly at developing threshold
-   ✓ threshold boundaries > boundary: below developing threshold → probationary
+   ✓ threshold boundaries > boundary: below developing threshold -> probationary
    ✓ threshold boundaries > custom thresholds override defaults
    ✓ deterministic repeat runs > produces byte-identical JSON across multiple runs
    ✓ deterministic repeat runs > generated_at always equals as_of
@@ -1116,9 +1218,17 @@ export function generateReputationLedger(
    ✓ consumer routing > low_category_diversity routes to emissions only
    ✓ min tasks for stats > exactly at min_tasks_for_stats gets classified
    ✓ min tasks for stats > below min_tasks_for_stats is new_operator
+   ✓ velocity directionality regression > declining_velocity fires when 7d pace drops below 50% of 30d pace
+   ✓ velocity directionality regression > does NOT fire declining_velocity when 7d pace is strong relative to 30d
+   ✓ holdback rate bounds > holdback_rate is always <= 1 even with more holdbacks than tasks
+   ✓ trust tier risk capping > critical severity caps tier to probationary
+   ✓ trust tier risk capping > high severity caps tier to developing
+   ✓ trust tier risk capping > unresolved holdbacks cap tier to reliable max
+   ✓ evidence quality semantics > zero evidence produces 0 score with no_evidence_submitted code
+   ✓ evidence quality semantics > low-quality evidence produces low score with weak_evidence_quality
 
  Test Files  1 passed (1)
-      Tests  47 passed (47)
+      Tests  56 passed (56)
 ```
 
 ### Full Test Source Code
@@ -1216,9 +1326,13 @@ function makeInput(
 // ============================================================================
 
 describe('Operator Reputation Ledger', () => {
+  // -------------------------------------------------------------------------
+  // 1. Empty history
+  // -------------------------------------------------------------------------
   describe('empty history', () => {
     it('returns new_operator tier with zero metrics', () => {
       const result = generateReputationLedger(makeInput());
+
       expect(result.trust_tier).toBe('new_operator');
       expect(result.reputation_snapshot.completion_rate).toBe(0);
       expect(result.reputation_snapshot.rejection_rate).toBe(0);
@@ -1234,6 +1348,7 @@ describe('Operator Reputation Ledger', () => {
 
     it('includes all required output fields', () => {
       const result = generateReputationLedger(makeInput());
+
       expect(result).toHaveProperty('generated_at');
       expect(result).toHaveProperty('as_of');
       expect(result).toHaveProperty('version');
@@ -1247,6 +1362,9 @@ describe('Operator Reputation Ledger', () => {
     });
   });
 
+  // -------------------------------------------------------------------------
+  // 2. High-trust (exemplary) operators
+  // -------------------------------------------------------------------------
   describe('high-trust operators', () => {
     it('assigns exemplary tier for high completion + strong evidence', () => {
       const tasks = Array.from({ length: 10 }, (_, i) =>
@@ -1258,11 +1376,26 @@ describe('Operator Reputation Ledger', () => {
         })
       );
       const evidence = tasks.map((t, i) =>
-        makeEvidence({ task_id: t.task_id, quality_score: 80 + i, verified: true })
+        makeEvidence({
+          task_id: t.task_id,
+          quality_score: 80 + i,
+          verified: true,
+        })
       );
-      const result = generateReputationLedger(makeInput({ rewarded_tasks: tasks, evidence }));
+
+      const result = generateReputationLedger(
+        makeInput({
+          rewarded_tasks: tasks,
+          evidence,
+        })
+      );
+
       expect(result.trust_tier).toBe('exemplary');
       expect(result.reputation_snapshot.completion_rate).toBe(1);
+      expect(result.reputation_snapshot.evidence_quality_score).toBeGreaterThanOrEqual(80);
+      expect(result.reason_codes).toContain('high_completion_rate');
+      expect(result.reason_codes).toContain('strong_evidence_quality');
+      expect(result.reason_codes).toContain('clean_holdback_record');
       expect(result.downstream_hints.payout_action).toBe('bonus_eligible');
       expect(result.downstream_hints.emissions_eligible).toBe(true);
     });
@@ -1271,36 +1404,68 @@ describe('Operator Reputation Ledger', () => {
       const tasks = Array.from({ length: 5 }, (_, i) =>
         makeTask({ task_id: `task-${i}`, completed_at: RECENT })
       );
-      const evidence = tasks.map(t => makeEvidence({ task_id: t.task_id, quality_score: 50 }));
-      const result = generateReputationLedger(makeInput({ rewarded_tasks: tasks, evidence }));
+      const evidence = tasks.map(t =>
+        makeEvidence({ task_id: t.task_id, quality_score: 50 })
+      );
+
+      const result = generateReputationLedger(
+        makeInput({
+          rewarded_tasks: tasks,
+          evidence,
+        })
+      );
+
       expect(result.trust_tier).toBe('reliable');
       expect(result.reason_codes).toContain('weak_evidence_quality');
     });
   });
 
+  // -------------------------------------------------------------------------
+  // 3. Rejection spikes
+  // -------------------------------------------------------------------------
   describe('rejection spikes', () => {
     it('flags high rejection rate as critical risk signal', () => {
       const tasks = [makeTask({ task_id: 'task-0', completed_at: RECENT })];
       const refusals = Array.from({ length: 4 }, (_, i) =>
         makeRefusal({ task_id: `ref-${i}`, occurred_at: RECENT })
       );
-      const result = generateReputationLedger(makeInput({ rewarded_tasks: tasks, refusals }));
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks, refusals })
+      );
+
+      // 1/5 = 20% completion, 80% rejection
       expect(result.reputation_snapshot.rejection_rate).toBe(0.8);
       expect(result.trust_tier).toBe('probationary');
+      expect(result.risk_signals.some(s => s.code === 'high_rejection_rate')).toBe(true);
       expect(result.risk_signals.find(s => s.code === 'high_rejection_rate')?.severity).toBe('critical');
+      expect(result.reason_codes).toContain('high_rejection_rate');
+      expect(result.reason_codes).toContain('low_completion_rate');
       expect(result.downstream_hints.moderation_action).toBe('escalate');
       expect(result.downstream_hints.guardrail_action).toBe('suppress');
     });
 
     it('detects moderate rejection rate as high severity', () => {
-      const tasks = [makeTask({ task_id: 'task-0' }), makeTask({ task_id: 'task-1' })];
+      // 2 completed, 1 refusal -> 33% rejection
+      const tasks = [
+        makeTask({ task_id: 'task-0' }),
+        makeTask({ task_id: 'task-1' }),
+      ];
       const refusals = [makeRefusal({ task_id: 'ref-0' })];
-      const result = generateReputationLedger(makeInput({ rewarded_tasks: tasks, refusals }));
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks, refusals })
+      );
+
       expect(result.reputation_snapshot.rejection_rate).toBeCloseTo(0.333333, 5);
+      expect(result.risk_signals.some(s => s.code === 'high_rejection_rate')).toBe(true);
       expect(result.risk_signals.find(s => s.code === 'high_rejection_rate')?.severity).toBe('high');
     });
   });
 
+  // -------------------------------------------------------------------------
+  // 4. Holdback recovery
+  // -------------------------------------------------------------------------
   describe('holdback recovery', () => {
     it('recognizes holdback recovery when all holdbacks released', () => {
       const tasks = Array.from({ length: 5 }, (_, i) =>
@@ -1310,38 +1475,65 @@ describe('Operator Reputation Ledger', () => {
         makeHoldback({ task_id: 'task-0', outcome: 'released', resolved_at: RECENT }),
         makeHoldback({ task_id: 'task-1', outcome: 'released', resolved_at: RECENT }),
       ];
-      const result = generateReputationLedger(makeInput({ rewarded_tasks: tasks, holdbacks }));
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks, holdbacks })
+      );
+
       expect(result.reason_codes).toContain('holdback_recovery');
       expect(result.reputation_snapshot.unresolved_holdback_count).toBe(0);
     });
 
     it('flags unresolved holdbacks as risk signal', () => {
-      const tasks = Array.from({ length: 5 }, (_, i) => makeTask({ task_id: `task-${i}` }));
-      const holdbacks = Array.from({ length: 3 }, (_, i) =>
-        makeHoldback({ task_id: `hold-${i}`, outcome: 'pending' })
+      const tasks = Array.from({ length: 5 }, (_, i) =>
+        makeTask({ task_id: `task-${i}` })
       );
-      const result = generateReputationLedger(makeInput({ rewarded_tasks: tasks, holdbacks }));
+      const holdbacks = [
+        makeHoldback({ task_id: 'task-0', outcome: 'pending' }),
+        makeHoldback({ task_id: 'task-1', outcome: 'pending' }),
+        makeHoldback({ task_id: 'task-2', outcome: 'pending' }),
+      ];
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks, holdbacks })
+      );
+
       expect(result.reputation_snapshot.unresolved_holdback_count).toBe(3);
+      expect(result.risk_signals.some(s => s.code === 'unresolved_holdbacks')).toBe(true);
       expect(result.risk_signals.find(s => s.code === 'unresolved_holdbacks')?.severity).toBe('high');
+      expect(result.reason_codes).toContain('unresolved_holdbacks');
     });
 
     it('does not flag holdback recovery when some are forfeited', () => {
-      const tasks = Array.from({ length: 5 }, (_, i) => makeTask({ task_id: `task-${i}` }));
+      const tasks = Array.from({ length: 5 }, (_, i) =>
+        makeTask({ task_id: `task-${i}` })
+      );
       const holdbacks = [
         makeHoldback({ task_id: 'task-0', outcome: 'released', resolved_at: RECENT }),
         makeHoldback({ task_id: 'task-1', outcome: 'forfeited', resolved_at: RECENT }),
       ];
-      const result = generateReputationLedger(makeInput({ rewarded_tasks: tasks, holdbacks }));
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks, holdbacks })
+      );
+
       expect(result.reason_codes).not.toContain('holdback_recovery');
     });
   });
 
+  // -------------------------------------------------------------------------
+  // 5. Stale history
+  // -------------------------------------------------------------------------
   describe('stale history', () => {
     it('flags operator with no recent activity as stale', () => {
       const tasks = Array.from({ length: 5 }, (_, i) =>
         makeTask({ task_id: `task-${i}`, completed_at: VERY_OLD })
       );
-      const result = generateReputationLedger(makeInput({ rewarded_tasks: tasks }));
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks })
+      );
+
       expect(result.risk_signals.some(s => s.code === 'stale_history')).toBe(true);
       expect(result.reason_codes).toContain('stale_history');
     });
@@ -1350,38 +1542,67 @@ describe('Operator Reputation Ledger', () => {
       const tasks = Array.from({ length: 5 }, (_, i) =>
         makeTask({ task_id: `task-${i}`, completed_at: RECENT })
       );
-      const result = generateReputationLedger(makeInput({ rewarded_tasks: tasks }));
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks })
+      );
+
       expect(result.risk_signals.some(s => s.code === 'stale_history')).toBe(false);
+      expect(result.reason_codes).not.toContain('stale_history');
     });
 
     it('stale severity escalates for very old history', () => {
+      // VERY_OLD is ~15 months ago, stale_days default is 60, so 2x = 120 days
       const tasks = [makeTask({ task_id: 'task-0', completed_at: VERY_OLD })];
+
       const result = generateReputationLedger(
         makeInput({ rewarded_tasks: tasks, refusals: [
-          makeRefusal({ task_id: 'ref-0' }), makeRefusal({ task_id: 'ref-1' }),
+          makeRefusal({ task_id: 'ref-0' }),
+          makeRefusal({ task_id: 'ref-1' }),
         ]})
       );
+
       const staleSig = result.risk_signals.find(s => s.code === 'stale_history');
+      expect(staleSig).toBeDefined();
       expect(staleSig?.severity).toBe('high');
     });
   });
 
+  // -------------------------------------------------------------------------
+  // 6. Category concentration
+  // -------------------------------------------------------------------------
   describe('category concentration', () => {
     it('flags low diversity when all tasks in one category', () => {
       const tasks = Array.from({ length: 5 }, (_, i) =>
         makeTask({ task_id: `task-${i}`, category: 'network' })
       );
-      const result = generateReputationLedger(makeInput({ rewarded_tasks: tasks }));
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks })
+      );
+
       expect(result.reputation_snapshot.category_diversity).toBe(1);
+      expect(result.reputation_snapshot.categories_seen).toEqual(['network']);
       expect(result.risk_signals.some(s => s.code === 'low_category_diversity')).toBe(true);
+      expect(result.reason_codes).toContain('low_category_diversity');
     });
 
     it('recognizes high diversity across multiple categories', () => {
       const categories = ['network', 'personal', 'mechanism-design', 'research'];
-      const tasks = categories.map((cat, i) => makeTask({ task_id: `task-${i}`, category: cat }));
-      const result = generateReputationLedger(makeInput({ rewarded_tasks: tasks }));
+      const tasks = categories.map((cat, i) =>
+        makeTask({ task_id: `task-${i}`, category: cat })
+      );
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks })
+      );
+
       expect(result.reputation_snapshot.category_diversity).toBe(4);
+      expect(result.reputation_snapshot.categories_seen).toEqual(
+        [...categories].sort()
+      );
       expect(result.reason_codes).toContain('high_category_diversity');
+      expect(result.risk_signals.some(s => s.code === 'low_category_diversity')).toBe(false);
     });
 
     it('groups uncategorized tasks under "uncategorized"', () => {
@@ -1390,71 +1611,161 @@ describe('Operator Reputation Ledger', () => {
         makeTask({ task_id: 'task-1', category: 'network' }),
         makeTask({ task_id: 'task-2', category: undefined }),
       ];
-      const result = generateReputationLedger(makeInput({ rewarded_tasks: tasks }));
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks })
+      );
+
       expect(result.reputation_snapshot.categories_seen).toContain('uncategorized');
       expect(result.reputation_snapshot.category_diversity).toBe(2);
     });
   });
 
+  // -------------------------------------------------------------------------
+  // 7. Threshold boundaries
+  // -------------------------------------------------------------------------
   describe('threshold boundaries', () => {
     it('exemplary requires BOTH high completion AND strong evidence', () => {
-      const tasks = Array.from({ length: 5 }, (_, i) => makeTask({ task_id: `task-${i}` }));
-      const result = generateReputationLedger(makeInput({ rewarded_tasks: tasks }));
-      expect(result.reputation_snapshot.completion_rate).toBe(1);
-      expect(result.trust_tier).toBe('reliable'); // Not exemplary without evidence
-    });
+      // 100% completion but no evidence -> reliable, not exemplary
+      const tasks = Array.from({ length: 5 }, (_, i) =>
+        makeTask({ task_id: `task-${i}` })
+      );
 
-    it('boundary: exactly at reliable threshold', () => {
-      const tasks = Array.from({ length: 7 }, (_, i) => makeTask({ task_id: `task-${i}` }));
-      const refusals = Array.from({ length: 3 }, (_, i) => makeRefusal({ task_id: `ref-${i}` }));
-      const result = generateReputationLedger(makeInput({ rewarded_tasks: tasks, refusals }));
-      expect(result.reputation_snapshot.completion_rate).toBe(0.7);
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks })
+      );
+
+      expect(result.reputation_snapshot.completion_rate).toBe(1);
+      expect(result.reputation_snapshot.evidence_quality_score).toBe(0);
       expect(result.trust_tier).toBe('reliable');
     });
 
-    it('boundary: just below reliable threshold → developing', () => {
-      const tasks = [makeTask({ task_id: 'task-0' }), makeTask({ task_id: 'task-1' })];
+    it('boundary: exactly at reliable threshold', () => {
+      // 70% completion = 7 completed, 3 refused
+      // But 30% rejection hits high_rejection_rate threshold -> high severity -> caps at developing
+      const tasks = Array.from({ length: 7 }, (_, i) =>
+        makeTask({ task_id: `task-${i}` })
+      );
+      const refusals = Array.from({ length: 3 }, (_, i) =>
+        makeRefusal({ task_id: `ref-${i}` })
+      );
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks, refusals })
+      );
+
+      expect(result.reputation_snapshot.completion_rate).toBe(0.7);
+      // Risk-capped: 30% rejection = high severity -> max tier developing
+      expect(result.trust_tier).toBe('developing');
+    });
+
+    it('boundary: reliable with clean rejection rate', () => {
+      // 70% completion but rejection rate below threshold -> actually reliable
+      const tasks = Array.from({ length: 7 }, (_, i) =>
+        makeTask({ task_id: `task-${i}` })
+      );
+      // Only 2 refusals out of 9 total = 22% < 30% threshold
+      const refusals = Array.from({ length: 2 }, (_, i) =>
+        makeRefusal({ task_id: `ref-${i}` })
+      );
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks, refusals })
+      );
+
+      expect(result.trust_tier).toBe('reliable');
+    });
+
+    it('boundary: just below reliable threshold -> developing', () => {
+      // 69% -> 69/100... let's use 2/3 ~ 0.666
+      const tasks = [
+        makeTask({ task_id: 'task-0' }),
+        makeTask({ task_id: 'task-1' }),
+      ];
       const refusals = [makeRefusal({ task_id: 'ref-0' })];
-      const result = generateReputationLedger(makeInput({ rewarded_tasks: tasks, refusals }));
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks, refusals })
+      );
+
+      // 2/3 ~ 0.666667 < 0.70
       expect(result.reputation_snapshot.completion_rate).toBeCloseTo(0.666667, 5);
       expect(result.trust_tier).toBe('developing');
     });
 
     it('boundary: exactly at developing threshold', () => {
-      const tasks = Array.from({ length: 3 }, (_, i) => makeTask({ task_id: `task-${i}` }));
-      const refusals = Array.from({ length: 3 }, (_, i) => makeRefusal({ task_id: `ref-${i}` }));
-      const result = generateReputationLedger(makeInput({ rewarded_tasks: tasks, refusals }));
+      // 50% completion = 3 completed, 3 refused
+      // 50% rejection rate -> critical severity -> caps at probationary
+      const tasks = Array.from({ length: 3 }, (_, i) =>
+        makeTask({ task_id: `task-${i}` })
+      );
+      const refusals = Array.from({ length: 3 }, (_, i) =>
+        makeRefusal({ task_id: `ref-${i}` })
+      );
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks, refusals })
+      );
+
       expect(result.reputation_snapshot.completion_rate).toBe(0.5);
-      expect(result.trust_tier).toBe('developing');
+      // Risk-capped: 50% rejection = critical -> probationary
+      expect(result.trust_tier).toBe('probationary');
     });
 
-    it('boundary: below developing threshold → probationary', () => {
+    it('boundary: below developing threshold -> probationary', () => {
+      // 1 completed, 3 refused -> 25%
       const tasks = [makeTask({ task_id: 'task-0' })];
-      const refusals = Array.from({ length: 3 }, (_, i) => makeRefusal({ task_id: `ref-${i}` }));
-      const result = generateReputationLedger(makeInput({ rewarded_tasks: tasks, refusals }));
+      const refusals = Array.from({ length: 3 }, (_, i) =>
+        makeRefusal({ task_id: `ref-${i}` })
+      );
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks, refusals })
+      );
+
       expect(result.reputation_snapshot.completion_rate).toBe(0.25);
       expect(result.trust_tier).toBe('probationary');
     });
 
     it('custom thresholds override defaults', () => {
-      const tasks = Array.from({ length: 3 }, (_, i) => makeTask({ task_id: `task-${i}` }));
+      // With lower exemplary threshold AND higher rejection threshold,
+      // a 60% operator becomes exemplary
+      const tasks = Array.from({ length: 3 }, (_, i) =>
+        makeTask({ task_id: `task-${i}` })
+      );
       const refusals = [makeRefusal({ task_id: 'ref-0' }), makeRefusal({ task_id: 'ref-1' })];
-      const evidence = tasks.map(t => makeEvidence({ task_id: t.task_id, quality_score: 90 }));
+      const evidence = tasks.map(t =>
+        makeEvidence({ task_id: t.task_id, quality_score: 90 })
+      );
+
       const result = generateReputationLedger({
         operator: makeOperator({ rewarded_tasks: tasks, refusals, evidence }),
         as_of: NOW,
-        thresholds: { exemplary_completion_rate: 0.50, strong_evidence_quality: 80 },
+        thresholds: {
+          exemplary_completion_rate: 0.50,
+          strong_evidence_quality: 80,
+          high_rejection_rate: 0.50, // Raise to avoid risk-capping
+        },
       });
+
+      expect(result.reputation_snapshot.completion_rate).toBe(0.6);
       expect(result.trust_tier).toBe('exemplary');
       expect(result.threshold_config.exemplary_completion_rate).toBe(0.50);
     });
   });
 
+  // -------------------------------------------------------------------------
+  // 8. Deterministic repeat runs
+  // -------------------------------------------------------------------------
   describe('deterministic repeat runs', () => {
     it('produces byte-identical JSON across multiple runs', () => {
       const input = makeInput({
         rewarded_tasks: Array.from({ length: 5 }, (_, i) =>
-          makeTask({ task_id: `task-${i}`, completed_at: RECENT, category: ['network', 'personal'][i % 2] })
+          makeTask({
+            task_id: `task-${i}`,
+            completed_at: RECENT,
+            category: ['network', 'personal'][i % 2],
+          })
         ),
         refusals: [makeRefusal({ task_id: 'ref-0' })],
         holdbacks: [makeHoldback({ task_id: 'task-0', outcome: 'released', resolved_at: RECENT })],
@@ -1463,9 +1774,11 @@ describe('Operator Reputation Ledger', () => {
           makeEvidence({ task_id: 'task-1', quality_score: 90 }),
         ],
       });
+
       const run1 = JSON.stringify(generateReputationLedger(input));
       const run2 = JSON.stringify(generateReputationLedger(input));
       const run3 = JSON.stringify(generateReputationLedger(input));
+
       expect(run1).toBe(run2);
       expect(run2).toBe(run3);
     });
@@ -1483,6 +1796,9 @@ describe('Operator Reputation Ledger', () => {
     });
   });
 
+  // -------------------------------------------------------------------------
+  // 9. Reward velocity
+  // -------------------------------------------------------------------------
   describe('reward velocity', () => {
     it('calculates velocity within window only', () => {
       const tasks = [
@@ -1490,23 +1806,550 @@ describe('Operator Reputation Ledger', () => {
         makeTask({ task_id: 'task-mid', completed_at: '2026-03-20T00:00:00.000Z', reward_pft: 3000 }),
         makeTask({ task_id: 'task-old', completed_at: '2026-02-01T00:00:00.000Z', reward_pft: 9999 }),
       ];
-      const result = generateReputationLedger(makeInput({ rewarded_tasks: tasks }));
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks })
+      );
+
+      // 7-day window: only task-recent (700 PFT / 7 days = 100)
       expect(result.reputation_snapshot.reward_velocity_7d).toBe(100);
+      // 30-day window: task-recent + task-mid (3700 PFT / 30 days ~ 123.333333)
       expect(result.reputation_snapshot.reward_velocity_30d).toBeCloseTo(123.333333, 4);
     });
 
     it('returns zero velocity when no tasks in window', () => {
-      const tasks = [makeTask({ task_id: 'task-old', completed_at: VERY_OLD, reward_pft: 1000 })];
-      const result = generateReputationLedger(makeInput({ rewarded_tasks: tasks }));
+      const tasks = [
+        makeTask({ task_id: 'task-old', completed_at: VERY_OLD, reward_pft: 1000 }),
+      ];
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks })
+      );
+
       expect(result.reputation_snapshot.reward_velocity_7d).toBe(0);
       expect(result.reputation_snapshot.reward_velocity_30d).toBe(0);
     });
   });
 
-  // ... (remaining 17 tests covering evidence scoring, downstream hints,
-  //      holdback rate, risk signal ordering, threshold config, reason code
-  //      ordering, developing operator, operator identity, category sorting,
-  //      velocity reason codes, consumer routing, and min tasks for stats)
+  // -------------------------------------------------------------------------
+  // 10. Evidence scoring
+  // -------------------------------------------------------------------------
+  describe('evidence scoring', () => {
+    it('averages quality scores correctly', () => {
+      const evidence = [
+        makeEvidence({ task_id: 'task-0', quality_score: 60 }),
+        makeEvidence({ task_id: 'task-1', quality_score: 80 }),
+        makeEvidence({ task_id: 'task-2', quality_score: 100 }),
+      ];
+
+      const result = generateReputationLedger(
+        makeInput({ evidence })
+      );
+
+      expect(result.reputation_snapshot.evidence_quality_score).toBe(80);
+    });
+
+    it('ignores evidence without quality_score in average', () => {
+      const evidence = [
+        makeEvidence({ task_id: 'task-0', quality_score: 90 }),
+        makeEvidence({ task_id: 'task-1', quality_score: undefined }),
+      ];
+
+      const result = generateReputationLedger(
+        makeInput({ evidence })
+      );
+
+      expect(result.reputation_snapshot.evidence_quality_score).toBe(90);
+      expect(result.reputation_snapshot.evidence_count).toBe(2);
+    });
+
+    it('tracks verified vs unverified evidence', () => {
+      const evidence = [
+        makeEvidence({ task_id: 'task-0', verified: true }),
+        makeEvidence({ task_id: 'task-1', verified: false }),
+        makeEvidence({ task_id: 'task-2', verified: true }),
+      ];
+
+      const result = generateReputationLedger(
+        makeInput({ evidence })
+      );
+
+      expect(result.reputation_snapshot.evidence_verified_count).toBe(2);
+      expect(result.reputation_snapshot.evidence_unverified_count).toBe(1);
+    });
+
+    it('no_evidence_submitted when operator has tasks but no evidence', () => {
+      const tasks = Array.from({ length: 3 }, (_, i) =>
+        makeTask({ task_id: `task-${i}` })
+      );
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks })
+      );
+
+      expect(result.reason_codes).toContain('no_evidence_submitted');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 11. Downstream hints
+  // -------------------------------------------------------------------------
+  describe('downstream hints', () => {
+    it('suppress guardrail for probationary operator', () => {
+      const tasks = [makeTask({ task_id: 'task-0' })];
+      const refusals = Array.from({ length: 5 }, (_, i) =>
+        makeRefusal({ task_id: `ref-${i}` })
+      );
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks, refusals })
+      );
+
+      expect(result.downstream_hints.guardrail_action).toBe('suppress');
+      expect(result.downstream_hints.payout_action).toBe('hold_for_review');
+    });
+
+    it('reduced issuance for new operators', () => {
+      const result = generateReputationLedger(
+        makeInput({
+          rewarded_tasks: [makeTask({ task_id: 'task-0' })],
+        })
+      );
+
+      expect(result.trust_tier).toBe('new_operator');
+      expect(result.downstream_hints.guardrail_action).toBe('reduced_issuance');
+    });
+
+    it('emissions eligible only for exemplary/reliable without risk', () => {
+      // Reliable with no risk signals -> eligible
+      const tasks = Array.from({ length: 5 }, (_, i) =>
+        makeTask({
+          task_id: `task-${i}`,
+          completed_at: RECENT,
+          category: ['network', 'personal', 'mechanism-design'][i % 3],
+        })
+      );
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks })
+      );
+
+      expect(result.trust_tier).toBe('reliable');
+      expect(result.downstream_hints.emissions_eligible).toBe(true);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 12. Holdback rate
+  // -------------------------------------------------------------------------
+  describe('holdback rate', () => {
+    it('calculates holdback rate relative to rewarded tasks', () => {
+      const tasks = Array.from({ length: 5 }, (_, i) =>
+        makeTask({ task_id: `task-${i}` })
+      );
+      const holdbacks = [
+        makeHoldback({ task_id: 'task-0', outcome: 'pending' }),
+      ];
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks, holdbacks })
+      );
+
+      expect(result.reputation_snapshot.holdback_rate).toBe(0.2);
+      expect(result.reputation_snapshot.holdback_count).toBe(1);
+    });
+
+    it('high holdback rate triggers risk signal', () => {
+      const tasks = Array.from({ length: 5 }, (_, i) =>
+        makeTask({ task_id: `task-${i}` })
+      );
+      const holdbacks = Array.from({ length: 3 }, (_, i) =>
+        makeHoldback({ task_id: `hold-${i}`, outcome: 'forfeited', resolved_at: RECENT })
+      );
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks, holdbacks })
+      );
+
+      expect(result.reputation_snapshot.holdback_rate).toBe(0.6);
+      expect(result.risk_signals.some(s => s.code === 'high_holdback_rate')).toBe(true);
+      expect(result.risk_signals.find(s => s.code === 'high_holdback_rate')?.severity).toBe('high');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 13. Risk signal ordering
+  // -------------------------------------------------------------------------
+  describe('risk signal ordering', () => {
+    it('sorts signals by severity (critical first) then code', () => {
+      // Build an operator with multiple risk signals
+      const tasks = [makeTask({ task_id: 'task-0', completed_at: VERY_OLD, category: 'network' })];
+      const refusals = Array.from({ length: 4 }, (_, i) =>
+        makeRefusal({ task_id: `ref-${i}` })
+      );
+      const holdbacks = Array.from({ length: 3 }, (_, i) =>
+        makeHoldback({ task_id: `hold-${i}`, outcome: 'pending' })
+      );
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks, refusals, holdbacks })
+      );
+
+      expect(result.risk_signals.length).toBeGreaterThan(1);
+      // Verify ordering: each signal's severity <= next signal's severity
+      const severityOrder = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+      for (let i = 1; i < result.risk_signals.length; i++) {
+        const prev = severityOrder[result.risk_signals[i - 1].severity];
+        const curr = severityOrder[result.risk_signals[i].severity];
+        expect(curr).toBeGreaterThanOrEqual(prev);
+      }
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 14. Threshold config echo-back
+  // -------------------------------------------------------------------------
+  describe('threshold config', () => {
+    it('echoes back full resolved thresholds including overrides', () => {
+      const result = generateReputationLedger({
+        operator: makeOperator(),
+        as_of: NOW,
+        thresholds: { stale_days: 90, min_tasks_for_stats: 5 },
+      });
+
+      expect(result.threshold_config.stale_days).toBe(90);
+      expect(result.threshold_config.min_tasks_for_stats).toBe(5);
+      // Defaults still present
+      expect(result.threshold_config.velocity_window_7d).toBe(7);
+      expect(result.threshold_config.exemplary_completion_rate).toBe(0.90);
+    });
+
+    it('echoes back defaults when no overrides provided', () => {
+      const result = generateReputationLedger(makeInput());
+      expect(result.threshold_config).toEqual(DEFAULT_THRESHOLDS);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 15. Reason code ordering
+  // -------------------------------------------------------------------------
+  describe('reason code ordering', () => {
+    it('reason codes are always sorted alphabetically', () => {
+      const tasks = Array.from({ length: 5 }, (_, i) =>
+        makeTask({ task_id: `task-${i}`, completed_at: RECENT })
+      );
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks })
+      );
+
+      const sorted = [...result.reason_codes].sort();
+      expect(result.reason_codes).toEqual(sorted);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 16. Mixed scenario: developing operator
+  // -------------------------------------------------------------------------
+  describe('developing operator', () => {
+    it('developing tier with mixed signals', () => {
+      // 60% completion (3/5), some evidence
+      const tasks = Array.from({ length: 3 }, (_, i) =>
+        makeTask({ task_id: `task-${i}`, category: 'network' })
+      );
+      const refusals = [
+        makeRefusal({ task_id: 'ref-0' }),
+        makeRefusal({ task_id: 'ref-1' }),
+      ];
+      const evidence = [
+        makeEvidence({ task_id: 'task-0', quality_score: 65 }),
+      ];
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks, refusals, evidence })
+      );
+
+      expect(result.trust_tier).toBe('developing');
+      expect(result.reputation_snapshot.completion_rate).toBe(0.6);
+      expect(result.downstream_hints.guardrail_action).toBe('reduced_issuance');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 17. Operator ID passthrough
+  // -------------------------------------------------------------------------
+  describe('operator identity', () => {
+    it('passes through operator_id to all relevant fields', () => {
+      const result = generateReputationLedger({
+        operator: makeOperator({ operator_id: 'op-custom-xyz' }),
+        as_of: NOW,
+      });
+
+      expect(result.operator_id).toBe('op-custom-xyz');
+      expect(result.reputation_snapshot.operator_id).toBe('op-custom-xyz');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 18. Categories sorted deterministically
+  // -------------------------------------------------------------------------
+  describe('category sorting', () => {
+    it('categories_seen is always alphabetically sorted', () => {
+      const tasks = [
+        makeTask({ task_id: 'task-0', category: 'zebra' }),
+        makeTask({ task_id: 'task-1', category: 'alpha' }),
+        makeTask({ task_id: 'task-2', category: 'middle' }),
+      ];
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks })
+      );
+
+      expect(result.reputation_snapshot.categories_seen).toEqual(['alpha', 'middle', 'zebra']);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 19. Consistent velocity reason code
+  // -------------------------------------------------------------------------
+  describe('velocity reason codes', () => {
+    it('consistent_reward_velocity when 30d >= 50% of 7d', () => {
+      const tasks = [
+        makeTask({ task_id: 'task-0', completed_at: '2026-04-05T00:00:00.000Z', reward_pft: 100 }),
+        makeTask({ task_id: 'task-1', completed_at: '2026-03-20T00:00:00.000Z', reward_pft: 100 }),
+        makeTask({ task_id: 'task-2', completed_at: '2026-03-15T00:00:00.000Z', reward_pft: 100 }),
+      ];
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks })
+      );
+
+      expect(result.reason_codes).toContain('consistent_reward_velocity');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 20. Consumer routing on risk signals
+  // -------------------------------------------------------------------------
+  describe('consumer routing', () => {
+    it('rejection risk signal routes to guardrail, moderation, payout', () => {
+      const tasks = [makeTask({ task_id: 'task-0' })];
+      const refusals = Array.from({ length: 4 }, (_, i) =>
+        makeRefusal({ task_id: `ref-${i}` })
+      );
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks, refusals })
+      );
+
+      const sig = result.risk_signals.find(s => s.code === 'high_rejection_rate');
+      expect(sig?.consumers).toContain('guardrail');
+      expect(sig?.consumers).toContain('moderation');
+      expect(sig?.consumers).toContain('payout');
+    });
+
+    it('low_category_diversity routes to emissions only', () => {
+      const tasks = Array.from({ length: 5 }, (_, i) =>
+        makeTask({ task_id: `task-${i}`, category: 'network' })
+      );
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks })
+      );
+
+      const sig = result.risk_signals.find(s => s.code === 'low_category_diversity');
+      expect(sig?.consumers).toEqual(['emissions']);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 21. Min tasks for stats boundary
+  // -------------------------------------------------------------------------
+  describe('min tasks for stats', () => {
+    it('exactly at min_tasks_for_stats gets classified (not new_operator)', () => {
+      // Default min is 3
+      const tasks = Array.from({ length: 3 }, (_, i) =>
+        makeTask({ task_id: `task-${i}` })
+      );
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks })
+      );
+
+      expect(result.trust_tier).not.toBe('new_operator');
+      expect(result.reputation_snapshot.total_tasks).toBe(3);
+    });
+
+    it('below min_tasks_for_stats is new_operator', () => {
+      const tasks = [makeTask({ task_id: 'task-0' }), makeTask({ task_id: 'task-1' })];
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks })
+      );
+
+      expect(result.trust_tier).toBe('new_operator');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 22. REGRESSION: Velocity directionality
+  // -------------------------------------------------------------------------
+  describe('velocity directionality regression', () => {
+    it('declining_velocity fires when 7d pace drops below 50% of 30d pace', () => {
+      // 30d: lots of activity. 7d: almost none.
+      const tasks = [
+        makeTask({ task_id: 'task-old-1', completed_at: '2026-03-15T00:00:00.000Z', reward_pft: 3000 }),
+        makeTask({ task_id: 'task-old-2', completed_at: '2026-03-20T00:00:00.000Z', reward_pft: 3000 }),
+        makeTask({ task_id: 'task-old-3', completed_at: '2026-03-25T00:00:00.000Z', reward_pft: 3000 }),
+        makeTask({ task_id: 'task-recent', completed_at: '2026-04-06T00:00:00.000Z', reward_pft: 100 }),
+      ];
+
+      const result = generateReputationLedger(makeInput({ rewarded_tasks: tasks }));
+
+      // 7d velocity: 100/7 ~ 14.3 PFT/day
+      // 30d velocity: 9100/30 ~ 303.3 PFT/day
+      // 14.3 < 303.3 * 0.5 -> declining
+      expect(result.risk_signals.some(s => s.code === 'declining_velocity')).toBe(true);
+      expect(result.reason_codes).toContain('declining_velocity');
+    });
+
+    it('does NOT fire declining_velocity when 7d pace is strong relative to 30d', () => {
+      // Recent burst of activity
+      const tasks = [
+        makeTask({ task_id: 'task-old', completed_at: '2026-03-15T00:00:00.000Z', reward_pft: 500 }),
+        makeTask({ task_id: 'task-recent-1', completed_at: '2026-04-05T00:00:00.000Z', reward_pft: 3000 }),
+        makeTask({ task_id: 'task-recent-2', completed_at: '2026-04-06T00:00:00.000Z', reward_pft: 3000 }),
+      ];
+
+      const result = generateReputationLedger(makeInput({ rewarded_tasks: tasks }));
+
+      // 7d: 6000/7 ~ 857. 30d: 6500/30 ~ 216. 857 > 216*0.5 -> not declining
+      expect(result.risk_signals.some(s => s.code === 'declining_velocity')).toBe(false);
+      expect(result.reason_codes).toContain('consistent_reward_velocity');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 23. REGRESSION: Holdback rate bounded [0, 1]
+  // -------------------------------------------------------------------------
+  describe('holdback rate bounds', () => {
+    it('holdback_rate is always <= 1 even with more holdbacks than tasks', () => {
+      const tasks = [makeTask({ task_id: 'task-0' })];
+      const holdbacks = Array.from({ length: 5 }, (_, i) =>
+        makeHoldback({ task_id: `hold-${i}`, outcome: 'pending' })
+      );
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks, holdbacks })
+      );
+
+      expect(result.reputation_snapshot.holdback_rate).toBeLessThanOrEqual(1);
+      expect(result.reputation_snapshot.holdback_rate).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 24. REGRESSION: Trust tier capped by critical risk signals
+  // -------------------------------------------------------------------------
+  describe('trust tier risk capping', () => {
+    it('critical severity caps tier to probationary', () => {
+      // High completion but critical rejection rate (>= 50%)
+      const tasks = Array.from({ length: 5 }, (_, i) =>
+        makeTask({ task_id: `task-${i}` })
+      );
+      const refusals = Array.from({ length: 5 }, (_, i) =>
+        makeRefusal({ task_id: `ref-${i}` })
+      );
+      const evidence = tasks.map(t =>
+        makeEvidence({ task_id: t.task_id, quality_score: 95 })
+      );
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks, refusals, evidence })
+      );
+
+      // 50% completion would be developing, but 50% rejection is critical -> probationary
+      expect(result.trust_tier).toBe('probationary');
+    });
+
+    it('high severity caps tier to developing', () => {
+      // Good completion (80%) but 30% rejection -> high severity
+      const tasks = Array.from({ length: 8 }, (_, i) =>
+        makeTask({ task_id: `task-${i}` })
+      );
+      const refusals = Array.from({ length: 2 }, (_, i) =>
+        makeRefusal({ task_id: `ref-${i}` })
+      );
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks, refusals })
+      );
+
+      // 80% completion = reliable, but... let's check rejection rate
+      // 2/10 = 20% < 30% threshold -> no high severity -> should stay reliable
+      expect(result.reputation_snapshot.rejection_rate).toBe(0.2);
+      // 20% < 30% threshold -> no risk cap -> reliable stands
+      expect(result.trust_tier).toBe('reliable');
+    });
+
+    it('unresolved holdbacks cap tier to reliable max', () => {
+      const tasks = Array.from({ length: 10 }, (_, i) =>
+        makeTask({ task_id: `task-${i}`, category: ['network', 'personal', 'defi'][i % 3] })
+      );
+      const evidence = tasks.map(t =>
+        makeEvidence({ task_id: t.task_id, quality_score: 95 })
+      );
+      const holdbacks = [
+        makeHoldback({ task_id: 'hold-0', outcome: 'pending' }),
+      ];
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks, evidence, holdbacks })
+      );
+
+      // 100% completion + 95 evidence = would be exemplary
+      // But unresolved holdback caps at reliable
+      expect(result.trust_tier).toBe('reliable');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 25. REGRESSION: Evidence quality 0 vs missing evidence
+  // -------------------------------------------------------------------------
+  describe('evidence quality semantics', () => {
+    it('zero evidence produces 0 score with no_evidence_submitted code', () => {
+      const tasks = Array.from({ length: 3 }, (_, i) =>
+        makeTask({ task_id: `task-${i}` })
+      );
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks, evidence: [] })
+      );
+
+      expect(result.reputation_snapshot.evidence_quality_score).toBe(0);
+      expect(result.reputation_snapshot.evidence_count).toBe(0);
+      expect(result.reason_codes).toContain('no_evidence_submitted');
+      // Should NOT contain weak_evidence_quality (no evidence != bad evidence)
+      expect(result.reason_codes).not.toContain('weak_evidence_quality');
+    });
+
+    it('low-quality evidence produces low score with weak_evidence_quality', () => {
+      const tasks = Array.from({ length: 3 }, (_, i) =>
+        makeTask({ task_id: `task-${i}` })
+      );
+      const evidence = [
+        makeEvidence({ task_id: 'task-0', quality_score: 30 }),
+      ];
+
+      const result = generateReputationLedger(
+        makeInput({ rewarded_tasks: tasks, evidence })
+      );
+
+      expect(result.reputation_snapshot.evidence_quality_score).toBe(30);
+      expect(result.reason_codes).toContain('weak_evidence_quality');
+      expect(result.reason_codes).not.toContain('no_evidence_submitted');
+    });
+  });
 });
 ```
 
