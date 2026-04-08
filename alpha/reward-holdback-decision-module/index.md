@@ -755,6 +755,368 @@ export { DEFAULT_THRESHOLDS, DEFAULT_REASON_CODE_POLICY, SCHEMA_VERSION };
 
 ## Unit Tests (32 passing)
 
+### holdback.test.ts
+
+```typescript
+/**
+ * Reward Holdback Decision Module — Unit Tests
+ *
+ * Covers:
+ *  1. Clean authorized release (auto_release)
+ *  2. Unauthorized operator holdback (UNKNOWN)
+ *  3. Missing artifact holdback
+ *  4. Private URL rejection (manual_review)
+ *  5. Stale authorization state escalation
+ *  6. Empty / zero-reward input handling
+ *  7. Threshold boundary behavior
+ *  8. Full-output determinism (byte-stable JSON)
+ *  9. Multiple reason code accumulation
+ * 10. Self-report escalation
+ * 11. Suspended operator holdback
+ * 12. Probationary below threshold passes
+ * 13. Malformed input — undefined
+ * 14. Malformed input — empty object
+ * 15. Malformed input — missing event
+ * 16. Malformed input — missing required fields
+ * 17. TRUSTED vs AUTHORIZED intentional behavior
+ * 18. Authenticated evidence is verifiable
+ * 19. Transaction without target
+ * 20. Reason code ordering determinism
+ * 21. Hard + soft code precedence
+ * 22. Configurable reason code policy override
+ * 23. Reviewer fields structure
+ * 24. Partial threshold override via input
+ */
+
+import { describe, it, expect } from 'vitest';
+import { evaluateHoldback } from '../src/holdback.js';
+import type { HoldbackInput, HoldbackOutput } from '../src/types.js';
+
+const NOW = '2026-04-07T12:00:00Z';
+
+function makeInput(eventOverrides: Record<string, unknown> = {}, inputOverrides: Record<string, unknown> = {}): HoldbackInput {
+  return {
+    as_of: NOW,
+    event: {
+      task_id: 'task_clean_001',
+      operator_id: 'op_alice',
+      reward_pft: 2000,
+      verification_type: 'url',
+      verification_target: 'https://example.com/proof',
+      evidence_visibility: 'public',
+      operator_auth_state: 'AUTHORIZED',
+      ...eventOverrides,
+    } as any,
+    ...inputOverrides,
+  };
+}
+
+describe('Clean Authorized Release', () => {
+  it('auto-releases when all checks pass', () => {
+    const result = evaluateHoldback(makeInput());
+    expect(result.decision).toBe('auto_release');
+    expect(result.holdback_reason_codes).toEqual(['CLEAN']);
+    expect(result.missing_public_evidence).toBe(false);
+    expect(result.task_id).toBe('task_clean_001');
+    expect(result.operator_id).toBe('op_alice');
+    expect(result.version).toBe('1.0.0');
+    expect(result.validation_warnings).toHaveLength(0);
+    expect(result.generated_at).toBe(NOW);
+    expect(result.as_of).toBe(NOW);
+  });
+});
+
+describe('Unauthorized Operator Holdback', () => {
+  it('holds back UNKNOWN operator', () => {
+    const result = evaluateHoldback(makeInput({ operator_auth_state: 'UNKNOWN' }));
+    expect(result.decision).toBe('holdback');
+    expect(result.holdback_reason_codes).toContain('UNAUTHORIZED_OPERATOR');
+  });
+});
+
+describe('Missing Artifact Holdback', () => {
+  it('holds back when evidence is missing', () => {
+    const result = evaluateHoldback(makeInput({ evidence_visibility: 'missing' }));
+    expect(result.decision).toBe('holdback');
+    expect(result.holdback_reason_codes).toContain('MISSING_EVIDENCE');
+    expect(result.missing_public_evidence).toBe(true);
+  });
+});
+
+describe('Private URL Rejection', () => {
+  it('escalates to manual_review for private artifacts', () => {
+    const result = evaluateHoldback(makeInput({ evidence_visibility: 'private' }));
+    expect(result.decision).toBe('manual_review');
+    expect(result.holdback_reason_codes).toContain('PRIVATE_ARTIFACT');
+    expect(result.missing_public_evidence).toBe(true);
+  });
+});
+
+describe('Stale Authorization State', () => {
+  it('escalates when auth state is stale', () => {
+    const result = evaluateHoldback(makeInput({ risk_signals: { days_since_auth_update: 90 } }));
+    expect(result.decision).toBe('manual_review');
+    expect(result.holdback_reason_codes).toContain('STALE_AUTH_STATE');
+  });
+  it('does not flag when auth state is fresh', () => {
+    const result = evaluateHoldback(makeInput({ risk_signals: { days_since_auth_update: 10 } }));
+    expect(result.decision).toBe('auto_release');
+    expect(result.holdback_reason_codes).not.toContain('STALE_AUTH_STATE');
+  });
+});
+
+describe('Empty / Zero-Reward Input', () => {
+  it('handles zero reward with validation warning', () => {
+    const result = evaluateHoldback(makeInput({ reward_pft: 0 }));
+    expect(result.validation_warnings).toContain('reward_pft is zero');
+    expect(result.decision).toBe('auto_release');
+  });
+  it('warns on negative reward', () => {
+    const result = evaluateHoldback(makeInput({ reward_pft: -100 }));
+    expect(result.validation_warnings).toContain('reward_pft is negative');
+  });
+});
+
+describe('Threshold Boundary Behavior', () => {
+  it('does not flag reward just below high_reward_threshold with private evidence', () => {
+    const result = evaluateHoldback(makeInput({ reward_pft: 4999, evidence_visibility: 'private' }));
+    expect(result.holdback_reason_codes).toContain('PRIVATE_ARTIFACT');
+    expect(result.holdback_reason_codes).not.toContain('HIGH_REWARD_WEAK_EVIDENCE');
+  });
+  it('flags reward at high_reward_threshold with private evidence', () => {
+    const result = evaluateHoldback(makeInput({ reward_pft: 5000, evidence_visibility: 'private' }));
+    expect(result.holdback_reason_codes).toContain('HIGH_REWARD_WEAK_EVIDENCE');
+    expect(result.holdback_reason_codes).toContain('PRIVATE_ARTIFACT');
+  });
+  it('respects custom thresholds via input', () => {
+    const result = evaluateHoldback(makeInput(
+      { reward_pft: 2000, evidence_visibility: 'private' },
+      { thresholds: { high_reward_threshold: 1500 } },
+    ));
+    expect(result.holdback_reason_codes).toContain('HIGH_REWARD_WEAK_EVIDENCE');
+  });
+});
+
+describe('Full-Output Determinism', () => {
+  it('produces byte-identical JSON for identical inputs', () => {
+    const input = makeInput({ evidence_visibility: 'expired', risk_signals: { recent_rejection_count: 5 } });
+    const a = evaluateHoldback(input);
+    const b = evaluateHoldback(input);
+    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+  });
+  it('generated_at equals as_of (no runtime clock)', () => {
+    const result = evaluateHoldback(makeInput());
+    expect(result.generated_at).toBe(result.as_of);
+    expect(result.generated_at).toBe(NOW);
+  });
+});
+
+describe('Multiple Reason Code Accumulation', () => {
+  it('accumulates all applicable codes', () => {
+    const result = evaluateHoldback(makeInput({
+      operator_auth_state: 'UNKNOWN', evidence_visibility: 'missing',
+      reward_pft: 6000, risk_signals: { recent_rejection_count: 10, evidence_coverage_ratio: 0.1 },
+    }));
+    expect(result.decision).toBe('holdback');
+    expect(result.holdback_reason_codes).toContain('UNAUTHORIZED_OPERATOR');
+    expect(result.holdback_reason_codes).toContain('MISSING_EVIDENCE');
+    expect(result.holdback_reason_codes).toContain('HIGH_REWARD_WEAK_EVIDENCE');
+    expect(result.holdback_reason_codes).toContain('ELEVATED_REJECTION_RATE');
+    expect(result.holdback_reason_codes).toContain('LOW_HISTORICAL_COVERAGE');
+    expect(result.holdback_reason_codes.length).toBeGreaterThanOrEqual(5);
+  });
+});
+
+describe('Self-Report Escalation', () => {
+  it('escalates self-report verification to manual review', () => {
+    const result = evaluateHoldback(makeInput({ verification_type: 'self_report' }));
+    expect(result.decision).toBe('manual_review');
+    expect(result.holdback_reason_codes).toContain('SELF_REPORT_ONLY');
+  });
+});
+
+describe('Suspended Operator Holdback', () => {
+  it('holds back SUSPENDED operator regardless of evidence', () => {
+    const result = evaluateHoldback(makeInput({ operator_auth_state: 'SUSPENDED', evidence_visibility: 'public' }));
+    expect(result.decision).toBe('holdback');
+    expect(result.holdback_reason_codes).toContain('UNAUTHORIZED_OPERATOR');
+  });
+});
+
+describe('Probationary Below Threshold', () => {
+  it('auto-releases PROBATIONARY operator below review threshold', () => {
+    const result = evaluateHoldback(makeInput({ operator_auth_state: 'PROBATIONARY', reward_pft: 1000 }));
+    expect(result.decision).toBe('auto_release');
+    expect(result.holdback_reason_codes).toEqual(['CLEAN']);
+  });
+  it('escalates PROBATIONARY operator at review threshold', () => {
+    const result = evaluateHoldback(makeInput({ operator_auth_state: 'PROBATIONARY', reward_pft: 3000 }));
+    expect(result.decision).toBe('manual_review');
+    expect(result.holdback_reason_codes).toContain('PROBATIONARY_HIGH_REWARD');
+  });
+});
+
+describe('Malformed Input — undefined', () => {
+  it('fails closed to holdback for undefined input', () => {
+    const result = evaluateHoldback(undefined as any);
+    expect(result.decision).toBe('holdback');
+    expect(result.holdback_reason_codes).toContain('INVALID_INPUT');
+    expect(result.task_id).toBe('INVALID');
+    expect(result.operator_id).toBe('INVALID');
+    expect(result.validation_warnings.length).toBeGreaterThan(0);
+  });
+});
+
+describe('Malformed Input — empty object', () => {
+  it('fails closed to holdback for empty object', () => {
+    const result = evaluateHoldback({} as any);
+    expect(result.decision).toBe('holdback');
+    expect(result.holdback_reason_codes).toContain('MISSING_EVENT_OBJECT');
+    expect(result.task_id).toBe('INVALID');
+  });
+});
+
+describe('Malformed Input — missing event', () => {
+  it('fails closed for null event', () => {
+    const result = evaluateHoldback({ as_of: NOW, event: null } as any);
+    expect(result.decision).toBe('holdback');
+    expect(result.holdback_reason_codes).toContain('MISSING_EVENT_OBJECT');
+    expect(result.generated_at).toBe(NOW);
+  });
+});
+
+describe('Malformed Input — missing required fields', () => {
+  it('fails closed when event is missing operator_auth_state', () => {
+    const result = evaluateHoldback({
+      as_of: NOW,
+      event: { task_id: 'task_x', operator_id: 'op_x', reward_pft: 1000, verification_type: 'url', evidence_visibility: 'public' },
+    } as any);
+    expect(result.decision).toBe('holdback');
+    expect(result.holdback_reason_codes).toContain('MISSING_REQUIRED_FIELDS');
+    expect(result.validation_warnings.some(w => w.includes('operator_auth_state'))).toBe(true);
+  });
+  it('fails closed when event is missing verification_type', () => {
+    const result = evaluateHoldback({
+      as_of: NOW,
+      event: { task_id: 'task_x', operator_id: 'op_x', reward_pft: 1000, evidence_visibility: 'public', operator_auth_state: 'AUTHORIZED' },
+    } as any);
+    expect(result.decision).toBe('holdback');
+    expect(result.holdback_reason_codes).toContain('MISSING_REQUIRED_FIELDS');
+  });
+});
+
+describe('TRUSTED vs AUTHORIZED behavior', () => {
+  it('auto-releases TRUSTED the same as AUTHORIZED', () => {
+    const authorized = evaluateHoldback(makeInput({ operator_auth_state: 'AUTHORIZED' }));
+    const trusted = evaluateHoldback(makeInput({ operator_auth_state: 'TRUSTED' }));
+    expect(authorized.decision).toBe('auto_release');
+    expect(trusted.decision).toBe('auto_release');
+    expect(authorized.holdback_reason_codes).toEqual(trusted.holdback_reason_codes);
+  });
+});
+
+describe('Authenticated Evidence', () => {
+  it('treats authenticated evidence as verifiable', () => {
+    const result = evaluateHoldback(makeInput({ evidence_visibility: 'authenticated' }));
+    expect(result.decision).toBe('auto_release');
+    expect(result.missing_public_evidence).toBe(false);
+    expect(result.reviewer_fields.evidence_status).toBe('verifiable');
+    expect(result.reviewer_fields.requires_public_artifact).toBe(false);
+  });
+});
+
+describe('Transaction Without Target', () => {
+  it('flags transaction type without verification_target', () => {
+    const result = evaluateHoldback(makeInput({ verification_type: 'transaction', verification_target: undefined }));
+    expect(result.holdback_reason_codes).toContain('VERIFICATION_TARGET_MISSING');
+    expect(result.decision).toBe('manual_review');
+  });
+});
+
+describe('Reason Code Ordering', () => {
+  it('produces identical code order across runs', () => {
+    const input = makeInput({
+      operator_auth_state: 'UNKNOWN', evidence_visibility: 'expired', reward_pft: 6000,
+      verification_type: 'code', verification_target: undefined, risk_signals: { recent_holdback_count: 5 },
+    });
+    const a = evaluateHoldback(input);
+    const b = evaluateHoldback(input);
+    expect(a.holdback_reason_codes).toEqual(b.holdback_reason_codes);
+    const codes = a.holdback_reason_codes;
+    const authIdx = codes.indexOf('UNAUTHORIZED_OPERATOR');
+    const expiredIdx = codes.indexOf('EXPIRED_EVIDENCE');
+    expect(authIdx).toBeLessThan(expiredIdx);
+  });
+});
+
+describe('Hard + Soft Code Precedence', () => {
+  it('holdback takes precedence over manual_review when both present', () => {
+    const result = evaluateHoldback(makeInput({
+      operator_auth_state: 'SUSPENDED', evidence_visibility: 'private',
+      risk_signals: { recent_rejection_count: 10 },
+    }));
+    expect(result.decision).toBe('holdback');
+    expect(result.holdback_reason_codes).toContain('UNAUTHORIZED_OPERATOR');
+    expect(result.holdback_reason_codes).toContain('PRIVATE_ARTIFACT');
+    expect(result.holdback_reason_codes).toContain('ELEVATED_REJECTION_RATE');
+  });
+});
+
+describe('Configurable Reason Code Policy', () => {
+  it('promotes PRIVATE_ARTIFACT to holdback when policy overridden', () => {
+    const result = evaluateHoldback(makeInput(
+      { evidence_visibility: 'private' },
+      { reason_code_policy: { PRIVATE_ARTIFACT: 'holdback' } },
+    ));
+    expect(result.decision).toBe('holdback');
+    expect(result.holdback_reason_codes).toContain('PRIVATE_ARTIFACT');
+  });
+  it('demotes UNAUTHORIZED_OPERATOR to manual_review when policy overridden', () => {
+    const result = evaluateHoldback(makeInput(
+      { operator_auth_state: 'UNKNOWN' },
+      { reason_code_policy: { UNAUTHORIZED_OPERATOR: 'manual_review' } },
+    ));
+    expect(result.decision).toBe('manual_review');
+    expect(result.holdback_reason_codes).toContain('UNAUTHORIZED_OPERATOR');
+  });
+});
+
+describe('Reviewer Fields Structure', () => {
+  it('includes all structured operational fields', () => {
+    const result = evaluateHoldback(makeInput({
+      evidence_visibility: 'private', operator_auth_state: 'PROBATIONARY', reward_pft: 4000,
+    }));
+    const rf = result.reviewer_fields;
+    expect(rf).toHaveProperty('operator_id');
+    expect(rf).toHaveProperty('evidence_status');
+    expect(rf).toHaveProperty('requires_public_artifact');
+    expect(rf).toHaveProperty('blocking_conditions');
+    expect(rf).toHaveProperty('risk_level');
+    expect(rf).toHaveProperty('next_review_step');
+    expect(rf).toHaveProperty('recommended_action');
+    expect(rf.evidence_status).toBe('unverifiable');
+    expect(rf.requires_public_artifact).toBe(true);
+    expect(rf.blocking_conditions).toContain('PROBATIONARY_HIGH_REWARD');
+    expect(rf.blocking_conditions).toContain('PRIVATE_ARTIFACT');
+    expect(rf.risk_level).toBe('medium');
+    expect(rf.recommended_action).toBe('manual_review');
+  });
+});
+
+describe('Partial Threshold Override', () => {
+  it('merges partial thresholds with defaults', () => {
+    const result = evaluateHoldback(makeInput(
+      { operator_auth_state: 'PROBATIONARY', reward_pft: 1500 },
+      { thresholds: { probationary_review_threshold: 1000 } },
+    ));
+    expect(result.decision).toBe('manual_review');
+    expect(result.holdback_reason_codes).toContain('PROBATIONARY_HIGH_REWARD');
+  });
+});
+```
+
+### Test Results
+
 ```bash
 $ npm test -- --reporter=verbose
 
