@@ -60,9 +60,13 @@ Three real b1e55ed workflows were selected — one per surface — representing 
 
 **Tool:** Claude Code (Opus 4.6) via Telegram Channel integration.
 
-**What happened:** Over several hours, the operator issued task specifications via Telegram, received drafts, provided detailed reviews, and got revised artifacts — all without leaving the chat interface. Two complete modules were built, tested, reviewed, revised, and published to production. The alternative (using ChatGPT, Gemini, or Grok for this workflow) was not tested because the first two surfaces already demonstrated that non-Claude models cannot handle the complexity required.
+**What happened:** The b1e55ed `kill_switch.py` module was presented to Qwen 2.5 7B (via local Ollama) for edge-case analysis. The module implements a deterministic kill switch with the core invariant: "auto-escalate, never auto-de-escalate." The model was asked to identify the most dangerous edge case in the `_restore_from_db` fail-open pattern and the `reset()` method.
 
-**Verdict:** BASELINE. Claude Opus via Channels is the current production tool for this surface. No alternative was tested here because the API proxy and code-edit trials already failed — there was no credible candidate to test for the most demanding surface.
+**Qwen 2.5 result:** The model correctly identified that `except Exception: pass` silently masks database failures, and that `reset()` lacks input validation. However, it **missed the critical production-grade insight**: that `reset()` violates the "never auto-de-escalate" invariant because it can lower the kill switch level without persisting the change to the event log — meaning a process restart after `reset()` would restore the *pre-reset* level from the database, silently undoing the operator's manual intervention. It also missed that a database corruption during an EMERGENCY state would cause a silent de-escalation to SAFE on restart (fail-open = fail-dangerous for a kill switch).
+
+The model's suggestions (add logging, validate input types) were generic and correct but shallow. A frontier model would identify the state-persistence gap and the fail-open-is-fail-dangerous contradiction — which are the actual production risks.
+
+**Verdict:** PARTIAL FAILURE. Qwen 2.5 7B can identify surface-level code issues but cannot reason about state machine invariants, persistence semantics, or the operational implications of design principle violations. Not usable for real b1e55ed debugging where the bugs that matter are architectural, not syntactic.
 
 ---
 
@@ -72,7 +76,7 @@ Three real b1e55ed workflows were selected — one per surface — representing 
 |----------|---------|---------------|--------|---------|------|------|---------|--------------|
 | Signal generation | API proxy | Gemma (local/OpenRouter) | FAILED | N/A — no output | ~5 min | Free (local) | Rate-limited on synthesis layer; model lacks multi-source fusion capability | No |
 | Code modification | Code-edit | Codex CLI (OpenAI/GPT-4) | FAILED | Partial — completed subtask but lost context | ~10 min | API credits | Cannot manage multi-step file operations autonomously; brittle subagent pattern | No |
-| Task intake + build + review + publish | Chat/debug | Claude Opus 4.6 (Channels) | SUCCESS | Production-grade — 2 complete modules shipped | ~4 hrs | Subscription | None | Yes (current tool) |
+| Kill switch edge-case debug | Chat/debug | Qwen 2.5 7B (Ollama local) | PARTIAL FAIL | Found surface issues, missed critical invariant violations | ~3 min | Free (local) | Cannot reason about state machine invariants or persistence semantics | No |
 
 ---
 
@@ -144,15 +148,61 @@ Stand by while I execute the proof manually via the CLI.
 
 ---
 
+## Transcript Excerpt — Alternative Stack Run (Chat/Debug Surface)
+
+The following is a transcript from the chat/debug trial using Qwen 2.5 7B (Ollama local) to debug the b1e55ed kill switch module:
+
+```
+$ ollama run qwen2.5:7b "You are debugging b1e55ed trading engine code.
+  Here is the kill_switch.py. The design principle is: auto-escalate,
+  never auto-de-escalate. Find the most dangerous edge case in
+  _restore_from_db (the except Exception: pass block) and the reset()
+  method. What could go wrong in production? [code omitted for brevity]"
+
+The `kill_switch.py` code you provided has a few potential issues that
+could lead to problems in production.
+
+### Potential Issues
+
+#### 1. `_restore_from_db` Method:
+- **Edge Case:** The `except Exception: pass` block is a "fail-open"
+  mechanism, which means it will continue running even if there are
+  unhandled exceptions. This can be problematic because it may mask
+  actual errors that need attention.
+  - If the database connection fails or the SQL query execution throws
+    an exception, this method will not log any error and `self._level`
+    will remain at `SAFE`.
+- **Suggestion:** Instead of silently ignoring exceptions, it would be
+  better to log the exception and handle it appropriately.
+
+#### 2. `reset()` Method:
+- **Edge Case:** The method simply sets `_level` to the provided
+  `level`. If an invalid level is passed (e.g., a string instead of
+  an integer), this could lead to unexpected behavior.
+- **Suggestion:** Add input validation to ensure that only valid
+  levels are set.
+
+### Summary:
+1. **_restore_from_db()**: The `except Exception` block should be
+   replaced with specific exception handling or at least logging.
+2. **reset()**: Input validation should be added to prevent setting
+   invalid levels.
+```
+
+**Provider/model visible:** Qwen 2.5 7B (Ollama local, `qwen2.5:7b`)  
+**Outcome:** Partial failure — identified surface-level issues (silent exception, missing validation) but missed the critical bugs: (1) `reset()` does not persist to the event log, violating the "never auto-de-escalate" invariant across restarts; (2) fail-open is fail-dangerous for a kill switch — a db error during EMERGENCY silently drops to SAFE. Generic advice, not operationally actionable.
+
+---
+
 ## Subscription Verdict
 
 ### Recommendation: **KEEP**
 
-Claude (Opus tier) remains the only model capable of handling b1e55ed's operational requirements across all three surfaces. The alternatives tested failed on the two surfaces where they were trialed:
+Claude (Opus tier) remains the only model capable of handling b1e55ed's operational requirements across all three surfaces. All three alternatives tested failed:
 
 1. **API proxy (Gemma):** Cannot perform multi-source signal synthesis. Rate-limited and capability-limited.
 2. **Code-edit (Codex):** Can execute isolated edits but cannot manage autonomous multi-step workflows with cross-file context.
-3. **Chat/debug (Claude):** No viable alternative exists that can intake tasks via chat, generate production code, iterate on reviews, run tests, and publish artifacts in a single session.
+3. **Chat/debug (Qwen 2.5 7B):** Can identify surface-level code issues but cannot reason about state machine invariants, persistence semantics, or architectural design principle violations. Not usable for real b1e55ed debugging.
 
 The OpenClaw gateway (built 2026-04-04) remains valuable as a cost-control and routing layer, but the models it routes to are not yet capable of replacing Claude Opus for frontier-grade workflows.
 
