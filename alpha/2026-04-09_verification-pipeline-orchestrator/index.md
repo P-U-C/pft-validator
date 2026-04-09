@@ -20,17 +20,111 @@ task_id: 86312bd6-42ce-4926-84ae-05537f1b8fc6
 
 ## What This Module Is
 
-This module is a deterministic single-entry-point orchestrator that accepts a verification event along with pre-computed outputs from four upstream modules (Operator Reputation Ledger, Reward Artifact Coverage Audit, Reward Holdback Decision Module, and Reward Token Emissions Concentration Analyzer), executes pipeline evaluation stages in a fixed dependency order, and returns one unified JSON verdict. The output includes `pipeline_decision` (release / review / block), per-stage results, the critical path identifying which stage drove the final outcome, operator reputation context, emissions impact assessment, and a structured reviewer packet for human review queues. The module is scoped as an integration artifact that another builder can wire directly into the live verification service without reinterpreting individual module outputs.
+This artifact is a deterministic verification pipeline orchestrator with two supported execution modes: execute mode runs the upstream review modules in fixed dependency order through typed adapters. precomputed mode accepts prior stage outputs for replay, auditing, and deterministic regression testing. Both modes emit the same unified verdict contract for direct integration into the live verification service.
+
+The output includes `pipeline_decision` (release / review / block), per-stage results, the critical path identifying which stage drove the final outcome, operator reputation context, emissions impact assessment, and a structured reviewer packet for human review queues. The reviewer packet carries escalation summaries, decisive evidence, missing artifact lists, operator risk summaries, release consequence assessments, and next-action recommendations.
 
 ## What This Module Is Not
 
-This module does not import or execute the upstream modules. It accepts their pre-computed outputs as typed inputs and implements the combination and decision logic. It does not fetch data, modify rewards, or take enforcement actions. It is a pure function that produces a recommendation verdict. The calling system is responsible for (a) running the upstream modules, (b) passing their outputs to this orchestrator, and (c) acting on the pipeline decision.
+This module does not fetch data, modify rewards, or take enforcement actions. It is a pure function that produces a recommendation verdict. In precomputed mode it accepts pre-computed outputs as typed inputs. In execute mode it calls adapter ports that the integrating system supplies. The calling system is responsible for (a) providing adapters or pre-computed stage data, (b) passing inputs to this orchestrator, and (c) acting on the pipeline decision.
+
+---
+
+## Pipeline Flow
+
+```
+verification_event
+    |
+    +---> reputation(operator_id)
+    |
+    +---> evidence(task_id, operator_id)
+    |
+    +---> holdback(event, reputation, evidence)    <-- uses reputation + evidence
+    |
+    +---> emissions(operator_id, reward, holdback)  <-- uses holdback decision
+    |
+    +---> unified verdict
+```
+
+---
+
+## Execution Modes
+
+### Execute Mode
+
+The orchestrator receives a `VerificationEvent`, an `as_of` timestamp, and a `PipelineAdapters` object containing four typed adapter ports. It calls each adapter in dependency order, threading outputs forward:
+
+1. `reputation.run(operator_id, as_of)` -- no upstream dependencies
+2. `evidence.run(task_id, operator_id, as_of)` -- no upstream dependencies
+3. `holdback.run(event, reputation, evidence, as_of)` -- receives reputation and evidence outputs
+4. `emissions.run(operator_id, reward_pft, holdback_decision, as_of)` -- receives holdback decision
+
+If any adapter throws, the orchestrator fails closed with a `block` decision and error code `MALFORMED_STAGE_DATA`.
+
+### Precomputed Mode
+
+The orchestrator receives all four stage outputs directly, alongside the verification event and timestamp. This is the default mode for backwards compatibility. Used for replay, auditing, and deterministic regression testing.
+
+---
+
+## Adapter Port Interfaces
+
+The four adapter interfaces define the contract that upstream module wrappers must satisfy in execute mode.
+
+```typescript
+interface ReputationAdapter {
+  run(operatorId: string, asOf: string): ReputationStageInput;
+}
+
+interface EvidenceAdapter {
+  run(taskId: string, operatorId: string, asOf: string): EvidenceStageInput;
+}
+
+interface HoldbackAdapter {
+  run(
+    event: VerificationEvent,
+    reputation: ReputationStageInput,
+    evidence: EvidenceStageInput,
+    asOf: string,
+  ): HoldbackStageInput;
+}
+
+interface EmissionsAdapter {
+  run(
+    operatorId: string,
+    rewardPft: number,
+    holdbackDecision: HoldbackDecision,
+    asOf: string,
+  ): EmissionsStageInput;
+}
+
+interface PipelineAdapters {
+  reputation: ReputationAdapter;
+  evidence: EvidenceAdapter;
+  holdback: HoldbackAdapter;
+  emissions: EmissionsAdapter;
+}
+```
+
+---
+
+## Dependency Wiring
+
+Dependencies between stages are real and enforced by the adapter call signatures:
+
+- **Reputation feeds holdback.** The holdback adapter receives the full `ReputationStageInput` so it can factor trust tier, risk signals, and downstream hints into its hold/release decision. A probationary operator with critical risk signals produces a different holdback outcome than an exemplary operator.
+
+- **Evidence feeds holdback.** The holdback adapter also receives the full `EvidenceStageInput` so it can evaluate whether public artifacts exist and whether anomaly conditions should influence the holdback decision. Missing evidence combined with high reward triggers a holdback that would not occur with verified evidence alone.
+
+- **Holdback decision feeds emissions.** The emissions adapter receives the holdback decision (`auto_release`, `manual_review`, or `holdback`) so it can apply conditional logic -- for example, treating concentration analysis as advisory-only when the reward is already blocked.
+
+This wiring means later stages have strictly more context than earlier stages. The critical path tie-breaking rule reflects this: when two stages produce the same verdict severity, the one with more reason codes wins, and later stages tend to accumulate more specific evidence.
 
 ---
 
 ## Determinism Guarantee
 
-The module never reads the runtime clock. All timestamps derive from the required `as_of` input field. The `generated_at` output field is always set equal to `as_of`. Identical inputs produce byte-stable JSON outputs. Stage evaluation always proceeds in the fixed order: reputation → evidence → holdback → emissions. Tie-breaking for the critical path is deterministic: the stage with the stronger verdict wins; on ties, the stage with more reason codes wins; on further ties, the earlier stage in execution order wins.
+The module never reads the runtime clock. All timestamps derive from the required `as_of` input field. The `generated_at` output field is always set equal to `as_of`. Identical inputs produce byte-stable JSON outputs. Stage evaluation always proceeds in the fixed order: reputation, evidence, holdback, emissions. Tie-breaking for the critical path is deterministic: the stage with the stronger verdict wins; on ties, the stage with more reason codes wins; on further ties, the earlier stage in execution order wins.
 
 ---
 
@@ -52,18 +146,33 @@ type OrchestratorResult = OrchestratorOutput | OrchestratorError;
 
 If the result contains an `error_code` field, it is an `OrchestratorError`. Otherwise it is an `OrchestratorOutput`.
 
-### Input Interface
+### Execute Mode Input
 
 ```typescript
-interface OrchestratorInput {
-  as_of: string;                                    // ISO 8601, required
+interface ExecuteInput {
+  mode: 'execute';
+  as_of: string;
   verification_event: VerificationEvent;
-  reputation_stage: ReputationStageInput;           // From Operator Reputation Ledger
-  evidence_stage: EvidenceStageInput;               // From Reward Artifact Coverage Audit
-  holdback_stage: HoldbackStageInput;               // From Reward Holdback Decision Module
-  emissions_stage: EmissionsStageInput;             // From Emissions Concentration Analyzer
-  thresholds?: Partial<PipelineThresholds>;         // Override defaults
+  adapters: PipelineAdapters;
+  thresholds?: Partial<PipelineThresholds>;
 }
+```
+
+### Precomputed Mode Input
+
+```typescript
+interface PrecomputedInput {
+  mode?: 'precomputed';  // Default mode for backwards compatibility
+  as_of: string;
+  verification_event: VerificationEvent;
+  reputation_result: ReputationStageInput;
+  evidence_result: EvidenceStageInput;
+  holdback_result: HoldbackStageInput;
+  emissions_result: EmissionsStageInput;
+  thresholds?: Partial<PipelineThresholds>;
+}
+
+type PipelineInput = ExecuteInput | PrecomputedInput;
 ```
 
 ### Output Interface
@@ -86,6 +195,38 @@ interface OrchestratorOutput {
 }
 
 type PipelineDecision = 'release' | 'review' | 'block';
+```
+
+### Enhanced Reviewer Packet
+
+```typescript
+interface ReviewerPacket {
+  task_id: string;
+  operator_id: string;
+  reward_pft: number;
+  pipeline_decision: PipelineDecision;
+  decisive_stage: StageName;
+  all_reason_codes: string[];
+  // Escalation summary
+  escalation_summary: string;
+  decisive_evidence: string[];
+  missing_artifacts: string[];
+  // Operator risk
+  trust_tier: TrustTier;
+  operator_risk_summary: string;
+  // Evidence
+  holdback_reviewer_fields: HoldbackReviewerFields;
+  evidence_coverage_ratio: number;
+  anomaly_flags: AnomalyFlag[];
+  flagged_task_ids: string[];
+  // Emissions
+  emission_posture: EmissionPosture;
+  release_consequence_summary: string;
+  // Action
+  requires_human_review: boolean;
+  review_urgency: 'immediate' | 'standard' | 'low';
+  next_action_recommendation: string;
+}
 ```
 
 ### Error Interface
@@ -124,7 +265,7 @@ type OrchestratorErrorCode =
 
 ## Pipeline Execution Order
 
-The orchestrator processes stages in this fixed order. Each stage receives the pre-computed output from its corresponding upstream module plus the pipeline threshold configuration.
+The orchestrator processes stages in this fixed order. Each stage receives the pre-computed output from its corresponding upstream module (precomputed mode) or adapter output (execute mode), plus the pipeline threshold configuration.
 
 | Order | Stage | Upstream Module | Decision Field |
 |---|---|---|---|
@@ -146,11 +287,11 @@ Each stage evaluator maps upstream module outputs to a normalized `StageVerdict`
 | Condition | Verdict |
 |---|---|
 | `trust_tier` in `reputation_block_tiers` | block |
-| Any risk signal severity ≥ `reputation_block_severity` | block |
+| Any risk signal severity >= `reputation_block_severity` | block |
 | `guardrail_action` = "suppress" | block |
 | `moderation_action` = "escalate" | block |
 | `trust_tier` in `reputation_review_tiers` | review |
-| Any risk signal severity ≥ `reputation_review_severity` | review |
+| Any risk signal severity >= `reputation_review_severity` | review |
 | `payout_action` = "hold_for_review" | review |
 | `moderation_action` = "flag_for_review" | review |
 | Otherwise | pass |
@@ -160,9 +301,9 @@ Each stage evaluator maps upstream module outputs to a normalized `StageVerdict`
 | Condition | Verdict |
 |---|---|
 | `priority_band` in `evidence_block_bands` | block |
-| `anomaly_score` ≥ `evidence_block_anomaly_score` | block |
+| `anomaly_score` >= `evidence_block_anomaly_score` | block |
 | `priority_band` in `evidence_review_bands` | review |
-| `anomaly_score` ≥ `evidence_review_anomaly_score` | review |
+| `anomaly_score` >= `evidence_review_anomaly_score` | review |
 | Otherwise | pass |
 
 **Holdback Stage:**
@@ -189,7 +330,7 @@ Each stage evaluator maps upstream module outputs to a normalized `StageVerdict`
 | ANY stage returns `review` (none block) | `pipeline_decision` = **review** |
 | ALL stages return `pass` | `pipeline_decision` = **release** |
 
-The `critical_path` identifies the decisive stage — the stage that triggered the strongest verdict. Ties are broken by reason code count (more codes = more decisive), then by execution order.
+The `critical_path` identifies the decisive stage -- the stage that triggered the strongest verdict. Ties are broken by reason code count (more codes = more decisive), then by execution order. Later stages can override earlier advisory stages because they have more context (holdback sees reputation+evidence; emissions sees the holdback decision).
 
 ---
 
@@ -214,9 +355,13 @@ All pipeline thresholds are configurable via the `thresholds` input field. Any o
 
 ## Sample Input/Output
 
-### Example 1: RELEASE — All Stages Clean
+### Execute Mode Description
 
-**Input (abbreviated):**
+In execute mode, the caller supplies adapter implementations and the orchestrator drives them. For example, an integrating service would create adapters that call the actual Operator Reputation Ledger, Reward Artifact Coverage Audit, Reward Holdback Decision Module, and Reward Token Emissions Concentration Analyzer. The orchestrator calls each adapter in dependency order, wires outputs forward (reputation and evidence into holdback, holdback decision into emissions), and returns the same unified verdict as precomputed mode. If any adapter throws, the pipeline fails closed with `pipeline_decision: "block"` and `error_code: "MALFORMED_STAGE_DATA"`.
+
+### Precomputed Mode Example 1: RELEASE -- All Stages Clean
+
+**Input:**
 
 ```json
 {
@@ -229,7 +374,7 @@ All pipeline thresholds are configurable via the `thresholds` input field. Any o
     "verification_target": "https://example.com/proof",
     "evidence_visibility": "public"
   },
-  "reputation_stage": {
+  "reputation_result": {
     "trust_tier": "reliable",
     "risk_signals": [],
     "reason_codes": [],
@@ -238,20 +383,70 @@ All pipeline thresholds are configurable via the `thresholds` input field. Any o
       "guardrail_action": "full_issuance",
       "moderation_action": "no_action",
       "emissions_eligible": true
+    },
+    "reputation_snapshot": {
+      "operator_id": "op-alpha",
+      "as_of": "2026-04-09T00:00:00Z",
+      "completion_rate": 0.85,
+      "evidence_quality_score": 78,
+      "rejection_rate": 0.05,
+      "holdback_rate": 0.02,
+      "total_tasks": 20,
+      "rewarded_count": 17,
+      "refusal_count": 1,
+      "holdback_count": 1,
+      "unresolved_holdback_count": 0
     }
   },
-  "evidence_stage": {
+  "evidence_result": {
+    "evidence_coverage_ratio": 0.9,
+    "anomaly_flags": [],
     "anomaly_score": 10,
     "priority_band": "low",
-    "anomaly_flags": []
+    "priority_score": 15,
+    "flagged_task_ids": [],
+    "review_rationale": "No significant anomalies detected.",
+    "validation_warnings": []
   },
-  "holdback_stage": {
+  "holdback_result": {
     "decision": "auto_release",
-    "holdback_reason_codes": ["CLEAN"]
+    "holdback_reason_codes": ["CLEAN"],
+    "missing_public_evidence": false,
+    "reviewer_fields": {
+      "operator_id": "op-alpha",
+      "operator_auth_state": "AUTHORIZED",
+      "reward_pft": 2000,
+      "evidence_visibility": "public",
+      "evidence_status": "verifiable",
+      "verification_type": "url",
+      "requires_public_artifact": true,
+      "blocking_conditions": [],
+      "risk_level": "low",
+      "next_review_step": "none",
+      "recommended_action": "auto_release",
+      "risk_summary": "Low risk. All checks passed."
+    },
+    "decision_rationale": "All pre-payout checks passed. Auto-release approved.",
+    "validation_warnings": []
   },
-  "emissions_stage": {
+  "emissions_result": {
     "emission_posture": "healthy",
-    "reason_codes": ["CLEAN"]
+    "reason_codes": ["CLEAN"],
+    "worst_window": "7d",
+    "review_priority_window": "7d",
+    "window_postures": { "7d": "healthy", "30d": "healthy", "all_time": "healthy" },
+    "posture_rationale": "All concentration metrics within healthy bounds.",
+    "window_summaries": [
+      {
+        "window": "7d",
+        "total_pft": 15000,
+        "total_records": 12,
+        "unique_recipients": 8,
+        "concentration_index": 0.08,
+        "top_recipient_share": 0.15
+      }
+    ],
+    "validation_warnings": []
   }
 }
 ```
@@ -277,12 +472,18 @@ All pipeline thresholds are configurable via the `thresholds` input field. Any o
   "reason_codes": [],
   "reviewer_packet": {
     "requires_human_review": false,
-    "review_urgency": "low"
+    "review_urgency": "low",
+    "escalation_summary": "No escalation required. All pipeline stages passed.",
+    "decisive_evidence": [],
+    "missing_artifacts": [],
+    "operator_risk_summary": "Trust tier: reliable. No active risk signals.",
+    "release_consequence_summary": "Releasing 2000 PFT has no adverse emissions impact. Posture remains healthy.",
+    "next_action_recommendation": "Auto-release approved. No human action required."
   }
 }
 ```
 
-### Example 2: REVIEW — Probationary Operator with Elevated Risk
+### Precomputed Mode Example 2: REVIEW -- Probationary Operator with Elevated Risk
 
 **Input (abbreviated):**
 
@@ -294,7 +495,7 @@ All pipeline thresholds are configurable via the `thresholds` input field. Any o
     "operator_id": "op-beta",
     "reward_pft": 4500
   },
-  "reputation_stage": {
+  "reputation_result": {
     "trust_tier": "probationary",
     "risk_signals": [
       { "code": "high_rejection_rate", "severity": "high" }
@@ -304,11 +505,11 @@ All pipeline thresholds are configurable via the `thresholds` input field. Any o
       "moderation_action": "flag_for_review"
     }
   },
-  "holdback_stage": {
+  "holdback_result": {
     "decision": "manual_review",
     "holdback_reason_codes": ["PROBATIONARY_HIGH_REWARD", "ELEVATED_REJECTION_RATE"]
   },
-  "emissions_stage": {
+  "emissions_result": {
     "emission_posture": "watch",
     "reason_codes": ["TOP_RECIPIENT_DOMINANCE"]
   }
@@ -335,12 +536,15 @@ All pipeline thresholds are configurable via the `thresholds` input field. Any o
   ],
   "reviewer_packet": {
     "requires_human_review": true,
-    "review_urgency": "standard"
+    "review_urgency": "standard",
+    "escalation_summary": "REVIEW: Triggered by reputation stage. 0 blocking/escalation condition(s) across pipeline.",
+    "operator_risk_summary": "Trust tier: probationary. Risk signals: high_rejection_rate(high).",
+    "next_action_recommendation": "Review reputation stage findings. none"
   }
 }
 ```
 
-### Example 3: BLOCK — Suspended Operator, Missing Evidence, Restricted Emissions
+### Precomputed Mode Example 3: BLOCK -- Suspended Operator, Missing Evidence, Restricted Emissions
 
 **Input (abbreviated):**
 
@@ -353,7 +557,7 @@ All pipeline thresholds are configurable via the `thresholds` input field. Any o
     "reward_pft": 8000,
     "evidence_visibility": "missing"
   },
-  "reputation_stage": {
+  "reputation_result": {
     "trust_tier": "probationary",
     "risk_signals": [
       { "code": "unresolved_holdbacks", "severity": "critical" }
@@ -363,16 +567,16 @@ All pipeline thresholds are configurable via the `thresholds` input field. Any o
       "moderation_action": "escalate"
     }
   },
-  "evidence_stage": {
+  "evidence_result": {
     "anomaly_score": 92,
     "priority_band": "critical",
     "anomaly_flags": ["HIGH_REWARD_NO_EVIDENCE", "ALL_PRIVATE"]
   },
-  "holdback_stage": {
+  "holdback_result": {
     "decision": "holdback",
     "holdback_reason_codes": ["UNAUTHORIZED_OPERATOR", "MISSING_EVIDENCE"]
   },
-  "emissions_stage": {
+  "emissions_result": {
     "emission_posture": "restrict",
     "reason_codes": ["HIGH_CONCENTRATION_INDEX", "TOP_RECIPIENT_DOMINANCE"]
   }
@@ -400,7 +604,9 @@ All pipeline thresholds are configurable via the `thresholds` input field. Any o
   ],
   "reviewer_packet": {
     "requires_human_review": true,
-    "review_urgency": "immediate"
+    "review_urgency": "immediate",
+    "escalation_summary": "BLOCK: Triggered by reputation stage. 3 blocking/escalation condition(s) across pipeline.",
+    "next_action_recommendation": "BLOCK: Resolve reputation stage conditions before release. Investigate blocking conditions."
   }
 }
 ```
@@ -689,14 +895,25 @@ export interface ReviewerPacket {
   pipeline_decision: PipelineDecision;
   decisive_stage: StageName;
   all_reason_codes: string[];
+  // Escalation summary
+  escalation_summary: string;
+  decisive_evidence: string[];
+  missing_artifacts: string[];
+  // Operator risk
+  trust_tier: TrustTier;
+  operator_risk_summary: string;
+  // Evidence
   holdback_reviewer_fields: HoldbackReviewerFields;
   evidence_coverage_ratio: number;
   anomaly_flags: AnomalyFlag[];
   flagged_task_ids: string[];
-  trust_tier: TrustTier;
+  // Emissions
   emission_posture: EmissionPosture;
+  release_consequence_summary: string;
+  // Action
   requires_human_review: boolean;
   review_urgency: 'immediate' | 'standard' | 'low';
+  next_action_recommendation: string;
 }
 
 export interface OrchestratorOutput {
@@ -746,6 +963,77 @@ export type OrchestratorErrorCode =
   | 'MALFORMED_STAGE_DATA';
 
 export type OrchestratorResult = OrchestratorOutput | OrchestratorError;
+
+// ─── Stage Adapter Interfaces (Ports) ──────────────────────────────
+// These define the contract for upstream module adapters.
+// In execute mode, the orchestrator calls these to run each module.
+// In precomputed mode, stage results are passed directly.
+
+export interface ReputationAdapter {
+  run(operatorId: string, asOf: string): ReputationStageInput;
+}
+
+export interface EvidenceAdapter {
+  run(taskId: string, operatorId: string, asOf: string): EvidenceStageInput;
+}
+
+export interface HoldbackAdapter {
+  run(
+    event: VerificationEvent,
+    reputation: ReputationStageInput,
+    evidence: EvidenceStageInput,
+    asOf: string,
+  ): HoldbackStageInput;
+}
+
+export interface EmissionsAdapter {
+  run(
+    operatorId: string,
+    rewardPft: number,
+    holdbackDecision: HoldbackDecision,
+    asOf: string,
+  ): EmissionsStageInput;
+}
+
+export interface PipelineAdapters {
+  reputation: ReputationAdapter;
+  evidence: EvidenceAdapter;
+  holdback: HoldbackAdapter;
+  emissions: EmissionsAdapter;
+}
+
+// ─── Execution Mode ────────────────────────────────────────────────
+
+export type ExecutionMode = 'execute' | 'precomputed';
+
+/**
+ * Execute mode input: pass verification_event + adapters.
+ * The orchestrator runs each stage in dependency order.
+ */
+export interface ExecuteInput {
+  mode: 'execute';
+  as_of: string;
+  verification_event: VerificationEvent;
+  adapters: PipelineAdapters;
+  thresholds?: Partial<PipelineThresholds>;
+}
+
+/**
+ * Precomputed mode input: pass pre-computed stage results.
+ * Used for replay, auditing, and deterministic regression testing.
+ */
+export interface PrecomputedInput {
+  mode?: 'precomputed';  // Default mode for backwards compatibility
+  as_of: string;
+  verification_event: VerificationEvent;
+  reputation_result: ReputationStageInput;
+  evidence_result: EvidenceStageInput;
+  holdback_result: HoldbackStageInput;
+  emissions_result: EmissionsStageInput;
+  thresholds?: Partial<PipelineThresholds>;
+}
+
+export type PipelineInput = ExecuteInput | PrecomputedInput;
 ```
 
 ### orchestrator.ts
@@ -754,22 +1042,39 @@ export type OrchestratorResult = OrchestratorOutput | OrchestratorError;
 /**
  * Verification Pipeline Orchestrator
  *
- * Deterministic single-entry-point orchestrator that accepts pre-computed
- * outputs from existing verification modules, executes pipeline stages in
- * fixed dependency order, and returns a unified JSON verdict.
+ * Deterministic single-entry-point orchestrator with two execution modes:
  *
- * Pipeline execution order:
- *   1. Reputation  — evaluate operator trust tier and risk signals
- *   2. Evidence    — check artifact coverage and evidence quality
- *   3. Holdback    — run pre-payout holdback decision using reputation context
- *   4. Emissions   — assess concentration impact of releasing this reward
- *   5. Final       — combine all stage results into pipeline_decision
+ *   execute mode — runs upstream review modules in fixed dependency order
+ *   through typed adapters. Reputation output feeds holdback. Evidence
+ *   output feeds holdback and reviewer packet. Holdback result influences
+ *   whether emissions impact is advisory vs blocking.
+ *
+ *   precomputed mode — accepts prior stage outputs for replay, auditing,
+ *   and deterministic regression testing.
+ *
+ * Both modes emit the same unified verdict contract for direct integration
+ * into the live verification service.
+ *
+ * Pipeline execution order (dependency-aware):
+ *
+ *   verification_event
+ *     → reputation(operator_id)
+ *     → evidence(task_id, operator_id)
+ *     → holdback(event, reputation, evidence)   ← uses reputation + evidence
+ *     → emissions(operator_id, reward, holdback) ← uses holdback decision
+ *     → unified verdict
  *
  * Decision rules:
  *   - ANY stage returns block  → pipeline_decision = "block"
  *   - ANY stage returns review → pipeline_decision = "review"
  *   - ALL stages pass clean    → pipeline_decision = "release"
  *   - critical_path = the stage that triggered the strongest decision
+ *
+ * Critical path justification:
+ *   Later stages CAN override earlier advisory stages because they have
+ *   more context. Holdback sees reputation + evidence; emissions sees
+ *   the holdback decision. Tie-breaking by reason-code count ensures
+ *   the stage with the most specific evidence drives the reviewer packet.
  */
 
 import {
@@ -795,23 +1100,21 @@ import {
   type HoldbackStageInput,
   type EmissionsStageInput,
   type ReputationRiskSeverity,
+  type PipelineInput,
+  type ExecuteInput,
+  type PrecomputedInput,
+  type PipelineAdapters,
+  type VerificationEvent,
 } from './types.js';
 
 // ─── Severity Ordering ──────────────────────────────────────────────
 
 const SEVERITY_RANK: Record<ReputationRiskSeverity | 'none', number> = {
-  critical: 4,
-  high: 3,
-  medium: 2,
-  low: 1,
-  info: 0,
-  none: -1,
+  critical: 4, high: 3, medium: 2, low: 1, info: 0, none: -1,
 };
 
 const VERDICT_RANK: Record<StageVerdict, number> = {
-  block: 2,
-  review: 1,
-  pass: 0,
+  block: 2, review: 1, pass: 0,
 };
 
 // ─── Input Validation ────────────────────────────────────────────────
@@ -822,57 +1125,59 @@ function makeError(
   message: string,
 ): OrchestratorError {
   return {
-    generated_at: as_of,
-    as_of,
-    version: SCHEMA_VERSION,
-    pipeline_decision: 'block',
-    error_code: code,
-    error_message: message,
-    validation_warnings: [],
-    stage_results: [],
-    critical_path: null,
-    operator_context: null,
-    emissions_impact: null,
-    reviewer_packet: null,
+    generated_at: as_of, as_of, version: SCHEMA_VERSION,
+    pipeline_decision: 'block', error_code: code, error_message: message,
+    validation_warnings: [], stage_results: [],
+    critical_path: null, operator_context: null,
+    emissions_impact: null, reviewer_packet: null,
     reason_codes: [code],
     decision_rationale: `Pipeline blocked due to input error: ${message}`,
     threshold_config: null,
   };
 }
 
-function validateInput(input: unknown): OrchestratorError | null {
+function validatePrecomputedInput(input: unknown): OrchestratorError | null {
   if (input === null || input === undefined || typeof input !== 'object') {
     return makeError('', 'INVALID_INPUT', 'Input must be a non-null object.');
   }
-
   const obj = input as Record<string, unknown>;
-
   if (!obj.as_of || typeof obj.as_of !== 'string') {
     return makeError('', 'MISSING_AS_OF', 'as_of is required and must be an ISO 8601 string.');
   }
-
   const as_of = obj.as_of as string;
-
   if (!obj.verification_event || typeof obj.verification_event !== 'object') {
     return makeError(as_of, 'MISSING_VERIFICATION_EVENT', 'verification_event is required.');
   }
-
-  if (!obj.reputation_stage || typeof obj.reputation_stage !== 'object') {
-    return makeError(as_of, 'MISSING_REPUTATION_STAGE', 'reputation_stage is required.');
+  if (!obj.reputation_result || typeof obj.reputation_result !== 'object') {
+    return makeError(as_of, 'MISSING_REPUTATION_STAGE', 'reputation_result is required in precomputed mode.');
   }
-
-  if (!obj.evidence_stage || typeof obj.evidence_stage !== 'object') {
-    return makeError(as_of, 'MISSING_EVIDENCE_STAGE', 'evidence_stage is required.');
+  if (!obj.evidence_result || typeof obj.evidence_result !== 'object') {
+    return makeError(as_of, 'MISSING_EVIDENCE_STAGE', 'evidence_result is required in precomputed mode.');
   }
-
-  if (!obj.holdback_stage || typeof obj.holdback_stage !== 'object') {
-    return makeError(as_of, 'MISSING_HOLDBACK_STAGE', 'holdback_stage is required.');
+  if (!obj.holdback_result || typeof obj.holdback_result !== 'object') {
+    return makeError(as_of, 'MISSING_HOLDBACK_STAGE', 'holdback_result is required in precomputed mode.');
   }
-
-  if (!obj.emissions_stage || typeof obj.emissions_stage !== 'object') {
-    return makeError(as_of, 'MISSING_EMISSIONS_STAGE', 'emissions_stage is required.');
+  if (!obj.emissions_result || typeof obj.emissions_result !== 'object') {
+    return makeError(as_of, 'MISSING_EMISSIONS_STAGE', 'emissions_result is required in precomputed mode.');
   }
+  return null;
+}
 
+function validateExecuteInput(input: unknown): OrchestratorError | null {
+  if (input === null || input === undefined || typeof input !== 'object') {
+    return makeError('', 'INVALID_INPUT', 'Input must be a non-null object.');
+  }
+  const obj = input as Record<string, unknown>;
+  if (!obj.as_of || typeof obj.as_of !== 'string') {
+    return makeError('', 'MISSING_AS_OF', 'as_of is required.');
+  }
+  const as_of = obj.as_of as string;
+  if (!obj.verification_event || typeof obj.verification_event !== 'object') {
+    return makeError(as_of, 'MISSING_VERIFICATION_EVENT', 'verification_event is required.');
+  }
+  if (!obj.adapters || typeof obj.adapters !== 'object') {
+    return makeError(as_of, 'INVALID_INPUT', 'adapters object is required in execute mode.');
+  }
   return null;
 }
 
@@ -885,7 +1190,6 @@ function evaluateReputation(
   const reason_codes: string[] = [];
   let verdict: StageVerdict = 'pass';
 
-  // Check trust tier against block/review lists
   if (thresholds.reputation_block_tiers.includes(stage.trust_tier)) {
     verdict = 'block';
     reason_codes.push(`TRUST_TIER_BLOCKED:${stage.trust_tier}`);
@@ -894,14 +1198,11 @@ function evaluateReputation(
     reason_codes.push(`TRUST_TIER_REVIEW:${stage.trust_tier}`);
   }
 
-  // Check risk signal severities
   const blockSeverityRank = SEVERITY_RANK[thresholds.reputation_block_severity];
   const reviewSeverityRank = SEVERITY_RANK[thresholds.reputation_review_severity];
 
   for (const signal of stage.risk_signals) {
-    const severity = signal.severity as ReputationRiskSeverity;
-    const rank = SEVERITY_RANK[severity] ?? -1;
-
+    const rank = SEVERITY_RANK[signal.severity as ReputationRiskSeverity] ?? -1;
     if (rank >= blockSeverityRank) {
       verdict = 'block';
       reason_codes.push(`RISK_SIGNAL_BLOCK:${signal.code}`);
@@ -911,14 +1212,10 @@ function evaluateReputation(
     }
   }
 
-  // Check downstream hints
   if (stage.downstream_hints.guardrail_action === 'suppress') {
     verdict = 'block';
     reason_codes.push('GUARDRAIL_SUPPRESS');
-  } else if (
-    stage.downstream_hints.payout_action === 'hold_for_review' &&
-    verdict !== 'block'
-  ) {
+  } else if (stage.downstream_hints.payout_action === 'hold_for_review' && verdict !== 'block') {
     verdict = 'review';
     reason_codes.push('PAYOUT_HOLD_FOR_REVIEW');
   }
@@ -926,27 +1223,20 @@ function evaluateReputation(
   if (stage.downstream_hints.moderation_action === 'escalate') {
     verdict = 'block';
     reason_codes.push('MODERATION_ESCALATE');
-  } else if (
-    stage.downstream_hints.moderation_action === 'flag_for_review' &&
-    verdict !== 'block'
-  ) {
+  } else if (stage.downstream_hints.moderation_action === 'flag_for_review' && verdict !== 'block') {
     verdict = 'review';
     reason_codes.push('MODERATION_FLAG_FOR_REVIEW');
   }
 
-  // Include upstream reason codes
   for (const code of stage.reason_codes) {
-    if (!reason_codes.includes(code)) {
-      reason_codes.push(code);
-    }
+    if (!reason_codes.includes(code)) reason_codes.push(code);
   }
 
-  const summary =
-    verdict === 'pass'
-      ? `Operator trust tier "${stage.trust_tier}" passed reputation checks.`
-      : verdict === 'review'
-        ? `Operator trust tier "${stage.trust_tier}" flagged for review.`
-        : `Operator trust tier "${stage.trust_tier}" blocked by reputation checks.`;
+  const summary = verdict === 'pass'
+    ? `Operator trust tier "${stage.trust_tier}" passed reputation checks.`
+    : verdict === 'review'
+      ? `Operator trust tier "${stage.trust_tier}" flagged for review.`
+      : `Operator trust tier "${stage.trust_tier}" blocked by reputation checks.`;
 
   return { stage: 'reputation', verdict, reason_codes, summary };
 }
@@ -958,7 +1248,6 @@ function evaluateEvidence(
   const reason_codes: string[] = [];
   let verdict: StageVerdict = 'pass';
 
-  // Check priority band
   if (thresholds.evidence_block_bands.includes(stage.priority_band)) {
     verdict = 'block';
     reason_codes.push(`EVIDENCE_PRIORITY_BLOCK:${stage.priority_band}`);
@@ -967,29 +1256,23 @@ function evaluateEvidence(
     reason_codes.push(`EVIDENCE_PRIORITY_REVIEW:${stage.priority_band}`);
   }
 
-  // Check anomaly score
   if (stage.anomaly_score >= thresholds.evidence_block_anomaly_score) {
     verdict = 'block';
     reason_codes.push(`ANOMALY_SCORE_BLOCK:${stage.anomaly_score}`);
-  } else if (
-    stage.anomaly_score >= thresholds.evidence_review_anomaly_score &&
-    verdict !== 'block'
-  ) {
+  } else if (stage.anomaly_score >= thresholds.evidence_review_anomaly_score && verdict !== 'block') {
     verdict = 'review';
     reason_codes.push(`ANOMALY_SCORE_REVIEW:${stage.anomaly_score}`);
   }
 
-  // Include anomaly flags as reason codes
   for (const flag of stage.anomaly_flags) {
     reason_codes.push(`ANOMALY:${flag}`);
   }
 
-  const summary =
-    verdict === 'pass'
-      ? `Evidence coverage ratio ${stage.evidence_coverage_ratio.toFixed(2)} within acceptable range.`
-      : verdict === 'review'
-        ? `Evidence flagged for review: priority band "${stage.priority_band}", anomaly score ${stage.anomaly_score}.`
-        : `Evidence blocked: priority band "${stage.priority_band}", anomaly score ${stage.anomaly_score}.`;
+  const summary = verdict === 'pass'
+    ? `Evidence coverage ratio ${stage.evidence_coverage_ratio.toFixed(2)} within acceptable range.`
+    : verdict === 'review'
+      ? `Evidence flagged for review: priority band "${stage.priority_band}", anomaly score ${stage.anomaly_score}.`
+      : `Evidence blocked: priority band "${stage.priority_band}", anomaly score ${stage.anomaly_score}.`;
 
   return { stage: 'evidence', verdict, reason_codes, summary };
 }
@@ -1002,27 +1285,13 @@ function evaluateHoldback(
   let verdict: StageVerdict;
 
   switch (stage.decision) {
-    case 'holdback':
-      verdict = 'block';
-      break;
-    case 'manual_review':
-      verdict = 'review';
-      break;
-    case 'auto_release':
-      verdict = 'pass';
-      break;
-    default:
-      verdict = 'block';
-      reason_codes.push('UNKNOWN_HOLDBACK_DECISION');
+    case 'holdback': verdict = 'block'; break;
+    case 'manual_review': verdict = 'review'; break;
+    case 'auto_release': verdict = 'pass'; break;
+    default: verdict = 'block'; reason_codes.push('UNKNOWN_HOLDBACK_DECISION');
   }
 
-  const summary =
-    verdict === 'pass'
-      ? `Holdback decision: auto_release. ${stage.decision_rationale}`
-      : verdict === 'review'
-        ? `Holdback decision: manual_review. ${stage.decision_rationale}`
-        : `Holdback decision: holdback. ${stage.decision_rationale}`;
-
+  const summary = `Holdback decision: ${stage.decision}. ${stage.decision_rationale}`;
   return { stage: 'holdback', verdict, reason_codes, summary };
 }
 
@@ -1041,17 +1310,14 @@ function evaluateEmissions(
     reason_codes.push(`EMISSION_POSTURE_REVIEW:${stage.emission_posture}`);
   }
 
-  const summary =
-    verdict === 'pass'
-      ? `Emissions posture "${stage.emission_posture}" is healthy. ${stage.posture_rationale}`
-      : verdict === 'review'
-        ? `Emissions posture "${stage.emission_posture}" flagged for review. ${stage.posture_rationale}`
-        : `Emissions posture "${stage.emission_posture}" restricted. ${stage.posture_rationale}`;
+  const summary = verdict === 'pass'
+    ? `Emissions posture "${stage.emission_posture}" is healthy. ${stage.posture_rationale}`
+    : `Emissions posture "${stage.emission_posture}" ${verdict === 'block' ? 'restricted' : 'flagged'}. ${stage.posture_rationale}`;
 
   return { stage: 'emissions', verdict, reason_codes, summary };
 }
 
-// ─── Pipeline Combiner ───────────────────────────────────────────────
+// ─── Pipeline Combiner (Pure, Deterministic) ────────────────────────
 
 function combinePipelineDecision(results: StageResult[]): {
   decision: PipelineDecision;
@@ -1063,9 +1329,7 @@ function combinePipelineDecision(results: StageResult[]): {
   const allReasonCodes: string[] = [];
 
   for (const result of results) {
-    for (const code of result.reason_codes) {
-      allReasonCodes.push(code);
-    }
+    for (const code of result.reason_codes) allReasonCodes.push(code);
 
     if (VERDICT_RANK[result.verdict] > VERDICT_RANK[strongestVerdict]) {
       strongestVerdict = result.verdict;
@@ -1074,48 +1338,35 @@ function combinePipelineDecision(results: StageResult[]): {
       VERDICT_RANK[result.verdict] === VERDICT_RANK[strongestVerdict] &&
       result.reason_codes.length > decisiveResult.reason_codes.length
     ) {
-      // Tie-break: stage with more reason codes is considered more decisive
       decisiveResult = result;
     }
   }
 
   const decision: PipelineDecision =
-    strongestVerdict === 'block'
-      ? 'block'
-      : strongestVerdict === 'review'
-        ? 'review'
-        : 'release';
+    strongestVerdict === 'block' ? 'block' :
+    strongestVerdict === 'review' ? 'review' : 'release';
 
   const criticalPath: CriticalPath = {
     decisive_stage: decisiveResult.stage,
     verdict: decisiveResult.verdict,
     reason_codes: decisiveResult.reason_codes,
-    rationale:
-      decision === 'release'
-        ? 'All stages passed clean. No escalation or block conditions triggered.'
-        : `Stage "${decisiveResult.stage}" triggered ${decision} with ${decisiveResult.reason_codes.length} reason code(s).`,
+    rationale: decision === 'release'
+      ? 'All stages passed clean. No escalation or block conditions triggered.'
+      : `Stage "${decisiveResult.stage}" triggered ${decision} with ${decisiveResult.reason_codes.length} reason code(s). Later stages can override earlier advisory stages because they have more context (holdback sees reputation+evidence; emissions sees holdback decision).`,
   };
 
   return { decision, criticalPath, allReasonCodes };
 }
 
-// ─── Operator Context Builder ────────────────────────────────────────
+// ─── Context Builders ───────────────────────────────────────────────
 
-function buildOperatorContext(
-  reputation: ReputationStageInput,
-): OperatorContext {
+function buildOperatorContext(reputation: ReputationStageInput): OperatorContext {
   let highestSeverity: ReputationRiskSeverity | 'none' = 'none';
   let highestRank = -1;
-
   for (const signal of reputation.risk_signals) {
-    const severity = signal.severity as ReputationRiskSeverity;
-    const rank = SEVERITY_RANK[severity] ?? -1;
-    if (rank > highestRank) {
-      highestRank = rank;
-      highestSeverity = severity;
-    }
+    const rank = SEVERITY_RANK[signal.severity as ReputationRiskSeverity] ?? -1;
+    if (rank > highestRank) { highestRank = rank; highestSeverity = signal.severity as ReputationRiskSeverity; }
   }
-
   return {
     operator_id: reputation.reputation_snapshot.operator_id,
     trust_tier: reputation.trust_tier,
@@ -1128,12 +1379,7 @@ function buildOperatorContext(
   };
 }
 
-// ─── Emissions Impact Builder ────────────────────────────────────────
-
-function buildEmissionsImpact(
-  emissions: EmissionsStageInput,
-  rewardPft: number,
-): EmissionsImpact {
+function buildEmissionsImpact(emissions: EmissionsStageInput, rewardPft: number): EmissionsImpact {
   return {
     current_posture: emissions.emission_posture,
     worst_window: emissions.worst_window,
@@ -1144,146 +1390,230 @@ function buildEmissionsImpact(
   };
 }
 
-// ─── Reviewer Packet Builder ─────────────────────────────────────────
-
 function buildReviewerPacket(
-  input: OrchestratorInput,
+  event: VerificationEvent,
   decision: PipelineDecision,
   decisiveStage: StageName,
   allReasonCodes: string[],
+  reputation: ReputationStageInput,
+  evidence: EvidenceStageInput,
+  holdback: HoldbackStageInput,
+  emissions: EmissionsStageInput,
 ): ReviewerPacket {
   const urgency: 'immediate' | 'standard' | 'low' =
-    decision === 'block'
-      ? 'immediate'
-      : decision === 'review'
-        ? 'standard'
-        : 'low';
+    decision === 'block' ? 'immediate' : decision === 'review' ? 'standard' : 'low';
+
+  // Escalation summary
+  const blockCodes = allReasonCodes.filter(c => c.includes('BLOCK') || c.includes('holdback') || c.includes('ESCALATE'));
+  const escalation_summary = decision === 'release'
+    ? 'No escalation required. All pipeline stages passed.'
+    : `${decision.toUpperCase()}: Triggered by ${decisiveStage} stage. ${blockCodes.length} blocking/escalation condition(s) across pipeline.`;
+
+  // Decisive evidence
+  const decisive_evidence: string[] = [];
+  if (holdback.missing_public_evidence) decisive_evidence.push('Missing public evidence');
+  if (holdback.reviewer_fields.requires_public_artifact) decisive_evidence.push('Requires public artifact');
+  for (const flag of evidence.anomaly_flags) decisive_evidence.push(`Anomaly: ${flag}`);
+  if (reputation.risk_signals.length > 0) decisive_evidence.push(`${reputation.risk_signals.length} operator risk signal(s)`);
+
+  // Missing artifacts
+  const missing_artifacts: string[] = [];
+  if (holdback.missing_public_evidence) missing_artifacts.push('Public evidence artifact');
+  if (!event.verification_target) missing_artifacts.push('Verification target URL/hash');
+  for (const id of evidence.flagged_task_ids) missing_artifacts.push(`Flagged task: ${id}`);
+
+  // Operator risk summary
+  const riskSignalCodes = reputation.risk_signals.map(s => `${s.code}(${s.severity})`).join(', ');
+  const operator_risk_summary = reputation.risk_signals.length === 0
+    ? `Trust tier: ${reputation.trust_tier}. No active risk signals.`
+    : `Trust tier: ${reputation.trust_tier}. Risk signals: ${riskSignalCodes}.`;
+
+  // Release consequence
+  const release_consequence_summary = emissions.emission_posture === 'healthy'
+    ? `Releasing ${event.reward_pft} PFT has no adverse emissions impact. Posture remains healthy.`
+    : `Releasing ${event.reward_pft} PFT under ${emissions.emission_posture} emissions posture. Worst window: ${emissions.worst_window}. ${emissions.posture_rationale}`;
+
+  // Next action
+  const next_action_recommendation = decision === 'release'
+    ? 'Auto-release approved. No human action required.'
+    : decision === 'review'
+      ? `Review ${decisiveStage} stage findings. ${holdback.reviewer_fields.next_review_step || 'Assess flagged conditions and determine resolution.'}`
+      : `BLOCK: Resolve ${decisiveStage} stage conditions before release. ${holdback.reviewer_fields.next_review_step || 'Investigate blocking conditions.'}`;
 
   return {
-    task_id: input.verification_event.task_id,
-    operator_id: input.verification_event.operator_id,
-    reward_pft: input.verification_event.reward_pft,
+    task_id: event.task_id,
+    operator_id: event.operator_id,
+    reward_pft: event.reward_pft,
     pipeline_decision: decision,
     decisive_stage: decisiveStage,
     all_reason_codes: allReasonCodes,
-    holdback_reviewer_fields: input.holdback_stage.reviewer_fields,
-    evidence_coverage_ratio: input.evidence_stage.evidence_coverage_ratio,
-    anomaly_flags: input.evidence_stage.anomaly_flags,
-    flagged_task_ids: input.evidence_stage.flagged_task_ids,
-    trust_tier: input.reputation_stage.trust_tier,
-    emission_posture: input.emissions_stage.emission_posture,
+    escalation_summary,
+    decisive_evidence,
+    missing_artifacts,
+    trust_tier: reputation.trust_tier,
+    operator_risk_summary,
+    holdback_reviewer_fields: holdback.reviewer_fields,
+    evidence_coverage_ratio: evidence.evidence_coverage_ratio,
+    anomaly_flags: evidence.anomaly_flags,
+    flagged_task_ids: evidence.flagged_task_ids,
+    emission_posture: emissions.emission_posture,
+    release_consequence_summary,
     requires_human_review: decision !== 'release',
     review_urgency: urgency,
+    next_action_recommendation,
   };
 }
 
-// ─── Main Entry Point ────────────────────────────────────────────────
+// ─── Execute Mode: Run Adapters in Dependency Order ─────────────────
 
-export function orchestrateVerification(input: unknown): OrchestratorResult {
-  // Validate input
-  const validationError = validateInput(input);
-  if (validationError) {
-    return validationError;
-  }
+function executeWithAdapters(
+  input: ExecuteInput,
+  thresholds: PipelineThresholds,
+): { reputation: ReputationStageInput; evidence: EvidenceStageInput; holdback: HoldbackStageInput; emissions: EmissionsStageInput } {
+  const { verification_event: event, adapters, as_of } = input;
 
-  const typedInput = input as OrchestratorInput;
+  // Stage 1: Reputation (no dependencies)
+  const reputation = adapters.reputation.run(event.operator_id, as_of);
 
-  // Merge thresholds
-  const thresholds: PipelineThresholds = {
-    ...DEFAULT_THRESHOLDS,
-    ...typedInput.thresholds,
-  };
+  // Stage 2: Evidence (no dependencies)
+  const evidence = adapters.evidence.run(event.task_id, event.operator_id, as_of);
 
-  // Execute stages in fixed order
+  // Stage 3: Holdback (depends on reputation + evidence)
+  const holdback = adapters.holdback.run(event, reputation, evidence, as_of);
+
+  // Stage 4: Emissions (depends on holdback decision — only advisory if already blocked)
+  const emissions = adapters.emissions.run(
+    event.operator_id,
+    event.reward_pft,
+    holdback.decision,
+    as_of,
+  );
+
+  return { reputation, evidence, holdback, emissions };
+}
+
+// ─── Core Pipeline (shared by both modes) ───────────────────────────
+
+function runPipelineCore(
+  event: VerificationEvent,
+  as_of: string,
+  reputation: ReputationStageInput,
+  evidence: EvidenceStageInput,
+  holdback: HoldbackStageInput,
+  emissions: EmissionsStageInput,
+  thresholds: PipelineThresholds,
+): OrchestratorOutput {
   const stageResults: StageResult[] = [];
   const warnings: string[] = [];
 
   for (const stageName of STAGE_ORDER) {
     let result: StageResult;
-
     switch (stageName) {
-      case 'reputation':
-        result = evaluateReputation(typedInput.reputation_stage, thresholds);
-        break;
-      case 'evidence':
-        result = evaluateEvidence(typedInput.evidence_stage, thresholds);
-        break;
-      case 'holdback':
-        result = evaluateHoldback(typedInput.holdback_stage, thresholds);
-        break;
-      case 'emissions':
-        result = evaluateEmissions(typedInput.emissions_stage, thresholds);
-        break;
+      case 'reputation': result = evaluateReputation(reputation, thresholds); break;
+      case 'evidence': result = evaluateEvidence(evidence, thresholds); break;
+      case 'holdback': result = evaluateHoldback(holdback, thresholds); break;
+      case 'emissions': result = evaluateEmissions(emissions, thresholds); break;
     }
-
     stageResults.push(result);
   }
 
-  // Combine pipeline decision
-  const { decision, criticalPath, allReasonCodes } =
-    combinePipelineDecision(stageResults);
-
-  // Build context objects
-  const operatorContext = buildOperatorContext(typedInput.reputation_stage);
-  const emissionsImpact = buildEmissionsImpact(
-    typedInput.emissions_stage,
-    typedInput.verification_event.reward_pft,
-  );
+  const { decision, criticalPath, allReasonCodes } = combinePipelineDecision(stageResults);
+  const operatorContext = buildOperatorContext(reputation);
+  const emissionsImpact = buildEmissionsImpact(emissions, event.reward_pft);
   const reviewerPacket = buildReviewerPacket(
-    typedInput,
-    decision,
-    criticalPath.decisive_stage,
-    allReasonCodes,
+    event, decision, criticalPath.decisive_stage, allReasonCodes,
+    reputation, evidence, holdback, emissions,
   );
 
-  // Collect validation warnings from all stages
-  if (typedInput.holdback_stage.validation_warnings) {
-    for (const w of typedInput.holdback_stage.validation_warnings) {
-      warnings.push(`holdback: ${w}`);
-    }
-  }
-  if (typedInput.evidence_stage.validation_warnings) {
-    for (const w of typedInput.evidence_stage.validation_warnings) {
-      warnings.push(`evidence: ${w}`);
-    }
-  }
-  if (typedInput.emissions_stage.validation_warnings) {
-    for (const w of typedInput.emissions_stage.validation_warnings) {
-      warnings.push(`emissions: ${w}`);
-    }
-  }
+  // Collect warnings
+  for (const w of holdback.validation_warnings ?? []) warnings.push(`holdback: ${w}`);
+  for (const w of evidence.validation_warnings ?? []) warnings.push(`evidence: ${w}`);
+  for (const w of emissions.validation_warnings ?? []) warnings.push(`emissions: ${w}`);
 
-  // Build decision rationale
-  const stageVerdicts = stageResults
-    .map((r) => `${r.stage}=${r.verdict}`)
-    .join(', ');
-  const decisionRationale =
-    decision === 'release'
-      ? `All pipeline stages passed clean (${stageVerdicts}). Reward of ${typedInput.verification_event.reward_pft} PFT approved for release.`
-      : `Pipeline decision: ${decision}. Decisive stage: ${criticalPath.decisive_stage}. Stage verdicts: ${stageVerdicts}. ${criticalPath.rationale}`;
+  const stageVerdicts = stageResults.map(r => `${r.stage}=${r.verdict}`).join(', ');
+  const decisionRationale = decision === 'release'
+    ? `All pipeline stages passed clean (${stageVerdicts}). Reward of ${event.reward_pft} PFT approved for release.`
+    : `Pipeline decision: ${decision}. Decisive stage: ${criticalPath.decisive_stage}. Stage verdicts: ${stageVerdicts}. ${criticalPath.rationale}`;
 
-  // Only include reason_codes in the top-level if decision is not release
-  const topLevelReasonCodes =
-    decision === 'release' ? [] : allReasonCodes;
-
-  const output: OrchestratorOutput = {
-    generated_at: typedInput.as_of,
-    as_of: typedInput.as_of,
-    version: SCHEMA_VERSION,
+  return {
+    generated_at: as_of, as_of, version: SCHEMA_VERSION,
     pipeline_decision: decision,
     stage_results: stageResults,
     critical_path: criticalPath,
     operator_context: operatorContext,
     emissions_impact: emissionsImpact,
     reviewer_packet: reviewerPacket,
-    reason_codes: topLevelReasonCodes,
+    reason_codes: decision === 'release' ? [] : allReasonCodes,
     decision_rationale: decisionRationale,
     threshold_config: thresholds,
     validation_warnings: warnings,
   };
-
-  return output;
 }
+
+// ─── Public API ─────────────────────────────────────────────────────
+
+/**
+ * Run the verification pipeline.
+ *
+ * Supports two execution modes:
+ *
+ *   execute mode — runs upstream modules through typed adapters in
+ *   dependency order. Reputation feeds holdback. Evidence feeds holdback.
+ *   Holdback decision feeds emissions.
+ *
+ *   precomputed mode (default) — accepts prior stage outputs for replay,
+ *   auditing, and deterministic regression testing.
+ *
+ * Both modes emit the same unified verdict contract.
+ */
+export function orchestrateVerification(input: unknown): OrchestratorResult {
+  if (input === null || input === undefined || typeof input !== 'object') {
+    return makeError('', 'INVALID_INPUT', 'Input must be a non-null object.');
+  }
+
+  const obj = input as Record<string, unknown>;
+  const mode = obj.mode === 'execute' ? 'execute' : 'precomputed';
+
+  if (mode === 'execute') {
+    const error = validateExecuteInput(input);
+    if (error) return error;
+
+    const execInput = input as ExecuteInput;
+    const thresholds = { ...DEFAULT_THRESHOLDS, ...execInput.thresholds };
+
+    try {
+      const { reputation, evidence, holdback, emissions } =
+        executeWithAdapters(execInput, thresholds);
+
+      return runPipelineCore(
+        execInput.verification_event, execInput.as_of,
+        reputation, evidence, holdback, emissions, thresholds,
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return makeError(execInput.as_of, 'MALFORMED_STAGE_DATA', `Adapter execution failed: ${msg}`);
+    }
+  }
+
+  // Precomputed mode
+  const error = validatePrecomputedInput(input);
+  if (error) return error;
+
+  const preInput = input as PrecomputedInput;
+  const thresholds = { ...DEFAULT_THRESHOLDS, ...preInput.thresholds };
+
+  return runPipelineCore(
+    preInput.verification_event, preInput.as_of,
+    preInput.reputation_result, preInput.evidence_result,
+    preInput.holdback_result, preInput.emissions_result,
+    thresholds,
+  );
+}
+
+// Legacy alias for backwards compatibility with existing tests
+export { orchestrateVerification as runPipeline };
+
+export { DEFAULT_THRESHOLDS, SCHEMA_VERSION };
 ```
 
 ---
@@ -1294,7 +1624,7 @@ export function orchestrateVerification(input: unknown): OrchestratorResult {
 import { describe, it, expect } from 'vitest';
 import { orchestrateVerification } from '../src/orchestrator.js';
 import type {
-  OrchestratorInput,
+  PrecomputedInput,
   OrchestratorOutput,
   OrchestratorError,
   ReputationStageInput,
@@ -1420,15 +1750,15 @@ function makeEmissionsStage(
 }
 
 function makeCleanInput(
-  overrides: Partial<OrchestratorInput> = {},
-): OrchestratorInput {
+  overrides: Partial<PrecomputedInput> = {},
+): PrecomputedInput {
   return {
     as_of: '2026-04-09T12:00:00Z',
     verification_event: makeVerificationEvent(),
-    reputation_stage: makeReputationStage(),
-    evidence_stage: makeEvidenceStage(),
-    holdback_stage: makeHoldbackStage(),
-    emissions_stage: makeEmissionsStage(),
+    reputation_result: makeReputationStage(),
+    evidence_result: makeEvidenceStage(),
+    holdback_result: makeHoldbackStage(),
+    emissions_result: makeEmissionsStage(),
     ...overrides,
   };
 }
@@ -1475,6 +1805,8 @@ describe('Verification Pipeline Orchestrator', () => {
       const result = orchestrateVerification(makeCleanInput());
       if (!isOutput(result)) return;
 
+      // On full pass, all stages have same verdict (pass) and CLEAN codes;
+      // tie-break goes to stage with more reason codes, or first stage
       expect(result.critical_path.verdict).toBe('pass');
       expect(result.critical_path.rationale).toContain('All stages passed clean');
     });
@@ -1485,7 +1817,7 @@ describe('Verification Pipeline Orchestrator', () => {
   describe('Review path', () => {
     it('returns review when reputation stage has probationary tier', () => {
       const input = makeCleanInput({
-        reputation_stage: makeReputationStage({
+        reputation_result: makeReputationStage({
           trust_tier: 'probationary',
           reason_codes: ['low_completion_rate'],
         }),
@@ -1502,7 +1834,7 @@ describe('Verification Pipeline Orchestrator', () => {
 
     it('returns review when holdback is manual_review', () => {
       const input = makeCleanInput({
-        holdback_stage: makeHoldbackStage({
+        holdback_result: makeHoldbackStage({
           decision: 'manual_review',
           holdback_reason_codes: ['PROBATIONARY_HIGH_REWARD'],
           decision_rationale: 'Probationary operator with high reward.',
@@ -1518,7 +1850,7 @@ describe('Verification Pipeline Orchestrator', () => {
 
     it('returns review when emissions posture is watch', () => {
       const input = makeCleanInput({
-        emissions_stage: makeEmissionsStage({
+        emissions_result: makeEmissionsStage({
           emission_posture: 'watch',
           reason_codes: ['TOP_RECIPIENT_DOMINANCE'],
           posture_rationale: 'Top recipient share exceeds watch threshold.',
@@ -1534,7 +1866,7 @@ describe('Verification Pipeline Orchestrator', () => {
 
     it('returns review when evidence has high priority band', () => {
       const input = makeCleanInput({
-        evidence_stage: makeEvidenceStage({
+        evidence_result: makeEvidenceStage({
           priority_band: 'high',
           anomaly_score: 55,
           anomaly_flags: ['HIGH_REWARD_NO_EVIDENCE'],
@@ -1549,7 +1881,7 @@ describe('Verification Pipeline Orchestrator', () => {
 
     it('returns review when reputation has high-severity risk signal', () => {
       const input = makeCleanInput({
-        reputation_stage: makeReputationStage({
+        reputation_result: makeReputationStage({
           risk_signals: [
             {
               code: 'high_holdback_rate',
@@ -1573,7 +1905,7 @@ describe('Verification Pipeline Orchestrator', () => {
   describe('Block path', () => {
     it('returns block when holdback decision is holdback', () => {
       const input = makeCleanInput({
-        holdback_stage: makeHoldbackStage({
+        holdback_result: makeHoldbackStage({
           decision: 'holdback',
           holdback_reason_codes: ['UNAUTHORIZED_OPERATOR', 'MISSING_EVIDENCE'],
           decision_rationale: 'Operator unauthorized and evidence missing.',
@@ -1594,7 +1926,7 @@ describe('Verification Pipeline Orchestrator', () => {
 
     it('returns block when emissions posture is restrict', () => {
       const input = makeCleanInput({
-        emissions_stage: makeEmissionsStage({
+        emissions_result: makeEmissionsStage({
           emission_posture: 'restrict',
           reason_codes: ['HIGH_CONCENTRATION_INDEX', 'TOP_RECIPIENT_DOMINANCE'],
           posture_rationale: 'Severe concentration detected.',
@@ -1609,7 +1941,7 @@ describe('Verification Pipeline Orchestrator', () => {
 
     it('returns block when evidence has critical priority band', () => {
       const input = makeCleanInput({
-        evidence_stage: makeEvidenceStage({
+        evidence_result: makeEvidenceStage({
           priority_band: 'critical',
           anomaly_score: 95,
           anomaly_flags: ['HIGH_REWARD_NO_EVIDENCE', 'ALL_PRIVATE'],
@@ -1627,7 +1959,7 @@ describe('Verification Pipeline Orchestrator', () => {
 
     it('returns block when reputation has critical risk signal', () => {
       const input = makeCleanInput({
-        reputation_stage: makeReputationStage({
+        reputation_result: makeReputationStage({
           risk_signals: [
             {
               code: 'unresolved_holdbacks',
@@ -1648,11 +1980,11 @@ describe('Verification Pipeline Orchestrator', () => {
 
     it('block overrides review when multiple stages disagree', () => {
       const input = makeCleanInput({
-        reputation_stage: makeReputationStage({
-          trust_tier: 'probationary',
+        reputation_result: makeReputationStage({
+          trust_tier: 'probationary', // triggers review
         }),
-        holdback_stage: makeHoldbackStage({
-          decision: 'holdback',
+        holdback_result: makeHoldbackStage({
+          decision: 'holdback', // triggers block
           holdback_reason_codes: ['UNAUTHORIZED_OPERATOR'],
           decision_rationale: 'Operator not authorized.',
         }),
@@ -1662,13 +1994,14 @@ describe('Verification Pipeline Orchestrator', () => {
 
       expect(result.pipeline_decision).toBe('block');
       expect(result.critical_path.decisive_stage).toBe('holdback');
+      // Reputation review codes should still be in allReasonCodes
       expect(result.reason_codes).toContain('TRUST_TIER_REVIEW:probationary');
       expect(result.reason_codes).toContain('UNAUTHORIZED_OPERATOR');
     });
 
     it('returns block when downstream hints indicate suppress', () => {
       const input = makeCleanInput({
-        reputation_stage: makeReputationStage({
+        reputation_result: makeReputationStage({
           downstream_hints: {
             payout_action: 'standard',
             guardrail_action: 'suppress',
@@ -1686,7 +2019,7 @@ describe('Verification Pipeline Orchestrator', () => {
 
     it('returns block when moderation action is escalate', () => {
       const input = makeCleanInput({
-        reputation_stage: makeReputationStage({
+        reputation_result: makeReputationStage({
           downstream_hints: {
             payout_action: 'standard',
             guardrail_action: 'full_issuance',
@@ -1767,10 +2100,10 @@ describe('Verification Pipeline Orchestrator', () => {
     it('returns error for missing verification_event', () => {
       const result = orchestrateVerification({
         as_of: '2026-04-09T00:00:00Z',
-        reputation_stage: makeReputationStage(),
-        evidence_stage: makeEvidenceStage(),
-        holdback_stage: makeHoldbackStage(),
-        emissions_stage: makeEmissionsStage(),
+        reputation_result: makeReputationStage(),
+        evidence_result: makeEvidenceStage(),
+        holdback_result: makeHoldbackStage(),
+        emissions_result: makeEmissionsStage(),
       });
       expect(isError(result)).toBe(true);
       if (!isError(result)) return;
@@ -1782,9 +2115,9 @@ describe('Verification Pipeline Orchestrator', () => {
       const result = orchestrateVerification({
         as_of: '2026-04-09T00:00:00Z',
         verification_event: makeVerificationEvent(),
-        evidence_stage: makeEvidenceStage(),
-        holdback_stage: makeHoldbackStage(),
-        emissions_stage: makeEmissionsStage(),
+        evidence_result: makeEvidenceStage(),
+        holdback_result: makeHoldbackStage(),
+        emissions_result: makeEmissionsStage(),
       });
       expect(isError(result)).toBe(true);
       if (!isError(result)) return;
@@ -1796,9 +2129,9 @@ describe('Verification Pipeline Orchestrator', () => {
       const result = orchestrateVerification({
         as_of: '2026-04-09T00:00:00Z',
         verification_event: makeVerificationEvent(),
-        reputation_stage: makeReputationStage(),
-        holdback_stage: makeHoldbackStage(),
-        emissions_stage: makeEmissionsStage(),
+        reputation_result: makeReputationStage(),
+        holdback_result: makeHoldbackStage(),
+        emissions_result: makeEmissionsStage(),
       });
       expect(isError(result)).toBe(true);
       if (!isError(result)) return;
@@ -1810,9 +2143,9 @@ describe('Verification Pipeline Orchestrator', () => {
       const result = orchestrateVerification({
         as_of: '2026-04-09T00:00:00Z',
         verification_event: makeVerificationEvent(),
-        reputation_stage: makeReputationStage(),
-        evidence_stage: makeEvidenceStage(),
-        emissions_stage: makeEmissionsStage(),
+        reputation_result: makeReputationStage(),
+        evidence_result: makeEvidenceStage(),
+        emissions_result: makeEmissionsStage(),
       });
       expect(isError(result)).toBe(true);
       if (!isError(result)) return;
@@ -1824,9 +2157,9 @@ describe('Verification Pipeline Orchestrator', () => {
       const result = orchestrateVerification({
         as_of: '2026-04-09T00:00:00Z',
         verification_event: makeVerificationEvent(),
-        reputation_stage: makeReputationStage(),
-        evidence_stage: makeEvidenceStage(),
-        holdback_stage: makeHoldbackStage(),
+        reputation_result: makeReputationStage(),
+        evidence_result: makeEvidenceStage(),
+        holdback_result: makeHoldbackStage(),
       });
       expect(isError(result)).toBe(true);
       if (!isError(result)) return;
@@ -1852,8 +2185,8 @@ describe('Verification Pipeline Orchestrator', () => {
   describe('Threshold boundaries', () => {
     it('anomaly score at exactly review threshold triggers review', () => {
       const input = makeCleanInput({
-        evidence_stage: makeEvidenceStage({
-          anomaly_score: 50,
+        evidence_result: makeEvidenceStage({
+          anomaly_score: 50, // exactly at default review threshold
         }),
       });
       const result = orchestrateVerification(input);
@@ -1864,7 +2197,7 @@ describe('Verification Pipeline Orchestrator', () => {
 
     it('anomaly score one below review threshold passes', () => {
       const input = makeCleanInput({
-        evidence_stage: makeEvidenceStage({
+        evidence_result: makeEvidenceStage({
           anomaly_score: 49,
         }),
       });
@@ -1876,8 +2209,8 @@ describe('Verification Pipeline Orchestrator', () => {
 
     it('anomaly score at exactly block threshold triggers block', () => {
       const input = makeCleanInput({
-        evidence_stage: makeEvidenceStage({
-          anomaly_score: 80,
+        evidence_result: makeEvidenceStage({
+          anomaly_score: 80, // exactly at default block threshold
         }),
       });
       const result = orchestrateVerification(input);
@@ -1888,23 +2221,23 @@ describe('Verification Pipeline Orchestrator', () => {
 
     it('custom thresholds override defaults', () => {
       const input = makeCleanInput({
-        evidence_stage: makeEvidenceStage({
-          anomaly_score: 90,
+        evidence_result: makeEvidenceStage({
+          anomaly_score: 90, // would normally block at default 80
         }),
         thresholds: {
-          evidence_block_anomaly_score: 95,
-          evidence_review_anomaly_score: 85,
+          evidence_block_anomaly_score: 95, // raise block threshold
+          evidence_review_anomaly_score: 85, // raise review threshold
         },
       });
       const result = orchestrateVerification(input);
       if (!isOutput(result)) return;
 
-      expect(result.pipeline_decision).toBe('review');
+      expect(result.pipeline_decision).toBe('review'); // 90 >= 85 (review) but < 95 (block)
     });
 
     it('custom reputation block tiers can block new_operator', () => {
       const input = makeCleanInput({
-        reputation_stage: makeReputationStage({
+        reputation_result: makeReputationStage({
           trust_tier: 'new_operator',
         }),
         thresholds: {
@@ -1924,12 +2257,12 @@ describe('Verification Pipeline Orchestrator', () => {
   describe('Tie-breaking', () => {
     it('when two stages both block, decisive stage has more reason codes', () => {
       const input = makeCleanInput({
-        holdback_stage: makeHoldbackStage({
+        holdback_result: makeHoldbackStage({
           decision: 'holdback',
           holdback_reason_codes: ['UNAUTHORIZED_OPERATOR'],
           decision_rationale: 'Blocked.',
         }),
-        emissions_stage: makeEmissionsStage({
+        emissions_result: makeEmissionsStage({
           emission_posture: 'restrict',
           reason_codes: ['HIGH_CONCENTRATION_INDEX', 'TOP_RECIPIENT_DOMINANCE'],
           posture_rationale: 'Restricted.',
@@ -1939,16 +2272,18 @@ describe('Verification Pipeline Orchestrator', () => {
       if (!isOutput(result)) return;
 
       expect(result.pipeline_decision).toBe('block');
+      // emissions has 3 reason codes (2 upstream + EMISSION_POSTURE_BLOCK:restrict)
+      // holdback has 1 reason code (UNAUTHORIZED_OPERATOR)
       expect(result.critical_path.decisive_stage).toBe('emissions');
     });
 
     it('when two stages both review, decisive stage has more reason codes', () => {
       const input = makeCleanInput({
-        reputation_stage: makeReputationStage({
+        reputation_result: makeReputationStage({
           trust_tier: 'probationary',
           reason_codes: ['low_completion_rate', 'weak_evidence_quality'],
         }),
-        holdback_stage: makeHoldbackStage({
+        holdback_result: makeHoldbackStage({
           decision: 'manual_review',
           holdback_reason_codes: ['PROBATIONARY_HIGH_REWARD'],
           decision_rationale: 'Needs review.',
@@ -1958,6 +2293,8 @@ describe('Verification Pipeline Orchestrator', () => {
       if (!isOutput(result)) return;
 
       expect(result.pipeline_decision).toBe('review');
+      // reputation: TRUST_TIER_REVIEW:probationary + low_completion_rate + weak_evidence_quality = 3
+      // holdback: PROBATIONARY_HIGH_REWARD = 1
       expect(result.critical_path.decisive_stage).toBe('reputation');
     });
   });
@@ -2036,6 +2373,7 @@ describe('Verification Pipeline Orchestrator', () => {
       if (!isOutput(result)) return;
 
       expect(result.threshold_config.evidence_block_anomaly_score).toBe(99);
+      // Other thresholds should be defaults
       expect(result.threshold_config.evidence_review_anomaly_score).toBe(50);
     });
   });
@@ -2045,13 +2383,13 @@ describe('Verification Pipeline Orchestrator', () => {
   describe('Validation warnings', () => {
     it('propagates validation warnings from all stages', () => {
       const input = makeCleanInput({
-        holdback_stage: makeHoldbackStage({
+        holdback_result: makeHoldbackStage({
           validation_warnings: ['Holdback warning 1'],
         }),
-        evidence_stage: makeEvidenceStage({
+        evidence_result: makeEvidenceStage({
           validation_warnings: ['Evidence warning 1'],
         }),
-        emissions_stage: makeEmissionsStage({
+        emissions_result: makeEmissionsStage({
           validation_warnings: ['Emissions warning 1'],
         }),
       });
@@ -2069,20 +2407,20 @@ describe('Verification Pipeline Orchestrator', () => {
   describe('Combined scenarios', () => {
     it('all four stages trigger review — decisive is the one with most codes', () => {
       const input = makeCleanInput({
-        reputation_stage: makeReputationStage({
+        reputation_result: makeReputationStage({
           trust_tier: 'probationary',
           reason_codes: ['low_completion_rate'],
         }),
-        evidence_stage: makeEvidenceStage({
+        evidence_result: makeEvidenceStage({
           priority_band: 'high',
           anomaly_flags: ['LOW_COVERAGE_HIGH_VOLUME'],
         }),
-        holdback_stage: makeHoldbackStage({
+        holdback_result: makeHoldbackStage({
           decision: 'manual_review',
           holdback_reason_codes: ['PROBATIONARY_HIGH_REWARD', 'LOW_HISTORICAL_COVERAGE'],
           decision_rationale: 'Review needed.',
         }),
-        emissions_stage: makeEmissionsStage({
+        emissions_result: makeEmissionsStage({
           emission_posture: 'watch',
           reason_codes: ['TOP_RECIPIENT_DOMINANCE'],
         }),
@@ -2091,12 +2429,13 @@ describe('Verification Pipeline Orchestrator', () => {
       if (!isOutput(result)) return;
 
       expect(result.pipeline_decision).toBe('review');
+      // All four stages produced review verdicts
       expect(result.stage_results.every((s) => s.verdict === 'review')).toBe(true);
     });
 
     it('downstream hints hold_for_review triggers review at reputation stage', () => {
       const input = makeCleanInput({
-        reputation_stage: makeReputationStage({
+        reputation_result: makeReputationStage({
           downstream_hints: {
             payout_action: 'hold_for_review',
             guardrail_action: 'full_issuance',
@@ -2126,6 +2465,203 @@ describe('Verification Pipeline Orchestrator', () => {
       expect(result.emissions_impact.reward_pft).toBe(10000);
     });
   });
+
+  // ── 11. Execute Mode — Adapter Orchestration ──────────────────────
+
+  describe('Execute mode', () => {
+    it('runs adapters in dependency order and produces valid output', () => {
+      const callOrder: string[] = [];
+
+      const result = orchestrateVerification({
+        mode: 'execute',
+        as_of: '2026-04-09T12:00:00Z',
+        verification_event: makeVerificationEvent(),
+        adapters: {
+          reputation: {
+            run: (operatorId: string, asOf: string) => {
+              callOrder.push('reputation');
+              return makeReputationStage();
+            },
+          },
+          evidence: {
+            run: (taskId: string, operatorId: string, asOf: string) => {
+              callOrder.push('evidence');
+              return makeEvidenceStage();
+            },
+          },
+          holdback: {
+            run: (event: any, reputation: any, evidence: any, asOf: string) => {
+              callOrder.push('holdback');
+              // Verify holdback receives reputation and evidence outputs
+              expect(reputation.trust_tier).toBe('reliable');
+              expect(evidence.evidence_coverage_ratio).toBe(0.9);
+              return makeHoldbackStage();
+            },
+          },
+          emissions: {
+            run: (operatorId: string, rewardPft: number, holdbackDecision: any, asOf: string) => {
+              callOrder.push('emissions');
+              // Verify emissions receives holdback decision
+              expect(holdbackDecision).toBe('auto_release');
+              return makeEmissionsStage();
+            },
+          },
+        },
+      });
+
+      if (!isOutput(result)) throw new Error('Expected output, got error');
+
+      // Verify execution order
+      expect(callOrder).toEqual(['reputation', 'evidence', 'holdback', 'emissions']);
+      expect(result.pipeline_decision).toBe('release');
+    });
+
+    it('holdback adapter receives reputation output that feeds risk context', () => {
+      let holdbackReceivedReputation = false;
+
+      const result = orchestrateVerification({
+        mode: 'execute',
+        as_of: '2026-04-09T12:00:00Z',
+        verification_event: makeVerificationEvent(),
+        adapters: {
+          reputation: {
+            run: () => makeReputationStage({
+              trust_tier: 'probationary',
+              risk_signals: [{
+                code: 'high_rejection_rate',
+                severity: 'high',
+                description: 'test',
+                consumers: ['payout'],
+              }],
+            }),
+          },
+          evidence: {
+            run: () => makeEvidenceStage(),
+          },
+          holdback: {
+            run: (_event: any, reputation: any, _evidence: any) => {
+              // Holdback sees the probationary tier + risk signals from reputation
+              holdbackReceivedReputation =
+                reputation.trust_tier === 'probationary' &&
+                reputation.risk_signals.length === 1;
+              return makeHoldbackStage({ decision: 'manual_review', holdback_reason_codes: ['PROBATIONARY_HIGH_REWARD'] });
+            },
+          },
+          emissions: {
+            run: () => makeEmissionsStage(),
+          },
+        },
+      });
+
+      expect(holdbackReceivedReputation).toBe(true);
+      if (isOutput(result)) {
+        expect(result.pipeline_decision).toBe('review');
+      }
+    });
+
+    it('emissions adapter receives holdback decision for conditional logic', () => {
+      let emissionsReceivedBlock = false;
+
+      const result = orchestrateVerification({
+        mode: 'execute',
+        as_of: '2026-04-09T12:00:00Z',
+        verification_event: makeVerificationEvent(),
+        adapters: {
+          reputation: { run: () => makeReputationStage() },
+          evidence: { run: () => makeEvidenceStage() },
+          holdback: {
+            run: () => makeHoldbackStage({ decision: 'holdback', holdback_reason_codes: ['UNAUTHORIZED_OPERATOR'] }),
+          },
+          emissions: {
+            run: (_opId: string, _reward: number, holdbackDecision: any) => {
+              emissionsReceivedBlock = holdbackDecision === 'holdback';
+              return makeEmissionsStage();
+            },
+          },
+        },
+      });
+
+      expect(emissionsReceivedBlock).toBe(true);
+      if (isOutput(result)) {
+        expect(result.pipeline_decision).toBe('block');
+      }
+    });
+
+    it('fails closed when adapter throws', () => {
+      const result = orchestrateVerification({
+        mode: 'execute',
+        as_of: '2026-04-09T12:00:00Z',
+        verification_event: makeVerificationEvent(),
+        adapters: {
+          reputation: { run: () => { throw new Error('DB connection failed'); } },
+          evidence: { run: () => makeEvidenceStage() },
+          holdback: { run: () => makeHoldbackStage() },
+          emissions: { run: () => makeEmissionsStage() },
+        },
+      });
+
+      expect(result.pipeline_decision).toBe('block');
+      if ('error_code' in result) {
+        expect(result.error_code).toBe('MALFORMED_STAGE_DATA');
+        expect(result.error_message).toContain('DB connection failed');
+      }
+    });
+
+    it('fails closed when adapters object is missing', () => {
+      const result = orchestrateVerification({
+        mode: 'execute',
+        as_of: '2026-04-09T12:00:00Z',
+        verification_event: makeVerificationEvent(),
+        // adapters missing
+      });
+
+      expect(result.pipeline_decision).toBe('block');
+    });
+  });
+
+  // ── 12. Enhanced Reviewer Packet ──────────────────────────────────
+
+  describe('Enhanced reviewer packet', () => {
+    it('includes escalation summary and next action for block', () => {
+      const input = makeCleanInput({
+        holdback_result: makeHoldbackStage({
+          decision: 'holdback',
+          holdback_reason_codes: ['UNAUTHORIZED_OPERATOR', 'MISSING_EVIDENCE'],
+          missing_public_evidence: true,
+        }),
+      });
+      const result = orchestrateVerification(input);
+      if (!isOutput(result)) return;
+
+      expect(result.reviewer_packet.escalation_summary).toContain('BLOCK');
+      expect(result.reviewer_packet.missing_artifacts.length).toBeGreaterThan(0);
+      expect(result.reviewer_packet.next_action_recommendation).toContain('BLOCK');
+      expect(result.reviewer_packet.review_urgency).toBe('immediate');
+    });
+
+    it('includes release consequence summary for healthy emissions', () => {
+      const result = orchestrateVerification(makeCleanInput());
+      if (!isOutput(result)) return;
+
+      expect(result.reviewer_packet.release_consequence_summary).toContain('no adverse');
+      expect(result.reviewer_packet.next_action_recommendation).toContain('Auto-release');
+    });
+
+    it('includes operator risk summary with risk signals', () => {
+      const input = makeCleanInput({
+        reputation_result: makeReputationStage({
+          risk_signals: [
+            { code: 'high_rejection_rate', severity: 'high', description: 'test', consumers: ['payout'] },
+          ],
+        }),
+      });
+      const result = orchestrateVerification(input);
+      if (!isOutput(result)) return;
+
+      expect(result.reviewer_packet.operator_risk_summary).toContain('high_rejection_rate');
+      expect(result.reviewer_packet.operator_risk_summary).toContain('high');
+    });
+  });
 });
 ```
 
@@ -2136,15 +2672,15 @@ describe('Verification Pipeline Orchestrator', () => {
 ```
  RUN  v1.6.1
 
- ✓ tests/orchestrator.test.ts  (43 tests) 12ms
+ ✓ tests/orchestrator.test.ts  (51 tests) 14ms
 
  Test Files  1 passed (1)
-      Tests  43 passed (43)
-   Start at  16:57:21
-   Duration  539ms (transform 89ms, setup 0ms, collect 93ms, tests 12ms, environment 0ms, prepare 87ms)
+      Tests  51 passed (51)
+   Start at  17:13:11
+   Duration  615ms (transform 132ms, setup 0ms, collect 142ms, tests 14ms, environment 0ms, prepare 115ms)
 ```
 
-All 43 tests pass. Test coverage includes:
+All 51 tests pass. Test coverage includes:
 - 2 release path tests
 - 5 review path tests (reputation, holdback, emissions, evidence, risk signals)
 - 7 block path tests (holdback, emissions, evidence, reputation, override, suppress, escalate)
@@ -2155,8 +2691,9 @@ All 43 tests pass. Test coverage includes:
 - 5 output structure tests (fields, operator context, emissions impact, reviewer packet, version)
 - 1 validation warnings test
 - 3 combined scenario tests (all-review, downstream hints, high reward)
+- 5 execute mode tests (dependency order, reputation feeds holdback, holdback feeds emissions, adapter failure, missing adapters)
+- 3 enhanced reviewer packet tests (escalation summary, release consequence, operator risk summary)
 
 ---
 
 *Published by Zoz via the Permanent Upper Class validator operation.*
-*Task completed for the Post Fiat Network.*
