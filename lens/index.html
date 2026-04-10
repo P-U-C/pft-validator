@@ -1013,15 +1013,14 @@
         layout: {
           name: 'concentric',
           concentric: function(node) {
-            // Most active node at center, least active at edge
-            return node.data('raw').memo_count || 0;
+            return (node.data('raw').memo_count || 0) + (node.data('raw').tx_count || 0);
           },
-          levelWidth: function() { return 2; },
-          minNodeSpacing: 30,
+          levelWidth: function() { return 3; },
+          minNodeSpacing: 20,
           animate: true,
           animationDuration: 800,
           fit: true,
-          padding: 25
+          padding: 20
         },
         minZoom: 0.15,
         maxZoom: 5,
@@ -1241,17 +1240,21 @@
       });
       document.getElementById('btnReset').addEventListener('click', function() {
         if (cy && graphData) {
+          // Clear all focus/dim states
+          cy.elements().removeClass('dimmed highlighted focused');
+          clearPanel();
+          // Re-run layout
           cy.layout({
             name: 'concentric',
             concentric: function(node) {
-              return node.data('raw').memo_count || 0;
+              return (node.data('raw').memo_count || 0) + (node.data('raw').tx_count || 0);
             },
-            levelWidth: function() { return 2; },
-            minNodeSpacing: 30,
+            levelWidth: function() { return 3; },
+            minNodeSpacing: 20,
             animate: true,
             animationDuration: 600,
             fit: true,
-            padding: 40
+            padding: 25
           }).run();
         }
       });
