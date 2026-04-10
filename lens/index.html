@@ -601,10 +601,12 @@
     function nodeSize(memoCount, allMemos) {
       var container = document.getElementById('cy');
       var w = container ? container.offsetWidth : 600;
-      // Scale nodes based on container: smaller screen = smaller nodes
-      var scale = Math.min(w / 600, 1.0); // 1.0 at 600px+, smaller below
-      var min = 10 * scale + 4;   // 4-14px minimum
-      var max = 28 * scale + 8;   // 8-36px maximum
+      var h = container ? container.offsetHeight : 400;
+      var dim = Math.min(w, h);
+      // Scale: at 300px container → nodes 4-16px, at 800px → nodes 8-30px
+      var scale = Math.max(0.4, Math.min(dim / 700, 1.0));
+      var min = 6 + 4 * scale;
+      var max = 12 + 20 * scale;
       var maxMemo = Math.max.apply(null, allMemos);
       if (maxMemo === 0) return min;
       var t = Math.pow(memoCount / maxMemo, 0.5);
@@ -780,20 +782,17 @@
           }
         ],
         layout: {
-          name: typeof cytoscapeCoseBilkent !== 'undefined' ? 'cose-bilkent' : 'cose',
-          animate: 'end',
-          animationDuration: 1000,
-          nodeRepulsion: 25000,
-          idealEdgeLength: 220,
-          edgeElasticity: 0.02,
-          nestingFactor: 0.1,
-          gravity: 0.08,
-          gravityRange: 5,
-          numIter: 3500,
-          tile: false,
+          name: 'concentric',
+          concentric: function(node) {
+            // Most active node at center, least active at edge
+            return node.data('raw').memo_count || 0;
+          },
+          levelWidth: function() { return 2; },
+          minNodeSpacing: 30,
+          animate: true,
+          animationDuration: 800,
           fit: true,
-          padding: 30,
-          randomize: false
+          padding: 25
         },
         minZoom: 0.15,
         maxZoom: 5,
@@ -920,16 +919,14 @@
       document.getElementById('btnReset').addEventListener('click', function() {
         if (cy && graphData) {
           cy.layout({
-            name: typeof cytoscapeCoseBilkent !== 'undefined' ? 'cose-bilkent' : 'cose',
-            animate: 'end',
-            animationDuration: 800,
-            nodeRepulsion: 25000,
-            idealEdgeLength: 220,
-            edgeElasticity: 0.02,
-            nestingFactor: 0.1,
-            gravity: 0.08,
-            numIter: 3500,
-            tile: false,
+            name: 'concentric',
+            concentric: function(node) {
+              return node.data('raw').memo_count || 0;
+            },
+            levelWidth: function() { return 2; },
+            minNodeSpacing: 30,
+            animate: true,
+            animationDuration: 600,
             fit: true,
             padding: 40
           }).run();
