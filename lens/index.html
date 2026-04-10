@@ -589,28 +589,31 @@
 
     /* -- Node sizing -- */
     function nodeSize(memoCount, allMemos) {
-      var min = 15, max = 60;
+      var min = 20, max = 55;
       var maxMemo = Math.max.apply(null, allMemos);
       if (maxMemo === 0) return min;
-      var t = Math.sqrt(memoCount / maxMemo);
+      var t = Math.pow(memoCount / maxMemo, 0.4); // gentler curve
       return min + t * (max - min);
     }
 
     /* -- Node color -- */
     function nodeColor(node) {
-      if (node.type === 'infrastructure') return '#2196F3';
+      if (node.type === 'infrastructure') return '#3d7dd9';
       if (node.activity_score > 0.5) return '#5eea96';
-      if (node.activity_score > 0.1) return '#dbb85c';
-      return '#888888';
+      if (node.activity_score > 0.2) return '#dbb85c';
+      if (node.activity_score > 0.05) return '#806930';
+      return '#555555';
     }
 
     function nodeBorderColor(node) {
       if (node.sybil_flagged) return '#f87171';
-      return nodeColor(node);
+      if (node.type === 'infrastructure') return '#5a9ae6';
+      return 'rgba(255,255,255,0.08)';
     }
 
     function nodeBorderWidth(node) {
-      return node.sybil_flagged ? 3 : 0;
+      if (node.sybil_flagged) return 2.5;
+      return 1;
     }
 
     function nodeShape(node) {
@@ -620,15 +623,15 @@
     /* -- Edge styling -- */
     function edgeWidth(edge, allMemos) {
       var maxMemo = Math.max.apply(null, allMemos);
-      if (maxMemo === 0) return 1;
-      return 1 + (edge.memo_count / maxMemo) * 4;
+      if (maxMemo === 0) return 0.5;
+      return 0.5 + (edge.memo_count / maxMemo) * 3.5;
     }
 
     function edgeColor(edge) {
-      if (edge.trust_flow === 'TRUST_PLUS_VALUE') return 'rgba(94,234,150,0.35)';
-      if (edge.trust_flow === 'FLOW_WITHOUT_TRUST') return 'rgba(219,184,92,0.25)';
-      if (edge.trust_flow === 'TRUST_ONLY') return 'rgba(33,150,243,0.3)';
-      return 'rgba(136,136,136,0.2)';
+      if (edge.trust_flow === 'TRUST_PLUS_VALUE') return 'rgba(94,234,150,0.4)';
+      if (edge.trust_flow === 'FLOW_WITHOUT_TRUST') return 'rgba(219,184,92,0.3)';
+      if (edge.trust_flow === 'TRUST_WITHOUT_VALUE') return 'rgba(100,160,255,0.25)';
+      return 'rgba(136,136,136,0.15)';
     }
 
     /* -- Build Cytoscape -- */
@@ -682,22 +685,33 @@
               'width': 'data(nodeSize)',
               'height': 'data(nodeSize)',
               'background-color': 'data(bgColor)',
+              'background-opacity': 0.85,
               'border-color': 'data(borderColor)',
               'border-width': 'data(borderWidth)',
+              'border-opacity': 0.6,
               'shape': 'data(shape)',
               'label': 'data(label)',
-              'font-size': '8px',
+              'font-size': '7px',
               'font-family': "'IBM Plex Mono', monospace",
-              'color': '#b8b8b8',
+              'color': '#999',
               'text-valign': 'bottom',
               'text-halign': 'center',
-              'text-margin-y': 6,
-              'text-outline-width': 0,
+              'text-margin-y': 8,
+              'text-outline-width': 2,
+              'text-outline-color': '#000',
+              'text-outline-opacity': 0.8,
               'text-background-opacity': 0,
-              'min-zoomed-font-size': 10,
+              'min-zoomed-font-size': 9,
               'overlay-opacity': 0,
-              'transition-property': 'border-color, border-width',
-              'transition-duration': '0.2s'
+              'transition-property': 'border-color, border-width, background-opacity, width, height',
+              'transition-duration': '0.25s'
+            }
+          },
+          {
+            selector: 'node:active',
+            style: {
+              'overlay-opacity': 0.08,
+              'overlay-color': '#dbb85c'
             }
           },
           {
@@ -720,11 +734,13 @@
               'width': 'data(lineWidth)',
               'line-color': 'data(lineColor)',
               'target-arrow-color': 'data(lineColor)',
-              'target-arrow-shape': 'triangle',
-              'arrow-scale': 0.6,
+              'target-arrow-shape': 'vee',
+              'arrow-scale': 0.5,
               'curve-style': 'bezier',
-              'opacity': 0.8,
-              'overlay-opacity': 0
+              'opacity': 0.65,
+              'overlay-opacity': 0,
+              'transition-property': 'opacity, line-color',
+              'transition-duration': '0.2s'
             }
           },
           {
@@ -739,20 +755,22 @@
         layout: {
           name: typeof cytoscapeCoseBilkent !== 'undefined' ? 'cose-bilkent' : 'cose',
           animate: 'end',
-          animationDuration: 800,
-          nodeRepulsion: 8000,
-          idealEdgeLength: 120,
-          edgeElasticity: 0.1,
+          animationDuration: 1000,
+          nodeRepulsion: 15000,
+          idealEdgeLength: 180,
+          edgeElasticity: 0.05,
           nestingFactor: 0.1,
-          gravity: 0.25,
-          numIter: 2500,
+          gravity: 0.15,
+          gravityRange: 3.8,
+          numIter: 3000,
           tile: true,
           fit: true,
-          padding: 40
+          padding: 60,
+          randomize: false
         },
-        minZoom: 0.2,
-        maxZoom: 4,
-        wheelSensitivity: 0.3
+        minZoom: 0.15,
+        maxZoom: 5,
+        wheelSensitivity: 0.2
       });
 
       /* -- Click events -- */
