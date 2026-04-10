@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lens — On-Chain Intelligence | Permanent Upper Class</title>
+  <meta name="description" content="Lens: interactive network graph visualization for the Post Fiat Network. See wallets, relationships, and sybil clusters verified from chain data.">
+  <meta name="theme-color" content="#000000">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --black: #000000;
+      --near-black: #101010;
+      --surface: #181818;
+      --surface-elevated: #222222;
+      --border: #333333;
+      --border-subtle: #282828;
+      --text-primary: #f5f5f5;
+      --text-secondary: #b8b8b8;
+      --text-muted: #888888;
+      --text-dim: #606060;
+      --accent: #dbb85c;
+      --accent-dim: rgba(219, 184, 92, 0.18);
+      --accent-line: rgba(219, 184, 92, 0.5);
+      --green: #5eea96;
+      --green-dim: rgba(94, 234, 150, 0.15);
+      --green-line: rgba(94, 234, 150, 0.6);
+      --red: #f87171;
+      --blue: #2196F3;
+      --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+      --serif: 'EB Garamond', Georgia, serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      background: var(--black);
+      color: var(--text-primary);
+      font-family: var(--mono);
+      font-weight: 400;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* Grain */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.015'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    ::selection { background: var(--accent); color: var(--black); }
+
+    a { color: var(--text-secondary); text-decoration: none; transition: color 0.2s; }
+    a:hover { color: var(--accent); }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 0 2rem; }
+    .container-wide { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+
+    /* -- Header -- */
+    header { padding: 2rem 0; border-bottom: 1px solid var(--border-subtle); }
+
+    .header-inner { display: flex; justify-content: space-between; align-items: center; }
+
+    .brand {
+      font-size: 0.65rem; font-weight: 500;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .header-nav { display: flex; align-items: center; gap: 1.5rem; }
+
+    .header-nav a {
+      font-size: 0.6rem; font-weight: 500;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .header-nav a:hover { color: var(--accent); }
+    .header-nav a.active { color: var(--accent); }
+
+    /* -- Hero -- */
+    .hero { padding: 5rem 0 4rem; border-bottom: 1px solid var(--border-subtle); }
+
+    .hero-eyebrow {
+      font-size: 0.6rem; font-weight: 500;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 1.5rem;
+    }
+
+    .hero h1 {
+      font-family: var(--serif);
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 400; font-style: italic;
+      line-height: 1.15; color: var(--text-primary);
+      margin-bottom: 1.5rem; max-width: 560px;
+    }
+    .hero h1 em { font-style: normal; color: var(--accent); }
+
+    .hero-subtitle {
+      font-size: 0.75rem; color: var(--text-muted);
+      line-height: 1.6; max-width: 520px; margin-bottom: 3rem;
+    }
+
+    .stats-row {
+      display: flex; gap: 0; border: 1px solid var(--border-subtle);
+      max-width: 600px;
+    }
+
+    .stat-cell {
+      padding: 1.5rem 1.5rem;
+      border-right: 1px solid var(--border-subtle);
+      flex: 1;
+    }
+    .stat-cell:last-child { border-right: none; }
+
+    .stat-label {
+      font-size: 0.55rem; font-weight: 500;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+      font-size: 1.8rem; font-weight: 300;
+      color: var(--text-primary); font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+    .stat-value.green { color: var(--green); }
+    .stat-value.accent { color: var(--accent); }
+    .stat-value.red { color: var(--red); }
+
+    /* -- Graph Section -- */
+    .graph-section { padding: 4rem 0; border-bottom: 1px solid var(--border-subtle); }
+
+    .section-label {
+      font-size: 0.55rem; font-weight: 600;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 0.4rem;
+    }
+
+    .section-narrative {
+      font-family: var(--serif); font-size: 0.95rem;
+      color: var(--text-muted); font-style: italic;
+      margin-bottom: 2.5rem; max-width: 520px; line-height: 1.6;
+    }
+
+    .graph-layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 1.5rem;
+    }
+
+    .graph-container {
+      background: var(--near-black);
+      border: 1px solid var(--border-subtle);
+      position: relative;
+      height: 600px;
+    }
+
+    #cy {
+      width: 100%;
+      height: 100%;
+    }
+
+    .graph-legend {
+      position: absolute;
+      bottom: 12px; left: 12px;
+      display: flex; gap: 1rem; flex-wrap: wrap;
+      font-size: 0.5rem; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--text-dim);
+    }
+
+    .legend-item { display: flex; align-items: center; gap: 0.35rem; }
+
+    .legend-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+    .legend-diamond {
+      width: 8px; height: 8px;
+      transform: rotate(45deg);
+    }
+
+    .graph-controls {
+      position: absolute;
+      top: 12px; right: 12px;
+      display: flex; gap: 0.5rem;
+    }
+
+    .graph-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.35rem 0.65rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .graph-btn:hover { border-color: var(--accent-line); color: var(--accent); }
+
+    /* -- Side Panel -- */
+    .side-panel {
+      background: var(--near-black);
+      border: 1px solid var(--border-subtle);
+      display: flex; flex-direction: column;
+    }
+
+    .panel-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .panel-title {
+      font-size: 0.55rem; font-weight: 600;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .panel-badge {
+      font-size: 0.5rem; font-weight: 500;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 0.15rem 0.45rem;
+      color: var(--accent); background: var(--accent-dim);
+    }
+    .panel-badge.sybil { color: var(--red); background: rgba(248,113,113,0.12); }
+    .panel-badge.infra { color: var(--blue); background: rgba(33,150,243,0.12); }
+
+    .panel-body { padding: 0.5rem 1.5rem; flex: 1; overflow-y: auto; }
+
+    .panel-empty {
+      display: flex; align-items: center; justify-content: center;
+      height: 100%; color: var(--text-dim); font-size: 0.65rem;
+      letter-spacing: 0.05em;
+    }
+
+    .detail-row {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 0.65rem 0; border-bottom: 1px solid var(--border-subtle);
+    }
+    .detail-row:last-child { border-bottom: none; }
+
+    .detail-key { font-size: 0.65rem; color: var(--text-muted); }
+
+    .detail-val {
+      font-size: 0.7rem; color: var(--text-secondary);
+      font-variant-numeric: tabular-nums; text-align: right;
+      max-width: 60%; word-break: break-all;
+    }
+    .detail-val.live { color: var(--green); }
+    .detail-val.warn { color: var(--red); }
+
+    /* -- Rich List -- */
+    .richlist-section { padding: 4rem 0; border-bottom: 1px solid var(--border-subtle); }
+
+    .richlist-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .richlist-table th {
+      font-size: 0.55rem; font-weight: 600;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 0.8rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--near-black);
+    }
+    .richlist-table th:last-child { text-align: right; }
+
+    .richlist-table td {
+      font-size: 0.7rem;
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+    }
+    .richlist-table td:last-child { text-align: right; }
+
+    .richlist-table tr:last-child td { border-bottom: none; }
+
+    .richlist-table tr:hover td { background: var(--surface); }
+
+    .richlist-rank {
+      color: var(--text-dim); font-size: 0.6rem;
+    }
+
+    .richlist-label { color: var(--accent); font-size: 0.6rem; }
+
+    /* -- Network Health -- */
+    .health-section { padding: 4rem 0; border-bottom: 1px solid var(--border-subtle); }
+
+    .health-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 0; border: 1px solid var(--border-subtle);
+    }
+
+    .health-card {
+      padding: 2rem 1.5rem;
+      border-right: 1px solid var(--border-subtle);
+    }
+    .health-card:last-child { border-right: none; }
+
+    .health-label {
+      font-size: 0.55rem; font-weight: 500;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 0.6rem;
+    }
+
+    .health-value {
+      font-size: 1.8rem; font-weight: 300;
+      color: var(--text-primary); font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+    .health-value.green { color: var(--green); }
+    .health-value.accent { color: var(--accent); }
+    .health-value.red { color: var(--red); }
+
+    .health-sub {
+      font-size: 0.6rem; color: var(--text-dim);
+      margin-top: 0.5rem; letter-spacing: 0.03em;
+    }
+
+    /* -- Footer -- */
+    footer { padding: 2.5rem 0; }
+
+    .footer-inner {
+      display: flex; justify-content: space-between;
+      align-items: center; flex-wrap: wrap; gap: 1rem;
+    }
+
+    .footer-brand {
+      font-size: 0.55rem; letter-spacing: 0.15em;
+      text-transform: uppercase; color: var(--text-dim);
+    }
+
+    .footer-right { display: flex; gap: 1.5rem; align-items: center; }
+
+    .footer-right a {
+      font-size: 0.55rem; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text-dim);
+    }
+
+    .footer-clock {
+      font-size: 0.55rem; color: var(--text-dim);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* -- Reveal animation -- */
+    .reveal {
+      opacity: 0; transform: translateY(16px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* -- Responsive -- */
+    @media (max-width: 900px) {
+      .graph-layout { grid-template-columns: 1fr; }
+      .side-panel { min-height: 300px; }
+      .graph-container { height: 450px; }
+      .stats-row { flex-wrap: wrap; max-width: 100%; }
+      .stat-cell { min-width: 140px; }
+    }
+
+    @media (max-width: 768px) {
+      .container, .container-wide { padding: 0 1.25rem; }
+      .hero { padding: 3.5rem 0 3rem; }
+      .health-grid { grid-template-columns: repeat(2, 1fr); }
+      .health-card:nth-child(2) { border-right: none; }
+      .health-card:nth-child(1), .health-card:nth-child(2) { border-bottom: 1px solid var(--border-subtle); }
+      .graph-container { height: 360px; }
+      .header-nav { gap: 1rem; }
+    }
+
+    @media (max-width: 480px) {
+      .stat-value, .health-value { font-size: 1.4rem; }
+      .stats-row { flex-direction: column; }
+      .stat-cell { border-right: none; border-bottom: 1px solid var(--border-subtle); }
+      .stat-cell:last-child { border-bottom: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container header-inner">
+      <div class="brand"><a href="https://permanentupperclass.com">Permanent Upper Class</a></div>
+      <nav class="header-nav">
+        <a href="/">Validator</a>
+        <a href="/lens/" class="active">Lens</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container">
+      <div class="hero-eyebrow">Lens -- On-Chain Intelligence</div>
+      <h1>See the <em>network.</em></h1>
+      <p class="hero-subtitle">21 wallets. 73 relationships. 626 memos. Verified from chain data.</p>
+      <div class="stats-row" id="heroStats">
+        <div class="stat-cell">
+          <div class="stat-label">Active Wallets</div>
+          <div class="stat-value green" id="statWallets">--</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Relationships</div>
+          <div class="stat-value accent" id="statEdges">--</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Sybil Clusters</div>
+          <div class="stat-value red" id="statSybil">--</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="graph-section reveal">
+    <div class="container-wide">
+      <div class="section-label">Network Topology</div>
+      <div class="section-narrative">
+        Every node is a wallet. Every edge is a verified on-chain relationship.
+        The graph reveals the structure that raw transactions hide.
+      </div>
+      <div class="graph-layout">
+        <div class="graph-container">
+          <div id="cy"></div>
+          <div class="graph-controls">
+            <button class="graph-btn" id="btnFit" title="Fit to view">Fit</button>
+            <button class="graph-btn" id="btnReset" title="Reset layout">Reset</button>
+          </div>
+          <div class="graph-legend">
+            <div class="legend-item">
+              <div class="legend-diamond" style="background:var(--blue);"></div>
+              <span>Infrastructure</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:var(--green);"></div>
+              <span>High Activity</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:var(--accent);"></div>
+              <span>Medium</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:var(--text-muted);"></div>
+              <span>Low</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:transparent;border:2px solid var(--red);width:6px;height:6px;"></div>
+              <span>Sybil Flagged</span>
+            </div>
+          </div>
+        </div>
+        <div class="side-panel">
+          <div class="panel-header">
+            <span class="panel-title">Inspector</span>
+            <span class="panel-badge" id="panelBadge" style="display:none;">--</span>
+          </div>
+          <div class="panel-body" id="panelBody">
+            <div class="panel-empty" id="panelEmpty">Click a node to inspect</div>
+            <div id="panelContent" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="richlist-section reveal">
+    <div class="container">
+      <div class="section-label">Rich List</div>
+      <div class="section-narrative">
+        Top 10 contributor wallets by PFT balance. Infrastructure wallets excluded.
+      </div>
+      <table class="richlist-table" id="richlistTable">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Address</th>
+            <th>Label</th>
+            <th>Balance (PFT)</th>
+          </tr>
+        </thead>
+        <tbody id="richlistBody">
+          <tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:2rem;">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="health-section reveal">
+    <div class="container">
+      <div class="section-label">Network Health</div>
+      <div class="section-narrative">
+        Aggregate metrics derived from on-chain analysis.
+      </div>
+      <div class="health-grid">
+        <div class="health-card">
+          <div class="health-label">Total Wallets</div>
+          <div class="health-value green" id="healthWallets">--</div>
+          <div class="health-sub">unique addresses</div>
+        </div>
+        <div class="health-card">
+          <div class="health-label">Total Memos</div>
+          <div class="health-value accent" id="healthMemos">--</div>
+          <div class="health-sub">on-chain messages</div>
+        </div>
+        <div class="health-card">
+          <div class="health-label">Sybil Clusters</div>
+          <div class="health-value red" id="healthSybil">--</div>
+          <div class="health-sub">detected groups</div>
+        </div>
+        <div class="health-card">
+          <div class="health-label">Last Updated</div>
+          <div class="health-value" id="healthUpdated" style="font-size:1rem;">--</div>
+          <div class="health-sub" id="healthUpdatedSub">--</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container footer-inner">
+      <div class="footer-brand"><a href="https://permanentupperclass.com">permanentupperclass.com</a></div>
+      <div class="footer-right">
+        <a href="https://permanentupperclass.com/brand-identity">Brand</a>
+        <a href="https://github.com/P-U-C">GitHub</a>
+        <div class="footer-clock" id="clock">--</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- NOTE: Add <a href="/lens/">Lens</a> to the main site header nav -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape-cose-bilkent/4.1.0/cytoscape-cose-bilkent.min.js"></script>
+  <script>
+  /* =============================================
+     Lens — Network Graph Visualization
+     ============================================= */
+
+  (function () {
+    'use strict';
+
+    let cy = null;
+    let graphData = null;
+
+    /* -- Helpers -- */
+    function fmtNum(n) {
+      if (n == null) return '--';
+      if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+      if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+      if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+      return n.toLocaleString('en-US');
+    }
+
+    function fmtBalance(n) {
+      if (n == null) return '--';
+      if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+      if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+      if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+      return n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+    }
+
+    function truncAddr(addr) {
+      if (!addr || addr.length < 12) return addr || '--';
+      return addr.slice(0, 6) + '...' + addr.slice(-4);
+    }
+
+    function fmtDate(iso) {
+      if (!iso) return '--';
+      var d = new Date(iso);
+      return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+        + ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+
+    /* -- Node sizing -- */
+    function nodeSize(memoCount, allMemos) {
+      var min = 15, max = 60;
+      var maxMemo = Math.max.apply(null, allMemos);
+      if (maxMemo === 0) return min;
+      var t = Math.sqrt(memoCount / maxMemo);
+      return min + t * (max - min);
+    }
+
+    /* -- Node color -- */
+    function nodeColor(node) {
+      if (node.type === 'infrastructure') return '#2196F3';
+      if (node.activity_score > 0.5) return '#5eea96';
+      if (node.activity_score > 0.1) return '#dbb85c';
+      return '#888888';
+    }
+
+    function nodeBorderColor(node) {
+      if (node.sybil_flagged) return '#f87171';
+      return nodeColor(node);
+    }
+
+    function nodeBorderWidth(node) {
+      return node.sybil_flagged ? 3 : 0;
+    }
+
+    function nodeShape(node) {
+      return node.type === 'infrastructure' ? 'diamond' : 'ellipse';
+    }
+
+    /* -- Edge styling -- */
+    function edgeWidth(edge, allMemos) {
+      var maxMemo = Math.max.apply(null, allMemos);
+      if (maxMemo === 0) return 1;
+      return 1 + (edge.memo_count / maxMemo) * 4;
+    }
+
+    function edgeColor(edge) {
+      if (edge.trust_flow === 'TRUST_PLUS_VALUE') return 'rgba(94,234,150,0.35)';
+      if (edge.trust_flow === 'FLOW_WITHOUT_TRUST') return 'rgba(219,184,92,0.25)';
+      if (edge.trust_flow === 'TRUST_ONLY') return 'rgba(33,150,243,0.3)';
+      return 'rgba(136,136,136,0.2)';
+    }
+
+    /* -- Build Cytoscape -- */
+    function buildGraph(data) {
+      graphData = data;
+      var nodes = data.nodes;
+      var edges = data.edges;
+
+      var allNodeMemos = nodes.map(function(n) { return n.memo_count; });
+      var allEdgeMemos = edges.map(function(e) { return e.memo_count; });
+
+      var elements = [];
+
+      nodes.forEach(function(n) {
+        elements.push({
+          group: 'nodes',
+          data: {
+            id: n.id,
+            label: n.label || truncAddr(n.id),
+            nodeSize: nodeSize(n.memo_count, allNodeMemos),
+            bgColor: nodeColor(n),
+            borderColor: nodeBorderColor(n),
+            borderWidth: nodeBorderWidth(n),
+            shape: nodeShape(n),
+            raw: n
+          }
+        });
+      });
+
+      edges.forEach(function(e, i) {
+        elements.push({
+          group: 'edges',
+          data: {
+            id: 'e' + i,
+            source: e.source,
+            target: e.target,
+            lineColor: edgeColor(e),
+            lineWidth: edgeWidth(e, allEdgeMemos),
+            raw: e
+          }
+        });
+      });
+
+      cy = cytoscape({
+        container: document.getElementById('cy'),
+        elements: elements,
+        style: [
+          {
+            selector: 'node',
+            style: {
+              'width': 'data(nodeSize)',
+              'height': 'data(nodeSize)',
+              'background-color': 'data(bgColor)',
+              'border-color': 'data(borderColor)',
+              'border-width': 'data(borderWidth)',
+              'shape': 'data(shape)',
+              'label': 'data(label)',
+              'font-size': '8px',
+              'font-family': "'IBM Plex Mono', monospace",
+              'color': '#b8b8b8',
+              'text-valign': 'bottom',
+              'text-halign': 'center',
+              'text-margin-y': 6,
+              'text-outline-width': 0,
+              'text-background-opacity': 0,
+              'min-zoomed-font-size': 10,
+              'overlay-opacity': 0,
+              'transition-property': 'border-color, border-width',
+              'transition-duration': '0.2s'
+            }
+          },
+          {
+            selector: 'node:selected',
+            style: {
+              'border-color': '#dbb85c',
+              'border-width': 3,
+              'overlay-opacity': 0
+            }
+          },
+          {
+            selector: 'node:active',
+            style: {
+              'overlay-opacity': 0
+            }
+          },
+          {
+            selector: 'edge',
+            style: {
+              'width': 'data(lineWidth)',
+              'line-color': 'data(lineColor)',
+              'target-arrow-color': 'data(lineColor)',
+              'target-arrow-shape': 'triangle',
+              'arrow-scale': 0.6,
+              'curve-style': 'bezier',
+              'opacity': 0.8,
+              'overlay-opacity': 0
+            }
+          },
+          {
+            selector: 'edge:selected',
+            style: {
+              'line-color': '#dbb85c',
+              'target-arrow-color': '#dbb85c',
+              'opacity': 1
+            }
+          }
+        ],
+        layout: {
+          name: 'cose-bilkent',
+          animate: 'end',
+          animationDuration: 800,
+          nodeRepulsion: 8000,
+          idealEdgeLength: 120,
+          edgeElasticity: 0.1,
+          nestingFactor: 0.1,
+          gravity: 0.2,
+          numIter: 2500,
+          tile: true,
+          fit: true,
+          padding: 40
+        },
+        minZoom: 0.2,
+        maxZoom: 4,
+        wheelSensitivity: 0.3
+      });
+
+      /* -- Click events -- */
+      cy.on('tap', 'node', function(evt) {
+        var d = evt.target.data('raw');
+        showNodePanel(d);
+      });
+
+      cy.on('tap', function(evt) {
+        if (evt.target === cy) {
+          clearPanel();
+        }
+      });
+    }
+
+    /* -- Panel -- */
+    function showNodePanel(n) {
+      var badge = document.getElementById('panelBadge');
+      var empty = document.getElementById('panelEmpty');
+      var content = document.getElementById('panelContent');
+
+      badge.style.display = 'inline-block';
+      if (n.sybil_flagged) {
+        badge.textContent = 'Sybil';
+        badge.className = 'panel-badge sybil';
+      } else if (n.type === 'infrastructure') {
+        badge.textContent = 'Infra';
+        badge.className = 'panel-badge infra';
+      } else {
+        badge.textContent = n.type;
+        badge.className = 'panel-badge';
+      }
+
+      empty.style.display = 'none';
+      content.style.display = 'block';
+
+      var activityClass = '';
+      if (n.activity_score > 0.5) activityClass = ' live';
+
+      var sybilText = 'Clean';
+      var sybilClass = ' live';
+      if (n.sybil_flagged) {
+        sybilText = 'Flagged (' + n.sybil_cluster + ')';
+        sybilClass = ' warn';
+        if (n.sybil_confidence != null) {
+          sybilText += ' @ ' + (n.sybil_confidence * 100).toFixed(0) + '%';
+        }
+      }
+
+      content.innerHTML = ''
+        + '<div class="detail-row"><span class="detail-key">Address</span><span class="detail-val">' + truncAddr(n.id) + '</span></div>'
+        + '<div class="detail-row"><span class="detail-key">Full Address</span><span class="detail-val" style="font-size:0.55rem;">' + n.id + '</span></div>'
+        + '<div class="detail-row"><span class="detail-key">Label</span><span class="detail-val">' + (n.label || '--') + '</span></div>'
+        + '<div class="detail-row"><span class="detail-key">Type</span><span class="detail-val">' + n.type + '</span></div>'
+        + '<div class="detail-row"><span class="detail-key">Balance</span><span class="detail-val">' + fmtBalance(n.balance_pft) + ' PFT</span></div>'
+        + '<div class="detail-row"><span class="detail-key">Memo Count</span><span class="detail-val">' + fmtNum(n.memo_count) + '</span></div>'
+        + '<div class="detail-row"><span class="detail-key">Tx Count</span><span class="detail-val">' + fmtNum(n.tx_count) + '</span></div>'
+        + '<div class="detail-row"><span class="detail-key">Peers</span><span class="detail-val">' + n.peers + '</span></div>'
+        + '<div class="detail-row"><span class="detail-key">Activity</span><span class="detail-val' + activityClass + '">' + (n.activity_score != null ? n.activity_score.toFixed(4) : '--') + '</span></div>'
+        + '<div class="detail-row"><span class="detail-key">Sybil Status</span><span class="detail-val' + sybilClass + '">' + sybilText + '</span></div>';
+    }
+
+    function clearPanel() {
+      document.getElementById('panelBadge').style.display = 'none';
+      document.getElementById('panelEmpty').style.display = 'flex';
+      document.getElementById('panelContent').style.display = 'none';
+      if (cy) cy.elements().unselect();
+    }
+
+    /* -- Rich List -- */
+    function buildRichList(data) {
+      var contributors = data.nodes
+        .filter(function(n) { return n.type !== 'infrastructure'; })
+        .sort(function(a, b) { return b.balance_pft - a.balance_pft; })
+        .slice(0, 10);
+
+      var tbody = document.getElementById('richlistBody');
+      if (contributors.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:2rem;">No contributor wallets found</td></tr>';
+        return;
+      }
+
+      var html = '';
+      contributors.forEach(function(n, i) {
+        var labelCell = n.label && n.label !== truncAddr(n.id) ? '<span class="richlist-label">' + n.label + '</span>' : '<span style="color:var(--text-dim);">--</span>';
+        html += '<tr>'
+          + '<td><span class="richlist-rank">' + (i + 1) + '</span></td>'
+          + '<td>' + truncAddr(n.id) + '</td>'
+          + '<td>' + labelCell + '</td>'
+          + '<td>' + fmtBalance(n.balance_pft) + '</td>'
+          + '</tr>';
+      });
+      tbody.innerHTML = html;
+    }
+
+    /* -- Populate stats -- */
+    function populateStats(data) {
+      var stats = data.stats;
+
+      document.getElementById('statWallets').textContent = stats.total_accounts;
+      document.getElementById('statEdges').textContent = stats.total_edges;
+      document.getElementById('statSybil').textContent = stats.sybil_clusters;
+
+      document.getElementById('healthWallets').textContent = stats.total_accounts;
+      document.getElementById('healthMemos').textContent = fmtNum(stats.memo_transactions);
+      document.getElementById('healthSybil').textContent = stats.sybil_clusters;
+
+      if (stats.generated_at) {
+        var d = new Date(stats.generated_at);
+        document.getElementById('healthUpdated').textContent = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        document.getElementById('healthUpdatedSub').textContent = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) + ' UTC';
+      }
+    }
+
+    /* -- Controls -- */
+    function initControls() {
+      document.getElementById('btnFit').addEventListener('click', function() {
+        if (cy) cy.fit(undefined, 40);
+      });
+      document.getElementById('btnReset').addEventListener('click', function() {
+        if (cy && graphData) {
+          cy.layout({
+            name: 'cose-bilkent',
+            animate: 'end',
+            animationDuration: 800,
+            nodeRepulsion: 8000,
+            idealEdgeLength: 120,
+            edgeElasticity: 0.1,
+            nestingFactor: 0.1,
+            gravity: 0.2,
+            numIter: 2500,
+            tile: true,
+            fit: true,
+            padding: 40
+          }).run();
+        }
+      });
+    }
+
+    /* -- Clock -- */
+    function tickClock() {
+      var now = new Date();
+      var el = document.getElementById('clock');
+      if (el) {
+        el.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+      }
+    }
+
+    /* -- Reveal on scroll -- */
+    function initReveal() {
+      var els = document.querySelectorAll('.reveal');
+      var obs = new IntersectionObserver(function(entries) {
+        entries.forEach(function(e) {
+          if (e.isIntersecting) {
+            e.target.classList.add('visible');
+            obs.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.1 });
+      els.forEach(function(el) { obs.observe(el); });
+    }
+
+    /* -- Init -- */
+    function init() {
+      initControls();
+      initReveal();
+      tickClock();
+      setInterval(tickClock, 1000);
+
+      fetch('./graph.json')
+        .then(function(r) {
+          if (!r.ok) throw new Error('Failed to load graph.json: ' + r.status);
+          return r.json();
+        })
+        .then(function(data) {
+          populateStats(data);
+          buildGraph(data);
+          buildRichList(data);
+        })
+        .catch(function(err) {
+          console.error('Lens: failed to load graph data', err);
+          document.getElementById('cy').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-dim);font-size:0.7rem;font-family:var(--mono);">Failed to load network data</div>';
+        });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+  </script>
+</body>
+</html>
