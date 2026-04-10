@@ -836,17 +836,16 @@
     }
 
     function edgeColor(edge) {
-      // Money flows: gold (branding accent)
-      if (edge.trust_flow === 'TRUST_PLUS_VALUE') return 'rgba(219,184,92,0.55)';
-      if (edge.trust_flow === 'FLOW_WITHOUT_TRUST') return 'rgba(219,184,92,0.35)';
-      // Pure communication: green (trust signal)
-      if (edge.trust_flow === 'TRUST_WITHOUT_VALUE') return 'rgba(94,234,150,0.25)';
-      // Weak/single interaction: barely visible
-      return 'rgba(255,255,255,0.06)';
+      // Money flows: gold — bright and clear
+      if (edge.trust_flow === 'TRUST_PLUS_VALUE') return 'rgba(219,184,92,0.75)';
+      if (edge.trust_flow === 'FLOW_WITHOUT_TRUST') return 'rgba(219,184,92,0.55)';
+      // Communication: brighter green — visible
+      if (edge.trust_flow === 'TRUST_WITHOUT_VALUE') return 'rgba(94,234,150,0.55)';
+      // Weak: still visible
+      return 'rgba(180,180,180,0.25)';
     }
 
     function edgeStyle(edge) {
-      // Solid for value transfers, dotted for communication-only
       if (edge.amount_pft > 0) return 'solid';
       return 'solid';
     }
@@ -978,6 +977,37 @@
               'target-arrow-color': '#dbb85c',
               'opacity': 1
             }
+          },
+          {
+            selector: '.dimmed',
+            style: {
+              'opacity': 0.08
+            }
+          },
+          {
+            selector: 'node.highlighted',
+            style: {
+              'opacity': 1,
+              'border-width': 1.5,
+              'border-color': 'rgba(219,184,92,0.6)'
+            }
+          },
+          {
+            selector: 'node.focused',
+            style: {
+              'opacity': 1,
+              'border-width': 2.5,
+              'border-color': '#dbb85c',
+              'font-size': '8px',
+              'color': '#f5f5f5',
+              'z-index': 999
+            }
+          },
+          {
+            selector: 'edge.highlighted',
+            style: {
+              'opacity': 0.9
+            }
           }
         ],
         layout: {
@@ -1013,14 +1043,24 @@
         }, 60);
       }
 
-      /* -- Click events -- */
+      /* -- Click events with focus/dim behavior -- */
       cy.on('tap', 'node', function(evt) {
-        var d = evt.target.data('raw');
+        var node = evt.target;
+        var d = node.data('raw');
         showNodePanel(d);
+
+        // Highlight this node and its neighborhood, dim everything else
+        var neighborhood = node.neighborhood().add(node);
+        cy.elements().addClass('dimmed');
+        neighborhood.removeClass('dimmed');
+        neighborhood.nodes().addClass('highlighted');
+        node.addClass('focused');
       });
 
       cy.on('tap', function(evt) {
         if (evt.target === cy) {
+          // Clear focus — restore all elements
+          cy.elements().removeClass('dimmed highlighted focused');
           clearPanel();
         }
       });
