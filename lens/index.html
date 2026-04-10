@@ -362,6 +362,143 @@
       font-variant-numeric: tabular-nums;
     }
 
+    /* -- Story Panels -- */
+    .story-section { padding: 4rem 0; border-bottom: 1px solid var(--border-subtle); }
+
+    .story-panels {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+
+    .story-panel {
+      background: var(--near-black);
+      border: 1px solid var(--border-subtle);
+      padding: 1.5rem;
+    }
+
+    .story-panel-title {
+      font-size: 0.55rem; font-weight: 600;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 1.2rem;
+    }
+
+    /* Concentration bar */
+    .concentration-bar-container {
+      background: var(--surface);
+      border: 1px solid var(--border-subtle);
+      height: 10px;
+      position: relative;
+      margin-bottom: 0.75rem;
+    }
+
+    .concentration-bar-fill {
+      height: 100%;
+      transition: width 0.6s ease;
+    }
+
+    .concentration-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.5rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 0.75rem;
+    }
+
+    .concentration-value {
+      font-size: 1.4rem;
+      font-weight: 300;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+      margin-bottom: 0.3rem;
+    }
+
+    .concentration-tag {
+      font-size: 0.6rem;
+      letter-spacing: 0.05em;
+    }
+
+    /* Sparkline */
+    .sparkline-container {
+      width: 100%;
+      max-width: 300px;
+      margin-bottom: 0.75rem;
+    }
+
+    .sparkline-container svg {
+      width: 100%;
+      height: 60px;
+      display: block;
+    }
+
+    .sparkline-summary {
+      font-size: 1.4rem;
+      font-weight: 300;
+      color: var(--green);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+      margin-bottom: 0.3rem;
+    }
+
+    .sparkline-sub {
+      font-size: 0.6rem;
+      color: var(--text-dim);
+      letter-spacing: 0.03em;
+    }
+
+    /* Edge stat boxes */
+    .edge-stat-row {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 1rem;
+    }
+
+    .edge-stat-box {
+      flex: 1;
+      padding: 0.8rem 0.6rem;
+      border-right: 1px solid var(--border-subtle);
+      text-align: center;
+    }
+    .edge-stat-box:last-child { border-right: none; }
+
+    .edge-stat-num {
+      font-size: 1.2rem;
+      font-weight: 300;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+      margin-bottom: 0.25rem;
+    }
+
+    .edge-stat-label {
+      font-size: 0.5rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .edge-note {
+      font-size: 0.6rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+      letter-spacing: 0.02em;
+    }
+
+    /* Pulsing glow for new nodes */
+    @keyframes newNodePulse {
+      0%   { box-shadow: 0 0 4px rgba(94, 234, 150, 0.3); }
+      50%  { box-shadow: 0 0 12px rgba(94, 234, 150, 0.6); }
+      100% { box-shadow: 0 0 4px rgba(94, 234, 150, 0.3); }
+    }
+
+    @media (max-width: 900px) {
+      .story-panels { grid-template-columns: 1fr; }
+    }
+
     /* -- Reveal animation -- */
     .reveal {
       opacity: 0; transform: translateY(16px);
@@ -485,6 +622,59 @@
             <div id="panelContent" style="display:none;"></div>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="story-section reveal">
+    <div class="container">
+      <div class="section-label">Data Stories</div>
+      <div class="section-narrative">
+        Three lenses into the health and activity of the Post Fiat Network.
+      </div>
+      <div class="story-panels">
+
+        <div class="story-panel">
+          <div class="story-panel-title">Network Health</div>
+          <div class="concentration-labels">
+            <span>Distributed</span>
+            <span>Concentrated</span>
+          </div>
+          <div class="concentration-bar-container">
+            <div class="concentration-bar-fill" id="hhiBarFill"></div>
+          </div>
+          <div class="concentration-value" id="hhiValue">--</div>
+          <div class="concentration-tag" id="hhiTag">--</div>
+        </div>
+
+        <div class="story-panel">
+          <div class="story-panel-title">Activity Pulse</div>
+          <div class="sparkline-container" id="sparklineContainer">
+            <svg id="sparklineSvg" viewBox="0 0 300 60" preserveAspectRatio="none"></svg>
+          </div>
+          <div class="sparkline-summary" id="sparklineSummary">--</div>
+          <div class="sparkline-sub" id="sparklineSub">memos in the last 7 days</div>
+        </div>
+
+        <div class="story-panel">
+          <div class="story-panel-title">Edge Analysis</div>
+          <div class="edge-stat-row">
+            <div class="edge-stat-box">
+              <div class="edge-stat-num" id="edgeTotal">--</div>
+              <div class="edge-stat-label">Relationships</div>
+            </div>
+            <div class="edge-stat-box">
+              <div class="edge-stat-num" id="edgeBidir">--</div>
+              <div class="edge-stat-label">Bidirectional</div>
+            </div>
+            <div class="edge-stat-box">
+              <div class="edge-stat-num" id="edgeValue">--</div>
+              <div class="edge-stat-label">Value Transfers</div>
+            </div>
+          </div>
+          <div class="edge-note">Both parties actively communicate -- genuine working relationships, not one-way payments.</div>
+        </div>
+
       </div>
     </div>
   </section>
@@ -683,6 +873,7 @@
             borderColor: nodeBorderColor(n),
             borderWidth: nodeBorderWidth(n),
             shape: nodeShape(n),
+            isNew: n.is_new === true,
             raw: n
           }
         });
@@ -758,6 +949,14 @@
             }
           },
           {
+            selector: 'node[?isNew]',
+            style: {
+              'border-color': 'rgba(94,234,150,0.7)',
+              'border-width': 2,
+              'border-opacity': 0.8
+            }
+          },
+          {
             selector: 'edge',
             style: {
               'width': 'data(lineWidth)',
@@ -798,6 +997,21 @@
         maxZoom: 5,
         wheelSensitivity: 0.2
       });
+
+      /* -- Pulsing glow for new nodes -- */
+      var newNodes = cy.nodes('[?isNew]');
+      if (newNodes.length > 0) {
+        var pulseUp = true;
+        var pulseOpacity = 0.4;
+        setInterval(function() {
+          if (pulseUp) { pulseOpacity += 0.04; if (pulseOpacity >= 0.9) pulseUp = false; }
+          else { pulseOpacity -= 0.04; if (pulseOpacity <= 0.3) pulseUp = true; }
+          newNodes.style({
+            'border-opacity': pulseOpacity,
+            'border-width': 2 + pulseOpacity * 2
+          });
+        }, 60);
+      }
 
       /* -- Click events -- */
       cy.on('tap', 'node', function(evt) {
@@ -909,6 +1123,75 @@
         document.getElementById('healthUpdated').textContent = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         document.getElementById('healthUpdatedSub').textContent = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) + ' UTC';
       }
+
+      /* -- Story Panel 1: Concentration HHI -- */
+      var hhi = stats.concentration_hhi;
+      if (hhi != null) {
+        var hhiPct = Math.min(hhi, 1) * 100;
+        var barFill = document.getElementById('hhiBarFill');
+        barFill.style.width = hhiPct + '%';
+
+        // Color gradient: green (<0.15), gold (0.15-0.25), red (>0.25)
+        var barColor;
+        if (hhi < 0.15) barColor = 'var(--green)';
+        else if (hhi <= 0.25) barColor = 'var(--accent)';
+        else barColor = 'var(--red)';
+        barFill.style.background = barColor;
+
+        var hhiValEl = document.getElementById('hhiValue');
+        hhiValEl.textContent = hhi.toFixed(4);
+        hhiValEl.style.color = barColor;
+
+        var tag, tagColor;
+        if (hhi < 0.15) { tag = 'Healthy'; tagColor = 'var(--green)'; }
+        else if (hhi <= 0.25) { tag = 'Moderate'; tagColor = 'var(--accent)'; }
+        else { tag = 'Concentrated'; tagColor = 'var(--red)'; }
+        var hhiTagEl = document.getElementById('hhiTag');
+        hhiTagEl.textContent = tag;
+        hhiTagEl.style.color = tagColor;
+      }
+
+      /* -- Story Panel 2: Sparkline -- */
+      var sparkline = stats.sparkline;
+      if (sparkline && sparkline.length > 0) {
+        var svgEl = document.getElementById('sparklineSvg');
+        var maxVal = Math.max.apply(null, sparkline);
+        if (maxVal === 0) maxVal = 1;
+        var len = sparkline.length;
+        var points = [];
+        for (var i = 0; i < len; i++) {
+          var x = (i / (len - 1)) * 300;
+          var y = 58 - (sparkline[i] / maxVal) * 54;
+          points.push(x.toFixed(1) + ',' + y.toFixed(1));
+        }
+        // Area fill
+        var areaPoints = '0,58 ' + points.join(' ') + ' 300,58';
+        svgEl.innerHTML = '<defs><linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(94,234,150,0.25)"/><stop offset="100%" stop-color="rgba(94,234,150,0)"/></linearGradient></defs>'
+          + '<polygon points="' + areaPoints + '" fill="url(#sparkGrad)"/>'
+          + '<polyline points="' + points.join(' ') + '" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>';
+
+        // Last 7 days sum
+        var last7 = sparkline.slice(-7).reduce(function(a, b) { return a + b; }, 0);
+        document.getElementById('sparklineSummary').textContent = fmtNum(last7);
+        document.getElementById('sparklineSub').textContent = 'memos in the last 7 days';
+      }
+
+      /* -- Story Panel 3: Edge Analysis -- */
+      document.getElementById('edgeTotal').textContent = stats.total_edges || '--';
+
+      var bidir = stats.bidirectional_edges;
+      document.getElementById('edgeBidir').textContent = bidir != null ? bidir : '--';
+
+      // Count edges with PFT > 0
+      var valueEdges = 0;
+      if (data.edges) {
+        data.edges.forEach(function(e) {
+          if ((e.a_to_b_pft && e.a_to_b_pft > 0) || (e.b_to_a_pft && e.b_to_a_pft > 0) || (e.amount_pft && e.amount_pft > 0)) {
+            valueEdges++;
+          }
+        });
+      }
+      document.getElementById('edgeValue').textContent = valueEdges;
     }
 
     /* -- Controls -- */
