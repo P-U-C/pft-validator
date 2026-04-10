@@ -164,7 +164,9 @@
       background: var(--near-black);
       border: 1px solid var(--border-subtle);
       position: relative;
-      height: 600px;
+      height: calc(100vh - 200px);
+      min-height: 400px;
+      max-height: 800px;
     }
 
     #cy {
@@ -371,7 +373,7 @@
     @media (max-width: 900px) {
       .graph-layout { grid-template-columns: 1fr; }
       .side-panel { min-height: 300px; }
-      .graph-container { height: 450px; }
+      .graph-container { height: calc(100vh - 180px); min-height: 350px; max-height: 550px; }
       .stats-row { flex-wrap: wrap; max-width: 100%; }
       .stat-cell { min-width: 140px; }
     }
@@ -382,7 +384,7 @@
       .health-grid { grid-template-columns: repeat(2, 1fr); }
       .health-card:nth-child(2) { border-right: none; }
       .health-card:nth-child(1), .health-card:nth-child(2) { border-bottom: 1px solid var(--border-subtle); }
-      .graph-container { height: 360px; }
+      .graph-container { height: calc(100vh - 160px); min-height: 300px; max-height: 450px; }
       .header-nav { gap: 1rem; }
     }
 
@@ -444,7 +446,7 @@
           </div>
           <div class="graph-legend">
             <div class="legend-item">
-              <div class="legend-diamond" style="background:var(--blue);"></div>
+              <div class="legend-diamond" style="background:var(--accent);"></div>
               <span>Infrastructure</span>
             </div>
             <div class="legend-item">
@@ -452,14 +454,22 @@
               <span>High Activity</span>
             </div>
             <div class="legend-item">
-              <div class="legend-dot" style="background:var(--accent);"></div>
+              <div class="legend-dot" style="background:rgba(219,184,92,0.7);"></div>
               <span>Medium</span>
             </div>
             <div class="legend-item">
-              <div class="legend-dot" style="background:var(--text-muted);"></div>
+              <div class="legend-dot" style="background:#404040;"></div>
               <span>Low</span>
             </div>
+            <div class="legend-item" style="border-left:1px solid var(--border);padding-left:1rem;">
+              <div style="width:20px;height:2px;background:var(--accent);"></div>
+              <span>Value Flow</span>
+            </div>
             <div class="legend-item">
+              <div style="width:20px;height:1px;background:rgba(94,234,150,0.4);"></div>
+              <span>Communication</span>
+            </div>
+            <div class="legend-item" style="border-left:1px solid var(--border);padding-left:1rem;">
               <div class="legend-dot" style="background:transparent;border:2px solid var(--red);width:6px;height:6px;"></div>
               <span>Sybil Flagged</span>
             </div>
@@ -596,42 +606,52 @@
       return min + t * (max - min);
     }
 
-    /* -- Node color -- */
+    /* -- Node color -- strict branding palette */
     function nodeColor(node) {
-      if (node.type === 'infrastructure') return '#3d7dd9';
-      if (node.activity_score > 0.5) return '#5eea96';
-      if (node.activity_score > 0.2) return '#dbb85c';
-      if (node.activity_score > 0.05) return '#806930';
-      return '#555555';
+      if (node.type === 'infrastructure') return '#dbb85c';  // gold for infra
+      if (node.activity_score > 0.5) return '#5eea96';       // green for high activity
+      if (node.activity_score > 0.15) return 'rgba(219,184,92,0.7)'; // muted gold
+      return '#404040';                                       // dark gray for low
     }
 
     function nodeBorderColor(node) {
-      if (node.sybil_flagged) return '#f87171';
-      if (node.type === 'infrastructure') return '#5a9ae6';
-      return 'rgba(255,255,255,0.08)';
+      if (node.sybil_flagged) return '#f87171';              // red for sybil
+      if (node.type === 'infrastructure') return '#dbb85c';
+      if (node.activity_score > 0.5) return 'rgba(94,234,150,0.5)';
+      return 'rgba(255,255,255,0.05)';
     }
 
     function nodeBorderWidth(node) {
       if (node.sybil_flagged) return 2.5;
-      return 1;
+      if (node.type === 'infrastructure') return 1.5;
+      return 0.5;
     }
 
     function nodeShape(node) {
       return node.type === 'infrastructure' ? 'diamond' : 'ellipse';
     }
 
-    /* -- Edge styling -- */
+    /* -- Edge styling -- messages vs money tell different stories */
     function edgeWidth(edge, allMemos) {
       var maxMemo = Math.max.apply(null, allMemos);
       if (maxMemo === 0) return 0.5;
-      return 0.5 + (edge.memo_count / maxMemo) * 3.5;
+      return 0.5 + (edge.memo_count / maxMemo) * 3;
     }
 
     function edgeColor(edge) {
-      if (edge.trust_flow === 'TRUST_PLUS_VALUE') return 'rgba(94,234,150,0.4)';
-      if (edge.trust_flow === 'FLOW_WITHOUT_TRUST') return 'rgba(219,184,92,0.3)';
-      if (edge.trust_flow === 'TRUST_WITHOUT_VALUE') return 'rgba(100,160,255,0.25)';
-      return 'rgba(136,136,136,0.15)';
+      // Money flows: gold (branding accent)
+      if (edge.trust_flow === 'TRUST_PLUS_VALUE') return 'rgba(219,184,92,0.55)';
+      if (edge.trust_flow === 'FLOW_WITHOUT_TRUST') return 'rgba(219,184,92,0.35)';
+      // Pure communication: green (trust signal)
+      if (edge.trust_flow === 'TRUST_WITHOUT_VALUE') return 'rgba(94,234,150,0.25)';
+      // Weak/single interaction: barely visible
+      return 'rgba(255,255,255,0.06)';
+    }
+
+    function edgeStyle(edge) {
+      // Solid for value transfers, dotted for communication-only
+      if (edge.amount_pft > 0) return 'solid';
+      return 'solid';
     }
 
     /* -- Build Cytoscape -- */
