@@ -597,12 +597,17 @@
         + ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
     }
 
-    /* -- Node sizing -- */
+    /* -- Node sizing -- responsive to container */
     function nodeSize(memoCount, allMemos) {
-      var min = 20, max = 55;
+      var container = document.getElementById('cy');
+      var w = container ? container.offsetWidth : 600;
+      // Scale nodes based on container: smaller screen = smaller nodes
+      var scale = Math.min(w / 600, 1.0); // 1.0 at 600px+, smaller below
+      var min = 10 * scale + 4;   // 4-14px minimum
+      var max = 28 * scale + 8;   // 8-36px maximum
       var maxMemo = Math.max.apply(null, allMemos);
       if (maxMemo === 0) return min;
-      var t = Math.pow(memoCount / maxMemo, 0.4); // gentler curve
+      var t = Math.pow(memoCount / maxMemo, 0.5);
       return min + t * (max - min);
     }
 
@@ -622,9 +627,9 @@
     }
 
     function nodeBorderWidth(node) {
-      if (node.sybil_flagged) return 2.5;
-      if (node.type === 'infrastructure') return 1.5;
-      return 0.5;
+      if (node.sybil_flagged) return 2;
+      if (node.type === 'infrastructure') return 1;
+      return 0;
     }
 
     function nodeShape(node) {
@@ -711,17 +716,19 @@
               'border-opacity': 0.6,
               'shape': 'data(shape)',
               'label': 'data(label)',
-              'font-size': '7px',
+              'font-size': '6px',
               'font-family': "'IBM Plex Mono', monospace",
-              'color': '#999',
+              'color': '#777',
               'text-valign': 'bottom',
               'text-halign': 'center',
-              'text-margin-y': 8,
-              'text-outline-width': 2,
+              'text-margin-y': 5,
+              'text-outline-width': 1.5,
               'text-outline-color': '#000',
-              'text-outline-opacity': 0.8,
+              'text-outline-opacity': 0.9,
               'text-background-opacity': 0,
-              'min-zoomed-font-size': 9,
+              'min-zoomed-font-size': 11,
+              'text-max-width': '80px',
+              'text-wrap': 'ellipsis',
               'overlay-opacity': 0,
               'transition-property': 'border-color, border-width, background-opacity, width, height',
               'transition-duration': '0.25s'
@@ -776,16 +783,16 @@
           name: typeof cytoscapeCoseBilkent !== 'undefined' ? 'cose-bilkent' : 'cose',
           animate: 'end',
           animationDuration: 1000,
-          nodeRepulsion: 15000,
-          idealEdgeLength: 180,
-          edgeElasticity: 0.05,
+          nodeRepulsion: 25000,
+          idealEdgeLength: 220,
+          edgeElasticity: 0.02,
           nestingFactor: 0.1,
-          gravity: 0.15,
-          gravityRange: 3.8,
-          numIter: 3000,
-          tile: true,
+          gravity: 0.08,
+          gravityRange: 5,
+          numIter: 3500,
+          tile: false,
           fit: true,
-          padding: 60,
+          padding: 30,
           randomize: false
         },
         minZoom: 0.15,
@@ -916,13 +923,13 @@
             name: typeof cytoscapeCoseBilkent !== 'undefined' ? 'cose-bilkent' : 'cose',
             animate: 'end',
             animationDuration: 800,
-            nodeRepulsion: 8000,
-            idealEdgeLength: 120,
-            edgeElasticity: 0.1,
+            nodeRepulsion: 25000,
+            idealEdgeLength: 220,
+            edgeElasticity: 0.02,
             nestingFactor: 0.1,
-            gravity: 0.25,
-            numIter: 2500,
-            tile: true,
+            gravity: 0.08,
+            numIter: 3500,
+            tile: false,
             fit: true,
             padding: 40
           }).run();
