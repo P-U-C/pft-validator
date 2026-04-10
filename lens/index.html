@@ -922,7 +922,7 @@
       tickClock();
       setInterval(tickClock, 1000);
 
-      fetch('./graph.json')
+      fetch('/lens/graph.json')
         .then(function(r) {
           if (!r.ok) throw new Error('Failed to load graph.json: ' + r.status);
           return r.json();
