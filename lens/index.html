@@ -737,14 +737,14 @@
           }
         ],
         layout: {
-          name: 'cose-bilkent',
+          name: typeof cytoscapeCoseBilkent !== 'undefined' ? 'cose-bilkent' : 'cose',
           animate: 'end',
           animationDuration: 800,
           nodeRepulsion: 8000,
           idealEdgeLength: 120,
           edgeElasticity: 0.1,
           nestingFactor: 0.1,
-          gravity: 0.2,
+          gravity: 0.25,
           numIter: 2500,
           tile: true,
           fit: true,
@@ -875,14 +875,14 @@
       document.getElementById('btnReset').addEventListener('click', function() {
         if (cy && graphData) {
           cy.layout({
-            name: 'cose-bilkent',
+            name: typeof cytoscapeCoseBilkent !== 'undefined' ? 'cose-bilkent' : 'cose',
             animate: 'end',
             animationDuration: 800,
             nodeRepulsion: 8000,
             idealEdgeLength: 120,
             edgeElasticity: 0.1,
             nestingFactor: 0.1,
-            gravity: 0.2,
+            gravity: 0.25,
             numIter: 2500,
             tile: true,
             fit: true,
@@ -928,13 +928,18 @@
           return r.json();
         })
         .then(function(data) {
-          populateStats(data);
-          buildGraph(data);
-          buildRichList(data);
+          try {
+            populateStats(data);
+            buildGraph(data);
+            buildRichList(data);
+          } catch(err) {
+            console.error('Lens: error building graph', err);
+            document.getElementById('cy').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-dim);font-size:0.7rem;font-family:var(--mono);">Error rendering graph: ' + err.message + '</div>';
+          }
         })
         .catch(function(err) {
           console.error('Lens: failed to load graph data', err);
-          document.getElementById('cy').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-dim);font-size:0.7rem;font-family:var(--mono);">Failed to load network data</div>';
+          document.getElementById('cy').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-dim);font-size:0.7rem;font-family:var(--mono);">Failed to load network data: ' + err.message + '</div>';
         });
     }
 
