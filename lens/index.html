@@ -1325,7 +1325,7 @@
 
       content.innerHTML = ''
         + '<div class="detail-row"><span class="detail-key">Address</span><span class="detail-val">' + truncAddr(n.id) + '</span></div>'
-        + '<div class="detail-row"><span class="detail-key">Full Address</span><span class="detail-val" style="font-size:0.55rem;">' + n.id + '</span></div>'
+        + '<div class="detail-row"><span class="detail-key">Full Address</span><span class="detail-val" style="font-size:0.55rem;"><a href="https://explorer.testnet.postfiat.org/' + n.id + '" target="_blank" style="color:var(--accent);text-decoration:none;">' + n.id + '</a></span></div>'
         + '<div class="detail-row"><span class="detail-key">Label</span><span class="detail-val">' + (n.label || '--') + '</span></div>'
         + '<div class="detail-row"><span class="detail-key">Type</span><span class="detail-val">' + n.type + '</span></div>'
         + '<div class="detail-row"><span class="detail-key">Balance</span><span class="detail-val">' + fmtBalance(n.balance_pft) + ' PFT</span></div>'
@@ -1377,7 +1377,7 @@
             if (details.length === 0) details.push(e.tx_count + ' tx');
 
             relHtml += '<div class="detail-row">'
-              + '<span class="detail-key" style="max-width:55%;">' + dir + ' ' + peerLabel + '</span>'
+              + '<span class="detail-key" style="max-width:55%;">' + dir + ' <a href="https://explorer.testnet.postfiat.org/' + peer + '" target="_blank" style="color:var(--text-secondary);text-decoration:none;">' + peerLabel + '</a></span>'
               + '<span class="detail-val" style="font-size:0.55rem;">' + details.join(' | ') + '</span>'
               + '</div>';
           });
@@ -1419,7 +1419,7 @@
         var labelCell = n.label && n.label !== truncAddr(n.id) ? '<span class="richlist-label">' + n.label + '</span>' : '<span style="color:var(--text-dim);">--</span>';
         html += '<tr>'
           + '<td><span class="richlist-rank">' + (i + 1) + '</span></td>'
-          + '<td>' + truncAddr(n.id) + '</td>'
+          + '<td><a href="https://explorer.testnet.postfiat.org/' + n.id + '" target="_blank" style="color:var(--text-secondary);text-decoration:none;">' + truncAddr(n.id) + '</a></td>'
           + '<td>' + labelCell + '</td>'
           + '<td>' + fmtBalance(n.balance_pft) + '</td>'
           + '</tr>';
