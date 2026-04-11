@@ -983,6 +983,10 @@
     }
 
     function edgeColor(edge) {
+      // Bot edges: purple
+      if (nodeTypeMap[edge.source] === 'bot' || nodeTypeMap[edge.target] === 'bot') {
+        return 'rgba(139,92,246,0.3)';
+      }
       // Money flows: gold — bright and clear
       if (edge.trust_flow === 'TRUST_PLUS_VALUE') return 'rgba(219,184,92,0.75)';
       if (edge.trust_flow === 'FLOW_WITHOUT_TRUST') return 'rgba(219,184,92,0.55)';
@@ -998,10 +1002,16 @@
     }
 
     /* -- Build Cytoscape -- */
+    var nodeTypeMap = {}; // address → type lookup for edge coloring
+
     function buildGraph(data) {
       graphData = data;
       var nodes = data.nodes;
       var edges = data.edges;
+
+      // Build type lookup for fast edge coloring
+      nodeTypeMap = {};
+      nodes.forEach(function(n) { nodeTypeMap[n.id] = n.type; });
 
       var allNodeMemos = nodes.map(function(n) { return n.memo_count; });
       var allEdgeMemos = edges.map(function(e) { return e.memo_count; });
