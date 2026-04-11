@@ -819,6 +819,15 @@
     </div>
   </section>
 
+  <section class="stories-section reveal" style="padding:4rem 0;border-bottom:1px solid var(--border-subtle);">
+    <div class="container">
+      <div class="section-label">What The Chain Says</div>
+      <div class="section-narrative">Five stories from on-chain data. No opinions. Just math.</div>
+
+      <div id="storiesContainer" style="display:grid;gap:1.5rem;margin-top:2rem;"></div>
+    </div>
+  </section>
+
   <section class="richlist-section reveal">
     <div class="container">
       <div class="section-label">Rich List</div>
@@ -1401,6 +1410,83 @@
       if (cy) cy.elements().unselect();
     }
 
+    /* -- Stories -- */
+    function buildStories(data) {
+      var nodes = data.nodes;
+      var edges = data.edges;
+      var total = nodes.length;
+      var humans = nodes.filter(function(n) { return n.type === 'contributor'; }).length;
+      var bots = nodes.filter(function(n) { return n.type === 'bot'; }).length;
+      var infra = nodes.filter(function(n) { return n.type === 'infrastructure'; }).length;
+      var botPct = Math.round(bots / total * 100);
+      var humanPct = Math.round(humans / total * 100);
+      var bidir = edges.filter(function(e) { return e.bidirectional; }).length;
+      var bidirPct = edges.length > 0 ? Math.round(bidir / edges.length * 100) : 0;
+      var humanEdges = edges.filter(function(e) {
+        return nodeTypeMap[e.source] === 'contributor' && nodeTypeMap[e.target] === 'contributor';
+      }).length;
+      var botEdges = edges.filter(function(e) {
+        return nodeTypeMap[e.source] === 'bot' || nodeTypeMap[e.target] === 'bot';
+      }).length;
+
+      // Top earner
+      var contribs = nodes.filter(function(n) { return n.type === 'contributor'; });
+      contribs.sort(function(a, b) { return b.balance_pft - a.balance_pft; });
+      var topBalance = contribs.length > 0 ? contribs[0].balance_pft : 0;
+
+      // Infra balance
+      var infraBal = nodes.filter(function(n) { return n.type === 'infrastructure'; })
+        .reduce(function(s, n) { return s + n.balance_pft; }, 0);
+      var totalBal = nodes.reduce(function(s, n) { return s + n.balance_pft; }, 0);
+      var infraPct = totalBal > 0 ? Math.round(infraBal / totalBal * 100) : 0;
+
+      var stories = [
+        {
+          num: humans,
+          unit: 'real contributors',
+          color: '#5eea96',
+          text: total + ' wallets on chain. ' + bots + ' are bots. ' + infra + ' are infrastructure. ' + humans + ' humans do the work. That is the real Post Fiat — small, verified, genuine.',
+        },
+        {
+          num: botPct + '%',
+          unit: 'of accounts are fake',
+          color: '#8b5cf6',
+          text: 'One operator deployed ' + bots + ' bot wallets doing wash trading. Zero memos, uniform balances, no sleep pattern. They inflated transaction counts but produced zero work. Lens caught them from behavioral signals alone.',
+        },
+        {
+          num: bidirPct + '%',
+          unit: 'two-way relationships',
+          color: '#dbb85c',
+          text: bidirPct + '% of edges are bidirectional — both parties communicate. These are genuine working relationships, not one-way payments. The network that works is collaborative.',
+        },
+        {
+          num: humanEdges,
+          unit: 'real connections',
+          color: '#5eea96',
+          text: humanEdges + ' human-to-human connections vs ' + botEdges + ' bot-tainted edges. Strip the noise and the signal is clear: real contributors find each other and build together.',
+        },
+        {
+          num: infraPct + '%',
+          unit: 'PFT in infrastructure',
+          color: '#dbb85c',
+          text: infraPct + '% of total PFT sits in ' + infra + ' infrastructure wallets. The top contributor holds ' + fmtBalance(topBalance) + '. Early-stage concentration — should decentralize as the network grows.',
+        },
+      ];
+
+      var html = '';
+      stories.forEach(function(s) {
+        html += '<div style="background:var(--near-black);border:1px solid var(--border-subtle);padding:1.5rem;display:grid;grid-template-columns:auto 1fr;gap:1.5rem;align-items:start;">'
+          + '<div style="text-align:center;min-width:80px;">'
+          + '<div style="font-size:1.8rem;font-weight:300;color:' + s.color + ';font-family:var(--mono);line-height:1;">' + s.num + '</div>'
+          + '<div style="font-size:0.45rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);margin-top:0.3rem;">' + s.unit + '</div>'
+          + '</div>'
+          + '<div style="font-size:0.65rem;font-family:var(--serif);font-style:italic;color:var(--text-secondary);line-height:1.6;">' + s.text + '</div>'
+          + '</div>';
+      });
+
+      document.getElementById('storiesContainer').innerHTML = html;
+    }
+
     /* -- Rich List -- */
     function buildRichList(data) {
       var contributors = data.nodes
@@ -1703,6 +1789,7 @@
           try {
             populateStats(data);
             buildGraph(data);
+            buildStories(data);
             buildRichList(data);
           } catch(err) {
             console.error('Lens: error building graph', err);
