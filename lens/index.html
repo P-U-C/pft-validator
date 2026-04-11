@@ -927,9 +927,11 @@
       var h = container ? container.offsetHeight : 400;
       var dim = Math.min(w, h);
       // Scale: at 300px container → nodes 4-16px, at 800px → nodes 8-30px
-      var scale = Math.max(0.4, Math.min(dim / 700, 1.0));
-      var min = 6 + 4 * scale;
-      var max = 12 + 20 * scale;
+      var nodeCount = document.querySelectorAll('#cy *').length || 100;
+      var densityScale = Math.max(0.5, Math.min(80 / Math.max(nodeCount, 1), 1.0));
+      var scale = Math.max(0.3, Math.min(dim / 700, 1.0)) * densityScale;
+      var min = 4 + 3 * scale;
+      var max = 8 + 16 * scale;
       var maxMemo = Math.max.apply(null, allMemos);
       if (maxMemo === 0) return min;
       var t = Math.pow(memoCount / maxMemo, 0.5);
@@ -1196,8 +1198,8 @@
           concentric: function(node) {
             return (node.data('raw').memo_count || 0) + (node.data('raw').tx_count || 0);
           },
-          levelWidth: function() { return 5; },
-          minNodeSpacing: 20,
+          levelWidth: function() { return 8; },
+          minNodeSpacing: 8,
           animate: edges.length <= 200,
           animationDuration: 800,
           fit: true,
