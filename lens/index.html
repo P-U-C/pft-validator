@@ -733,11 +733,11 @@
             </div>
             <div class="legend-item" style="border-left:1px solid var(--border);padding-left:1rem;">
               <div style="width:20px;height:2px;background:var(--accent);"></div>
-              <span>Value Flow</span>
+              <span>Two-way</span>
             </div>
             <div class="legend-item">
-              <div style="width:20px;height:1px;background:rgba(94,234,150,0.4);"></div>
-              <span>Communication</span>
+              <div style="width:20px;height:1px;background:rgba(180,180,180,0.4);border-top:1px dashed rgba(180,180,180,0.4);"></div>
+              <span>One-way</span>
             </div>
             <div class="legend-item" style="border-left:1px solid var(--border);padding-left:1rem;">
               <div class="legend-dot" style="background:transparent;border:2px solid var(--red);width:6px;height:6px;"></div>
@@ -805,7 +805,7 @@
               <div class="edge-stat-label">Value Transfers</div>
             </div>
           </div>
-          <div class="edge-note">Both parties actively communicate -- genuine working relationships, not one-way payments.</div>
+          <div class="edge-note">Two-way edges (solid) = both parties communicate. One-way (dashed) = unreciprocated. High bidirectional ratio = healthy collaborative network.</div>
         </div>
 
       </div>
@@ -1033,8 +1033,10 @@
             lineWidth: edgeWidth(e, allEdgeMemos),
             edgeLabel: label,
             edgeType: edgeType,
+            isBidir: e.bidirectional || false,
             raw: e
-          }
+          },
+          classes: e.bidirectional ? 'bidirectional' : 'oneway'
         });
       });
 
@@ -1128,11 +1130,32 @@
             }
           },
           {
+            selector: 'edge.bidirectional',
+            style: {
+              'line-style': 'solid',
+              'opacity': 0.8,
+              'width': function(e) { return Math.max(e.data('lineWidth'), 1.5); },
+              'source-arrow-shape': 'vee',
+              'source-arrow-color': 'data(lineColor)',
+              'arrow-scale': 0.4
+            }
+          },
+          {
+            selector: 'edge.oneway',
+            style: {
+              'line-style': 'dashed',
+              'line-dash-pattern': [6, 3],
+              'opacity': 0.4
+            }
+          },
+          {
             selector: 'edge:selected',
             style: {
               'line-color': '#dbb85c',
               'target-arrow-color': '#dbb85c',
-              'opacity': 1
+              'source-arrow-color': '#dbb85c',
+              'opacity': 1,
+              'line-style': 'solid'
             }
           },
           {
