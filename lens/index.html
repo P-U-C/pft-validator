@@ -531,6 +531,124 @@
       .stat-cell { border-right: none; border-bottom: 1px solid var(--border-subtle); }
       .stat-cell:last-child { border-bottom: none; }
     }
+
+    /* -- Filter Bar -- */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      padding: 0.6rem 1rem;
+      background: var(--near-black);
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 1rem;
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.55rem;
+      font-family: var(--mono);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .filter-group label {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 0.55rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .filter-group input[type="range"] {
+      width: 90px;
+      height: 3px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: var(--border);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .filter-group input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 10px;
+      height: 10px;
+      background: var(--accent);
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .filter-group input[type="range"]::-moz-range-thumb {
+      width: 10px;
+      height: 10px;
+      background: var(--accent);
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+    }
+
+    .filter-group input[type="checkbox"] {
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .filter-group #filterMinTxVal {
+      font-variant-numeric: tabular-nums;
+      color: var(--accent);
+      min-width: 1.2em;
+      text-align: center;
+    }
+
+    .filter-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: var(--mono);
+      font-size: 0.5rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.5rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+    }
+
+    .filter-btn:hover {
+      border-color: var(--accent-line);
+      color: var(--accent);
+    }
+
+    .filter-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    @media (max-width: 768px) {
+      .filter-bar { gap: 0.8rem; }
+    }
+
+    /* -- Doxxer Warning -- */
+    .doxxer-warning {
+      font-family: var(--serif);
+      font-size: 0.7rem;
+      font-style: italic;
+      color: var(--text-dim);
+      line-height: 1.6;
+      border-left: 2px solid var(--accent-line);
+      padding: 0.5rem 0 0.5rem 0.8rem;
+      margin-top: 1rem;
+    }
+
+    /* -- Node selected always show label -- */
+    /* handled via JS style override */
   </style>
 </head>
 <body>
@@ -549,7 +667,7 @@
     <div class="container">
       <div class="hero-eyebrow">Lens -- On-Chain Intelligence</div>
       <h1>See the <em>network.</em></h1>
-      <p class="hero-subtitle">21 wallets. 73 relationships. 626 memos. Verified from chain data.</p>
+      <p class="hero-subtitle" id="heroSubtitle">Loading network data...</p>
       <div class="stats-row" id="heroStats">
         <div class="stat-cell">
           <div class="stat-label">Active Wallets</div>
@@ -573,6 +691,21 @@
       <div class="section-narrative">
         Every node is a wallet. Every edge is a verified on-chain relationship.
         The graph reveals the structure that raw transactions hide.
+      </div>
+      <div class="filter-bar">
+        <div class="filter-group">
+          <label>Min interactions</label>
+          <input type="range" min="1" max="20" value="1" id="filterMinTx">
+          <span id="filterMinTxVal">1</span>
+        </div>
+        <div class="filter-group">
+          <button class="filter-btn active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="messages">Messages</button>
+          <button class="filter-btn" data-filter="value">Value</button>
+        </div>
+        <div class="filter-group">
+          <label><input type="checkbox" id="filterHideInfra"> Hide infra</label>
+        </div>
       </div>
       <div class="graph-layout">
         <div class="graph-container">
@@ -885,6 +1018,11 @@
         if (e.amount_pft > 0) parts.push(fmtBalance(e.amount_pft) + ' PFT');
         var label = parts.join(' | ') || (e.tx_count + ' tx');
 
+        // Determine edge type for filtering
+        var hasValue = (e.amount_pft > 0) || (e.a_to_b_pft > 0) || (e.b_to_a_pft > 0);
+        var hasMsgs = (e.memo_count > 0);
+        var edgeType = hasValue ? 'value' : (hasMsgs ? 'messages' : 'messages');
+
         elements.push({
           group: 'edges',
           data: {
@@ -894,6 +1032,7 @@
             lineColor: edgeColor(e),
             lineWidth: edgeWidth(e, allEdgeMemos),
             edgeLabel: label,
+            edgeType: edgeType,
             raw: e
           }
         });
@@ -925,7 +1064,7 @@
               'text-outline-color': '#000',
               'text-outline-opacity': 0.9,
               'text-background-opacity': 0,
-              'min-zoomed-font-size': 11,
+              'min-zoomed-font-size': 14,
               'text-max-width': '80px',
               'text-wrap': 'ellipsis',
               'overlay-opacity': 0,
@@ -945,7 +1084,8 @@
             style: {
               'border-color': '#dbb85c',
               'border-width': 3,
-              'overlay-opacity': 0
+              'overlay-opacity': 0,
+              'min-zoomed-font-size': 0
             }
           },
           {
@@ -968,9 +1108,10 @@
               'width': 'data(lineWidth)',
               'line-color': 'data(lineColor)',
               'target-arrow-color': 'data(lineColor)',
-              'target-arrow-shape': 'vee',
+              'target-arrow-shape': 'none',
               'arrow-scale': 0.5,
-              'curve-style': 'bezier',
+              'curve-style': 'haystack',
+              'haystack-radius': 0.5,
               'opacity': 0.7,
               'overlay-opacity': 0,
               'label': 'data(edgeLabel)',
@@ -981,7 +1122,7 @@
               'text-margin-y': -8,
               'text-outline-width': 1,
               'text-outline-color': '#000',
-              'min-zoomed-font-size': 12,
+              'min-zoomed-font-size': 14,
               'transition-property': 'opacity, line-color',
               'transition-duration': '0.2s'
             }
@@ -1015,6 +1156,7 @@
               'border-width': 2.5,
               'border-color': '#dbb85c',
               'font-size': '8px',
+              'min-zoomed-font-size': 0,
               'color': '#f5f5f5',
               'z-index': 999
             }
@@ -1031,9 +1173,9 @@
           concentric: function(node) {
             return (node.data('raw').memo_count || 0) + (node.data('raw').tx_count || 0);
           },
-          levelWidth: function() { return 3; },
+          levelWidth: function() { return 5; },
           minNodeSpacing: 20,
-          animate: true,
+          animate: edges.length <= 200,
           animationDuration: 800,
           fit: true,
           padding: 20
@@ -1115,6 +1257,25 @@
         }
       }
 
+      // Calculate network share
+      var totalMemos = 0;
+      if (graphData && graphData.stats) totalMemos = graphData.stats.memo_transactions || 0;
+      var networkShare = totalMemos > 0 ? ((n.memo_count / totalMemos) * 100).toFixed(2) : '0.00';
+
+      // Find first/last seen from edges
+      var firstSeen = null;
+      var lastSeen = null;
+      if (graphData && graphData.edges) {
+        graphData.edges.forEach(function(e) {
+          if (e.source === n.id || e.target === n.id) {
+            if (e.first_seen && (!firstSeen || e.first_seen < firstSeen)) firstSeen = e.first_seen;
+            if (e.last_seen && (!lastSeen || e.last_seen > lastSeen)) lastSeen = e.last_seen;
+            if (e.first_tx && (!firstSeen || e.first_tx < firstSeen)) firstSeen = e.first_tx;
+            if (e.last_tx && (!lastSeen || e.last_tx > lastSeen)) lastSeen = e.last_tx;
+          }
+        });
+      }
+
       content.innerHTML = ''
         + '<div class="detail-row"><span class="detail-key">Address</span><span class="detail-val">' + truncAddr(n.id) + '</span></div>'
         + '<div class="detail-row"><span class="detail-key">Full Address</span><span class="detail-val" style="font-size:0.55rem;">' + n.id + '</span></div>'
@@ -1123,7 +1284,10 @@
         + '<div class="detail-row"><span class="detail-key">Balance</span><span class="detail-val">' + fmtBalance(n.balance_pft) + ' PFT</span></div>'
         + '<div class="detail-row"><span class="detail-key">Memo Count</span><span class="detail-val">' + fmtNum(n.memo_count) + '</span></div>'
         + '<div class="detail-row"><span class="detail-key">Tx Count</span><span class="detail-val">' + fmtNum(n.tx_count) + '</span></div>'
+        + '<div class="detail-row"><span class="detail-key">Network Share</span><span class="detail-val">' + networkShare + '%</span></div>'
         + '<div class="detail-row"><span class="detail-key">Peers</span><span class="detail-val">' + n.peers + '</span></div>'
+        + '<div class="detail-row"><span class="detail-key">First Seen</span><span class="detail-val">' + fmtDate(firstSeen) + '</span></div>'
+        + '<div class="detail-row"><span class="detail-key">Last Seen</span><span class="detail-val">' + fmtDate(lastSeen) + '</span></div>'
         + '<div class="detail-row"><span class="detail-key">Activity</span><span class="detail-val' + activityClass + '">' + (n.activity_score != null ? n.activity_score.toFixed(4) : '--') + '</span></div>'
         + '<div class="detail-row"><span class="detail-key">Sybil Status</span><span class="detail-val' + sybilClass + '">' + sybilText + '</span></div>';
 
@@ -1165,6 +1329,9 @@
           content.innerHTML += relHtml;
         }
       }
+
+      // Doxxer warning
+      content.innerHTML += '<div class="doxxer-warning">Lens sees all. Tags are public, permanent, and linked to your wallet. Tag unfairly and the network tags you back. The panopticon is watching, friend.</div>';
     }
 
     function clearPanel() {
@@ -1207,6 +1374,12 @@
       document.getElementById('statWallets').textContent = stats.total_accounts;
       document.getElementById('statEdges').textContent = stats.total_edges;
       document.getElementById('statSybil').textContent = stats.sybil_clusters;
+
+      // Dynamic hero subtitle
+      var walletCount = fmtNum(stats.total_accounts);
+      var edgeCount = fmtNum(stats.total_edges);
+      var memoCount = fmtNum(stats.memo_transactions);
+      document.getElementById('heroSubtitle').textContent = walletCount + ' wallets. ' + edgeCount + ' relationships. ' + memoCount + ' memos. Verified from chain data.';
 
       document.getElementById('healthWallets').textContent = stats.total_accounts;
       document.getElementById('healthMemos').textContent = fmtNum(stats.memo_transactions);
@@ -1299,19 +1472,110 @@
           cy.elements().removeClass('dimmed highlighted focused');
           clearPanel();
           // Re-run layout
+          var edgeCount = graphData.edges ? graphData.edges.length : 0;
           cy.layout({
             name: 'concentric',
             concentric: function(node) {
               return (node.data('raw').memo_count || 0) + (node.data('raw').tx_count || 0);
             },
-            levelWidth: function() { return 3; },
+            levelWidth: function() { return 5; },
             minNodeSpacing: 20,
-            animate: true,
+            animate: edgeCount <= 200,
             animationDuration: 600,
             fit: true,
             padding: 25
           }).run();
         }
+      });
+    }
+
+    /* -- Filters -- */
+    function applyFilters() {
+      if (!cy || !graphData) return;
+
+      var minTx = parseInt(document.getElementById('filterMinTx').value, 10) || 1;
+      var hideInfra = document.getElementById('filterHideInfra').checked;
+
+      // Determine active edge type filter
+      var activeFilterBtn = document.querySelector('.filter-btn.active');
+      var edgeTypeFilter = activeFilterBtn ? activeFilterBtn.getAttribute('data-filter') : 'all';
+
+      // First, show everything
+      cy.elements().show();
+
+      // Hide infra nodes if toggled
+      if (hideInfra) {
+        cy.nodes().forEach(function(node) {
+          var raw = node.data('raw');
+          if (raw && raw.type === 'infrastructure') {
+            node.hide();
+          }
+        });
+      }
+
+      // Filter edges
+      cy.edges().forEach(function(edge) {
+        var raw = edge.data('raw');
+        if (!raw) return;
+
+        var txCount = raw.tx_count || 0;
+        var memoCount = raw.memo_count || 0;
+        var interactionCount = Math.max(txCount, memoCount);
+
+        // Hide if below min interactions threshold
+        if (interactionCount < minTx) {
+          edge.hide();
+          return;
+        }
+
+        // Hide if edge type doesn't match filter
+        if (edgeTypeFilter !== 'all') {
+          var eType = edge.data('edgeType');
+          if (edgeTypeFilter === 'messages' && eType !== 'messages') {
+            edge.hide();
+            return;
+          }
+          if (edgeTypeFilter === 'value' && eType !== 'value') {
+            edge.hide();
+            return;
+          }
+        }
+      });
+
+      // Hide nodes that became disconnected (all edges hidden)
+      cy.nodes().forEach(function(node) {
+        if (!node.visible()) return; // already hidden (e.g. infra)
+        var connectedEdges = node.connectedEdges();
+        var hasVisibleEdge = false;
+        connectedEdges.forEach(function(edge) {
+          if (edge.visible()) hasVisibleEdge = true;
+        });
+        if (!hasVisibleEdge && connectedEdges.length > 0) {
+          node.hide();
+        }
+      });
+    }
+
+    function initFilters() {
+      var slider = document.getElementById('filterMinTx');
+      var sliderVal = document.getElementById('filterMinTxVal');
+
+      slider.addEventListener('input', function() {
+        sliderVal.textContent = slider.value;
+        applyFilters();
+      });
+
+      document.getElementById('filterHideInfra').addEventListener('change', function() {
+        applyFilters();
+      });
+
+      var filterBtns = document.querySelectorAll('.filter-btn');
+      filterBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          filterBtns.forEach(function(b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+          applyFilters();
+        });
       });
     }
 
@@ -1341,6 +1605,7 @@
     /* -- Init -- */
     function init() {
       initControls();
+      initFilters();
       initReveal();
       tickClock();
       setInterval(tickClock, 1000);
