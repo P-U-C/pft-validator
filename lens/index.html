@@ -1338,6 +1338,19 @@
         + '<div class="detail-row"><span class="detail-key">Activity</span><span class="detail-val' + activityClass + '">' + (n.activity_score != null ? n.activity_score.toFixed(4) : '--') + '</span></div>'
         + '<div class="detail-row"><span class="detail-key">Sybil Status</span><span class="detail-val' + sybilClass + '">' + sybilText + '</span></div>';
 
+      // Bot cluster info
+      if (n.type === 'bot' || n.sybil_cluster === 'sybil_botnet_001') {
+        var botMaster = 'r9k51cJFVaYRST5vMUsdokiYcwdpQdUJGR';
+        var isMaster = n.id === botMaster;
+        content.innerHTML += '<div style="margin-top:0.8rem;padding:0.6rem;background:rgba(139,92,246,0.08);border-left:2px solid #8b5cf6;font-size:0.55rem;">'
+          + (isMaster
+            ? '<strong style="color:#8b5cf6;">BOT MASTER</strong><br>Deployed and funded 63 bot wallets.<br>Wash-trading network generating fake tx volume.'
+            : '<strong style="color:#8b5cf6;">BOT</strong> — Part of botnet (63 wallets).<br>'
+              + 'Master: <span style="color:#8b5cf6;">' + truncAddr(botMaster) + '</span><br>'
+              + 'Pattern: zero memos, 1 PFT round-robin, 24h activity, uniform balance.')
+          + '</div>';
+      }
+
       // Add relationship table from graph edges
       if (graphData && graphData.edges) {
         var myEdges = graphData.edges.filter(function(e) {
