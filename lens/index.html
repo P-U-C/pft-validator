@@ -1346,7 +1346,7 @@
           + (isMaster
             ? '<strong style="color:#8b5cf6;">BOT MASTER</strong><br>Deployed and funded 63 bot wallets.<br>Wash-trading network generating fake tx volume.'
             : '<strong style="color:#8b5cf6;">BOT</strong> — Part of botnet (63 wallets).<br>'
-              + 'Master: <span style="color:#8b5cf6;">' + truncAddr(botMaster) + '</span><br>'
+              + 'Master: <a href="https://explorer.testnet.postfiat.org/accounts/' + botMaster + '" target="_blank" style="color:#8b5cf6;text-decoration:none;">' + truncAddr(botMaster) + '</a><br>'
               + 'Pattern: zero memos, 1 PFT round-robin, 24h activity, uniform balance.')
           + '</div>';
       }
