@@ -956,6 +956,7 @@
 
     function nodeBorderColor(node) {
       if (node.sybil_flagged) return '#f87171';              // red for sybil
+      if (node.type === 'bot') return '#6d28d9';             // dark purple border for bots
       if (node.type === 'infrastructure') return '#dbb85c';
       if (node.activity_score > 0.5) return 'rgba(94,234,150,0.5)';
       return 'rgba(255,255,255,0.05)';
@@ -963,12 +964,15 @@
 
     function nodeBorderWidth(node) {
       if (node.sybil_flagged) return 2;
+      if (node.type === 'bot') return 1.5;
       if (node.type === 'infrastructure') return 1;
       return 0;
     }
 
     function nodeShape(node) {
-      return node.type === 'infrastructure' ? 'diamond' : 'ellipse';
+      if (node.type === 'infrastructure') return 'diamond';
+      if (node.type === 'bot') return 'hexagon';
+      return 'ellipse';
     }
 
     /* -- Edge styling -- messages vs money tell different stories */
