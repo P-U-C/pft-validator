@@ -759,6 +759,7 @@
           </div>
           <div class="panel-body" id="panelBody">
             <div class="panel-empty" id="panelEmpty">Click a node to inspect</div>
+            <div id="nodeStory" style="display:none;"></div>
             <div id="panelContent" style="display:none;"></div>
           </div>
         </div>
@@ -1284,6 +1285,7 @@
       var badge = document.getElementById('panelBadge');
       var empty = document.getElementById('panelEmpty');
       var content = document.getElementById('panelContent');
+      var storyEl = document.getElementById('nodeStory');
 
       badge.style.display = 'inline-block';
       if (n.sybil_flagged) {
@@ -1299,6 +1301,71 @@
 
       empty.style.display = 'none';
       content.style.display = 'block';
+      storyEl.style.display = 'block';
+
+      // Build visual story
+      var s = n.story || {};
+      var storyHtml = '';
+
+      if (n.type === 'contributor' && (s.work_memos > 0 || s.collab_memos > 0 || s.bonus_count > 0)) {
+        // Bar widths relative to max value
+        var maxVal = Math.max(s.work_memos || 0, s.collab_memos || 0, s.bonus_count || 0, 1);
+
+        storyHtml += '<div style="padding:0.8rem 0;border-bottom:1px solid var(--border-subtle);">';
+        storyHtml += '<div style="font-size:0.45rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.6rem;">Account Story</div>';
+
+        // Work bar (gold)
+        if (s.work_memos > 0 || s.work_pft > 0) {
+          var workW = Math.max((s.work_memos / maxVal) * 100, 8);
+          storyHtml += '<div style="margin-bottom:0.5rem;">'
+            + '<div style="display:flex;justify-content:space-between;font-size:0.5rem;margin-bottom:0.2rem;">'
+            + '<span style="color:var(--accent);">Work</span>'
+            + '<span style="color:var(--text-dim);">' + s.work_memos + ' tasks | ' + fmtBalance(s.work_pft) + '</span></div>'
+            + '<div style="height:6px;background:var(--surface);border-radius:3px;overflow:hidden;">'
+            + '<div style="width:' + workW + '%;height:100%;background:var(--accent);border-radius:3px;"></div></div></div>';
+        }
+
+        // Collaboration bar (green)
+        if (s.collab_memos > 0) {
+          var collabW = Math.max((s.collab_memos / maxVal) * 100, 8);
+          storyHtml += '<div style="margin-bottom:0.5rem;">'
+            + '<div style="display:flex;justify-content:space-between;font-size:0.5rem;margin-bottom:0.2rem;">'
+            + '<span style="color:var(--green);">Collaboration</span>'
+            + '<span style="color:var(--text-dim);">' + s.collab_memos + ' msgs | ' + s.collab_peers + ' peers</span></div>'
+            + '<div style="height:6px;background:var(--surface);border-radius:3px;overflow:hidden;">'
+            + '<div style="width:' + collabW + '%;height:100%;background:var(--green);border-radius:3px;"></div></div></div>';
+        }
+
+        // Bonus bar (blue/teal)
+        if (s.bonus_count > 0) {
+          var bonusW = Math.max((s.bonus_count / maxVal) * 100, 8);
+          storyHtml += '<div style="margin-bottom:0.5rem;">'
+            + '<div style="display:flex;justify-content:space-between;font-size:0.5rem;margin-bottom:0.2rem;">'
+            + '<span style="color:#60a5fa;">Recognition</span>'
+            + '<span style="color:var(--text-dim);">' + s.bonus_count + ' airdrops | ' + fmtBalance(s.bonus_pft) + '</span></div>'
+            + '<div style="height:6px;background:var(--surface);border-radius:3px;overflow:hidden;">'
+            + '<div style="width:' + bonusW + '%;height:100%;background:#60a5fa;border-radius:3px;"></div></div></div>';
+        }
+
+        // Net flow summary
+        storyHtml += '<div style="display:flex;justify-content:space-between;font-size:0.5rem;margin-top:0.6rem;padding-top:0.5rem;border-top:1px solid var(--border-subtle);">'
+          + '<span style="color:var(--text-muted);">Net PFT flow</span>'
+          + '<span style="color:' + (s.net_pft >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + (s.net_pft >= 0 ? '+' : '') + fmtBalance(s.net_pft) + '</span></div>';
+
+        storyHtml += '</div>';
+      } else if (n.type === 'bot') {
+        storyHtml += '<div style="padding:0.8rem 0;border-bottom:1px solid var(--border-subtle);">'
+          + '<div style="font-size:0.45rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.4rem;">Account Story</div>'
+          + '<div style="font-size:0.55rem;font-family:var(--serif);font-style:italic;color:#8b5cf6;">Automated wallet. ' + n.tx_count + ' transactions, zero meaningful communication. Part of a wash-trading cluster cycling small amounts between ' + n.peers + ' peers.</div>'
+          + '</div>';
+      } else if (n.type === 'infrastructure') {
+        storyHtml += '<div style="padding:0.8rem 0;border-bottom:1px solid var(--border-subtle);">'
+          + '<div style="font-size:0.45rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.4rem;">Account Story</div>'
+          + '<div style="font-size:0.55rem;font-family:var(--serif);font-style:italic;color:var(--accent);">Network infrastructure. ' + (n.label || 'System wallet') + ' serving ' + n.peers + ' connected wallets with ' + n.memo_count + ' on-chain communications.</div>'
+          + '</div>';
+      }
+
+      storyEl.innerHTML = storyHtml;
 
       var activityClass = '';
       if (n.activity_score > 0.5) activityClass = ' live';
@@ -1397,6 +1464,7 @@
       document.getElementById('panelBadge').style.display = 'none';
       document.getElementById('panelEmpty').style.display = 'flex';
       document.getElementById('panelContent').style.display = 'none';
+      document.getElementById('nodeStory').style.display = 'none';
       if (cy) cy.elements().unselect();
     }
 
