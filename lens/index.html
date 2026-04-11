@@ -1318,19 +1318,9 @@
       if (graphData && graphData.stats) totalMemos = graphData.stats.memo_transactions || 0;
       var networkShare = totalMemos > 0 ? ((n.memo_count / totalMemos) * 100).toFixed(2) : '0.00';
 
-      // Find first/last seen from edges
-      var firstSeen = null;
-      var lastSeen = null;
-      if (graphData && graphData.edges) {
-        graphData.edges.forEach(function(e) {
-          if (e.source === n.id || e.target === n.id) {
-            if (e.first_seen && (!firstSeen || e.first_seen < firstSeen)) firstSeen = e.first_seen;
-            if (e.last_seen && (!lastSeen || e.last_seen > lastSeen)) lastSeen = e.last_seen;
-            if (e.first_tx && (!firstSeen || e.first_tx < firstSeen)) firstSeen = e.first_tx;
-            if (e.last_tx && (!lastSeen || e.last_tx > lastSeen)) lastSeen = e.last_tx;
-          }
-        });
-      }
+      // Use accurate per-account timestamps from chain
+      var firstSeen = n.first_seen || null;
+      var lastSeen = n.last_seen || null;
 
       content.innerHTML = ''
         + '<div class="detail-row"><span class="detail-key">Address</span><span class="detail-val">' + truncAddr(n.id) + '</span></div>'
@@ -1342,8 +1332,8 @@
         + '<div class="detail-row"><span class="detail-key">Tx Count</span><span class="detail-val">' + fmtNum(n.tx_count) + '</span></div>'
         + '<div class="detail-row"><span class="detail-key">Network Share</span><span class="detail-val">' + networkShare + '%</span></div>'
         + '<div class="detail-row"><span class="detail-key">Peers</span><span class="detail-val">' + n.peers + '</span></div>'
-        + '<div class="detail-row"><span class="detail-key">First Seen</span><span class="detail-val">' + fmtDate(firstSeen) + '</span></div>'
-        + '<div class="detail-row"><span class="detail-key">Last Seen</span><span class="detail-val">' + fmtDate(lastSeen) + '</span></div>'
+        + '<div class="detail-row"><span class="detail-key">First Activity</span><span class="detail-val">' + fmtDate(firstSeen) + '</span></div>'
+        + '<div class="detail-row"><span class="detail-key">Last Activity</span><span class="detail-val">' + fmtDate(lastSeen) + '</span></div>'
         + '<div class="detail-row"><span class="detail-key">Activity</span><span class="detail-val' + activityClass + '">' + (n.activity_score != null ? n.activity_score.toFixed(4) : '--') + '</span></div>'
         + '<div class="detail-row"><span class="detail-key">Sybil Status</span><span class="detail-val' + sybilClass + '">' + sybilText + '</span></div>';
 
