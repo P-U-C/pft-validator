@@ -706,6 +706,9 @@
         <div class="filter-group">
           <label><input type="checkbox" id="filterHideInfra"> Hide infra</label>
         </div>
+        <div class="filter-group">
+          <label><input type="checkbox" id="filterHideBots"> Hide bots</label>
+        </div>
       </div>
       <div class="graph-layout">
         <div class="graph-container">
@@ -730,6 +733,10 @@
             <div class="legend-item">
               <div class="legend-dot" style="background:#404040;"></div>
               <span>Low</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:#8b5cf6;"></div>
+              <span>Bot</span>
             </div>
             <div class="legend-item" style="border-left:1px solid var(--border);padding-left:1rem;">
               <div style="width:20px;height:2px;background:var(--accent);"></div>
@@ -941,6 +948,7 @@
     /* -- Node color -- strict branding palette */
     function nodeColor(node) {
       if (node.type === 'infrastructure') return '#dbb85c';  // gold for infra
+      if (node.type === 'bot') return '#8b5cf6';             // purple for bots
       if (node.activity_score > 0.5) return '#5eea96';       // green for high activity
       if (node.activity_score > 0.15) return 'rgba(219,184,92,0.7)'; // muted gold
       return '#404040';                                       // dark gray for low
@@ -1493,9 +1501,17 @@
       });
       document.getElementById('btnReset').addEventListener('click', function() {
         if (cy && graphData) {
-          // Clear all focus/dim states
+          // Reset all states
           cy.elements().removeClass('dimmed highlighted focused');
+          cy.elements().show();
           clearPanel();
+          // Reset filter controls
+          document.getElementById('filterMinTx').value = 1;
+          document.getElementById('filterMinTxVal').textContent = '1';
+          document.getElementById('filterHideInfra').checked = false;
+          document.getElementById('filterHideBots').checked = false;
+          document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+          document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
           // Re-run layout
           var edgeCount = graphData.edges ? graphData.edges.length : 0;
           cy.layout({
@@ -1503,12 +1519,12 @@
             concentric: function(node) {
               return (node.data('raw').memo_count || 0) + (node.data('raw').tx_count || 0);
             },
-            levelWidth: function() { return 5; },
-            minNodeSpacing: 20,
+            levelWidth: function() { return 8; },
+            minNodeSpacing: 8,
             animate: edgeCount <= 200,
             animationDuration: 600,
             fit: true,
-            padding: 25
+            padding: 20
           }).run();
         }
       });
@@ -1520,12 +1536,14 @@
 
       var minTx = parseInt(document.getElementById('filterMinTx').value, 10) || 1;
       var hideInfra = document.getElementById('filterHideInfra').checked;
+      var hideBots = document.getElementById('filterHideBots').checked;
 
       // Determine active edge type filter
       var activeFilterBtn = document.querySelector('.filter-btn.active');
       var edgeTypeFilter = activeFilterBtn ? activeFilterBtn.getAttribute('data-filter') : 'all';
 
-      // First, show everything
+      // First, show everything and clear focus
+      cy.elements().removeClass('dimmed highlighted focused');
       cy.elements().show();
 
       // Hide infra nodes if toggled
@@ -1533,6 +1551,16 @@
         cy.nodes().forEach(function(node) {
           var raw = node.data('raw');
           if (raw && raw.type === 'infrastructure') {
+            node.hide();
+          }
+        });
+      }
+
+      // Hide bot nodes if toggled
+      if (hideBots) {
+        cy.nodes().forEach(function(node) {
+          var raw = node.data('raw');
+          if (raw && raw.type === 'bot') {
             node.hide();
           }
         });
@@ -1591,6 +1619,10 @@
       });
 
       document.getElementById('filterHideInfra').addEventListener('change', function() {
+        applyFilters();
+      });
+
+      document.getElementById('filterHideBots').addEventListener('change', function() {
         applyFilters();
       });
 
