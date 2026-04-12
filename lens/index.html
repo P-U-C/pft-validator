@@ -1502,7 +1502,7 @@
       var bidir = edges.filter(function(e) { return e.bidirectional; }).length;
       var bidirPct = edges.length > 0 ? Math.round(bidir / edges.length * 100) : 0;
       var humanEdges = edges.filter(function(e) {
-        return nodeTypeMap[e.source] === 'contributor' && nodeTypeMap[e.target] === 'contributor';
+        return nodeTypeMap[e.source] !== 'bot' && nodeTypeMap[e.target] !== 'bot';
       }).length;
       var botEdges = edges.filter(function(e) {
         return nodeTypeMap[e.source] === 'bot' || nodeTypeMap[e.target] === 'bot';
@@ -1542,7 +1542,7 @@
           num: humanEdges,
           unit: 'real connections',
           color: '#5eea96',
-          text: humanEdges + ' human-to-human connections vs ' + botEdges + ' bot-tainted edges. Strip the noise and the signal is clear: real contributors find each other and build together.',
+          text: humanEdges + ' real connections between contributors and infrastructure vs ' + botEdges + ' bot-tainted edges. The actual work — task proposals, verifications, rewards — flows through these clean channels.',
         },
         {
           num: infraPct + '%',
