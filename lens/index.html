@@ -659,6 +659,7 @@
       <nav class="header-nav">
         <a href="/">Validator</a>
         <a href="/lens/" class="active">Lens</a>
+        <a href="/lens/audit.html">Audit</a>
       </nav>
     </div>
   </header>
@@ -878,6 +879,18 @@
           <div class="health-value" id="healthUpdated" style="font-size:1rem;">--</div>
           <div class="health-sub" id="healthUpdatedSub">--</div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="audit-section reveal" style="padding:4rem 0;border-bottom:1px solid var(--border-subtle);">
+    <div class="container">
+      <div class="section-label">Audit Surface</div>
+      <div class="section-narrative">Transparency layer. Every number is verifiable. Every heuristic is documented.</div>
+      <div id="auditSummary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-top:1.5rem;"></div>
+      <div style="margin-top:1.5rem;text-align:center;">
+        <a href="/lens/audit.html" style="font-size:0.55rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);text-decoration:none;border:1px solid var(--accent);padding:0.5rem 1.5rem;display:inline-block;">Full Audit Report</a>
+        <a href="/lens/audit.json" style="font-size:0.5rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);text-decoration:none;margin-left:1rem;">audit.json</a>
       </div>
     </div>
   </section>
@@ -1878,6 +1891,28 @@
           console.error('Lens: failed to load graph data', err);
           document.getElementById('cy').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-dim);font-size:0.7rem;font-family:var(--mono);">Failed to load network data: ' + err.message + '</div>';
         });
+
+      // Load audit summary
+      fetch('/lens/audit.json')
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(a) {
+          if (!a) return;
+          var el = document.getElementById('auditSummary');
+          if (!el) return;
+          var cards = [
+            {label: 'Coverage', value: a.coverage.indexed_ledger_range, sub: a.coverage.our_depth_advantage},
+            {label: 'Last Updated', value: a.generated_at ? a.generated_at.replace('T', ' ').substring(0, 16) : '--', sub: 'Refreshes ' + a.refresh_cadence},
+            {label: 'Schema', value: 'v' + a.schema_version, sub: 'Methods v' + a.methodology_version},
+            {label: 'Confidence', value: a.sample_profile.history_confidence.toUpperCase(), sub: a.totals.humans + ' humans verified'},
+          ];
+          el.innerHTML = cards.map(function(c) {
+            return '<div style="background:var(--near-black);border:1px solid var(--border-subtle);padding:1rem;">'
+              + '<div style="font-size:0.45rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);">' + c.label + '</div>'
+              + '<div style="font-size:0.75rem;color:var(--accent);margin:0.3rem 0;font-family:var(--mono);">' + c.value + '</div>'
+              + '<div style="font-size:0.5rem;color:var(--text-muted);font-family:var(--serif);font-style:italic;">' + c.sub + '</div>'
+              + '</div>';
+          }).join('');
+        }).catch(function() {});
     }
 
     if (document.readyState === 'loading') {
