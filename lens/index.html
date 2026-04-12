@@ -1591,7 +1591,19 @@
       var walletCount = fmtNum(stats.total_accounts);
       var edgeCount = fmtNum(stats.total_edges);
       var memoCount = fmtNum(stats.memo_transactions);
-      document.getElementById('heroSubtitle').textContent = walletCount + ' wallets. ' + edgeCount + ' relationships. ' + memoCount + ' memos. Verified from chain data.';
+      var subtitle = walletCount + ' wallets. ' + edgeCount + ' relationships. ' + memoCount + ' memos. Verified from chain data.';
+
+      // Show deltas if available
+      var d = stats.deltas;
+      if (d && (d.accounts || d.transactions || d.edges || d.memos)) {
+        var parts = [];
+        if (d.accounts) parts.push((d.accounts > 0 ? '+' : '') + d.accounts + ' wallets');
+        if (d.memos) parts.push((d.memos > 0 ? '+' : '') + d.memos + ' memos');
+        if (d.edges) parts.push((d.edges > 0 ? '+' : '') + d.edges + ' edges');
+        subtitle += ' | Last update: ' + parts.join(', ');
+      }
+
+      document.getElementById('heroSubtitle').textContent = subtitle;
 
       document.getElementById('healthWallets').textContent = stats.total_accounts;
       document.getElementById('healthMemos').textContent = fmtNum(stats.memo_transactions);
