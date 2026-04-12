@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lens Audit Surface — Transparency | Permanent Upper Class</title>
+  <meta name="description" content="Transparency and audit layer for Lens chain analytics. Coverage depth, methodology, freshness, and data integrity verification.">
+  <meta name="theme-color" content="#000000">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --black: #000000;
+      --near-black: #101010;
+      --surface: #181818;
+      --surface-elevated: #222222;
+      --border: #333333;
+      --border-subtle: #282828;
+      --text-primary: #f5f5f5;
+      --text-secondary: #b8b8b8;
+      --text-muted: #888888;
+      --text-dim: #606060;
+      --accent: #dbb85c;
+      --accent-dim: rgba(219, 184, 92, 0.18);
+      --accent-line: rgba(219, 184, 92, 0.5);
+      --green: #5eea96;
+      --green-dim: rgba(94, 234, 150, 0.15);
+      --green-line: rgba(94, 234, 150, 0.6);
+      --red: #f87171;
+      --blue: #2196F3;
+      --mono: 'IBM Plex Mono', 'SF Mono', monospace;
+      --serif: 'EB Garamond', Georgia, serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      background: var(--black);
+      color: var(--text-primary);
+      font-family: var(--mono);
+      font-weight: 400;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* Grain */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.015'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    ::selection { background: var(--accent); color: var(--black); }
+
+    a { color: var(--text-secondary); text-decoration: none; transition: color 0.2s; }
+    a:hover { color: var(--accent); }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 0 2rem; }
+
+    /* -- Header -- */
+    header { padding: 2rem 0; border-bottom: 1px solid var(--border-subtle); }
+
+    .header-inner { display: flex; justify-content: space-between; align-items: center; }
+
+    .brand {
+      font-size: 0.65rem; font-weight: 500;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .header-nav { display: flex; align-items: center; gap: 1.5rem; }
+
+    .header-nav a {
+      font-size: 0.6rem; font-weight: 500;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .header-nav a:hover { color: var(--accent); }
+    .header-nav a.active { color: var(--accent); }
+
+    /* -- Hero -- */
+    .hero { padding: 5rem 0 4rem; border-bottom: 1px solid var(--border-subtle); }
+
+    .hero-eyebrow {
+      font-size: 0.6rem; font-weight: 500;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 1.5rem;
+    }
+
+    .hero h1 {
+      font-family: var(--serif);
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 400; font-style: italic;
+      line-height: 1.15; color: var(--text-primary);
+      margin-bottom: 1.5rem; max-width: 560px;
+    }
+    .hero h1 em { font-style: normal; color: var(--accent); }
+
+    .hero-subtitle {
+      font-size: 0.75rem; color: var(--text-muted);
+      line-height: 1.6; max-width: 520px;
+    }
+
+    /* -- Sections -- */
+    .audit-section {
+      padding: 4rem 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .section-label {
+      font-size: 0.55rem; font-weight: 600;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 0.4rem;
+    }
+
+    .section-narrative {
+      font-family: var(--serif); font-size: 0.95rem;
+      color: var(--text-muted); font-style: italic;
+      margin-bottom: 2.5rem; max-width: 520px; line-height: 1.6;
+    }
+
+    /* -- Data Grid -- */
+    .data-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1px;
+      background: var(--border-subtle);
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 2rem;
+    }
+
+    .data-cell {
+      background: var(--near-black);
+      padding: 1.5rem;
+    }
+
+    .data-label {
+      font-size: 0.5rem; font-weight: 500;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 0.5rem;
+    }
+
+    .data-value {
+      font-size: 1.4rem; font-weight: 300;
+      color: var(--text-primary); font-variant-numeric: tabular-nums;
+      line-height: 1.2; word-break: break-all;
+    }
+
+    .data-value.accent { color: var(--accent); }
+    .data-value.green { color: var(--green); }
+    .data-value.red { color: var(--red); }
+    .data-value.small { font-size: 0.85rem; font-weight: 400; }
+
+    .data-sub {
+      font-size: 0.6rem; color: var(--text-dim);
+      margin-top: 0.3rem;
+    }
+
+    /* -- Coverage Bar -- */
+    .coverage-bar-wrapper {
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .coverage-bar-labels {
+      display: flex; justify-content: space-between;
+      font-size: 0.5rem; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--text-dim);
+      margin-bottom: 0.5rem;
+    }
+
+    .coverage-bar-track {
+      position: relative;
+      height: 28px;
+      background: var(--surface);
+      border: 1px solid var(--border-subtle);
+      overflow: hidden;
+    }
+
+    .coverage-bar-fill {
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      transition: width 0.8s ease;
+    }
+
+    .coverage-bar-fill.ours {
+      background: var(--accent-dim);
+      border-right: 2px solid var(--accent);
+      z-index: 2;
+    }
+
+    .coverage-bar-fill.public {
+      background: var(--green-dim);
+      border-right: 2px solid var(--green);
+      z-index: 1;
+    }
+
+    .coverage-bar-legend {
+      display: flex; gap: 1.5rem; margin-top: 0.6rem;
+      font-size: 0.5rem; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--text-dim);
+    }
+
+    .coverage-legend-item { display: flex; align-items: center; gap: 0.35rem; }
+
+    .coverage-legend-dot {
+      width: 8px; height: 8px;
+    }
+
+    /* -- Delta display -- */
+    .delta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1px;
+      background: var(--border-subtle);
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 1.5rem;
+    }
+
+    .delta-cell {
+      background: var(--near-black);
+      padding: 1.2rem 1.5rem;
+    }
+
+    .delta-label {
+      font-size: 0.5rem; font-weight: 500;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 0.4rem;
+    }
+
+    .delta-value {
+      font-size: 1.2rem; font-weight: 400;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+    }
+
+    .delta-positive { color: var(--green); }
+    .delta-zero { color: var(--text-dim); }
+    .delta-negative { color: var(--red); }
+
+    /* -- Methodology -- */
+    .method-list {
+      display: flex; flex-direction: column;
+      gap: 1px; background: var(--border-subtle);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .method-item {
+      background: var(--near-black);
+      padding: 1.5rem;
+    }
+
+    .method-title {
+      font-size: 0.6rem; font-weight: 600;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.6rem;
+    }
+
+    .method-desc {
+      font-family: var(--serif); font-size: 0.95rem;
+      color: var(--text-secondary); font-style: italic;
+      line-height: 1.6; max-width: 680px;
+    }
+
+    /* -- Sample Profile -- */
+    .profile-card {
+      background: var(--near-black);
+      border: 1px solid var(--border-subtle);
+      padding: 2rem;
+    }
+
+    .profile-address {
+      font-size: 0.75rem; font-weight: 500;
+      color: var(--accent); word-break: break-all;
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.02em;
+    }
+
+    .profile-meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1px; background: var(--border-subtle);
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 2rem;
+    }
+
+    .profile-meta-cell {
+      background: var(--surface);
+      padding: 1rem;
+    }
+
+    .profile-meta-label {
+      font-size: 0.45rem; font-weight: 500;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-dim); margin-bottom: 0.3rem;
+    }
+
+    .profile-meta-value {
+      font-size: 1rem; font-weight: 300;
+      color: var(--text-primary); font-variant-numeric: tabular-nums;
+    }
+
+    /* -- Relationships Table -- */
+    .rel-table-wrap {
+      overflow-x: auto;
+    }
+
+    .rel-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.7rem;
+    }
+
+    .rel-table th {
+      font-size: 0.45rem; font-weight: 600;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--text-dim); text-align: left;
+      padding: 0.6rem 0.8rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .rel-table td {
+      padding: 0.6rem 0.8rem;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+      vertical-align: top;
+    }
+
+    .rel-table tr:last-child td { border-bottom: none; }
+
+    .rel-table .addr {
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      word-break: break-all;
+      max-width: 240px;
+    }
+
+    .rel-table .label-tag {
+      font-size: 0.5rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--accent-dim);
+      padding: 0.15rem 0.4rem;
+      display: inline-block;
+    }
+
+    /* -- Machine Readable -- */
+    .machine-link {
+      display: inline-block;
+      font-size: 0.65rem; font-weight: 500;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      border: 1px solid var(--accent-line);
+      padding: 0.6rem 1.2rem;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .machine-link:hover {
+      background: var(--accent);
+      color: var(--black);
+    }
+
+    /* -- Footer -- */
+    footer { padding: 2.5rem 0; }
+
+    .footer-inner {
+      display: flex; justify-content: space-between;
+      align-items: center; flex-wrap: wrap; gap: 1rem;
+    }
+
+    .footer-brand {
+      font-size: 0.55rem; letter-spacing: 0.15em;
+      text-transform: uppercase; color: var(--text-dim);
+    }
+
+    .footer-right { display: flex; gap: 1.5rem; align-items: center; }
+
+    .footer-right a {
+      font-size: 0.55rem; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text-dim);
+    }
+
+    .footer-clock {
+      font-size: 0.55rem; color: var(--text-dim);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* -- Completeness note -- */
+    .completeness-note {
+      font-family: var(--serif); font-size: 0.85rem;
+      color: var(--text-dim); font-style: italic;
+      line-height: 1.6; margin-top: 1rem;
+      max-width: 680px;
+    }
+
+    /* -- Loading state -- */
+    .loading-state {
+      text-align: center;
+      padding: 6rem 0;
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    /* -- Responsive -- */
+    @media (max-width: 640px) {
+      .data-grid { grid-template-columns: 1fr 1fr; }
+      .delta-grid { grid-template-columns: 1fr 1fr; }
+      .profile-meta { grid-template-columns: 1fr 1fr; }
+      .container { padding: 0 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container header-inner">
+      <div class="brand"><a href="https://permanentupperclass.com">Permanent Upper Class</a></div>
+      <nav class="header-nav">
+        <a href="/">Validator</a>
+        <a href="/lens/">Lens</a>
+        <a href="/lens/audit.html" class="active">Audit</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container">
+      <div class="hero-eyebrow">Transparency</div>
+      <h1>Lens <em>Audit Surface</em></h1>
+      <p class="hero-subtitle">Transparency layer for chain analytics integrity. Every number on Lens is derived from verifiable chain data. This page documents what we index, how deep it goes, and when it last changed.</p>
+    </div>
+  </section>
+
+  <div id="auditContent" style="display:none;">
+
+    <!-- COVERAGE -->
+    <section class="audit-section">
+      <div class="container">
+        <div class="section-label">Coverage</div>
+        <p class="section-narrative">How deep our chain indexing reaches, compared to public infrastructure.</p>
+
+        <div class="data-grid">
+          <div class="data-cell">
+            <div class="data-label">Indexed Ledger Range</div>
+            <div class="data-value accent" id="indexedRange">--</div>
+          </div>
+          <div class="data-cell">
+            <div class="data-label">Node Ledger Range</div>
+            <div class="data-value" id="nodeRange">--</div>
+          </div>
+          <div class="data-cell">
+            <div class="data-label">Public Node Range</div>
+            <div class="data-value" id="publicRange">--</div>
+          </div>
+          <div class="data-cell">
+            <div class="data-label">Depth Advantage</div>
+            <div class="data-value green" id="depthAdvantage">--</div>
+          </div>
+          <div class="data-cell">
+            <div class="data-label">Connected Peers</div>
+            <div class="data-value" id="nodePeers">--</div>
+          </div>
+          <div class="data-cell">
+            <div class="data-label">Indexed Time Range</div>
+            <div class="data-value small" id="timeRange">--</div>
+          </div>
+        </div>
+
+        <div class="coverage-bar-wrapper">
+          <div class="coverage-bar-labels">
+            <span>Ledger 0</span>
+            <span>Latest</span>
+          </div>
+          <div class="coverage-bar-track">
+            <div class="coverage-bar-fill ours" id="coverageOurs" style="width:0%"></div>
+            <div class="coverage-bar-fill public" id="coveragePublic" style="width:0%"></div>
+          </div>
+          <div class="coverage-bar-legend">
+            <div class="coverage-legend-item">
+              <div class="coverage-legend-dot" style="background:var(--accent);"></div>
+              <span>Our indexed range</span>
+            </div>
+            <div class="coverage-legend-item">
+              <div class="coverage-legend-dot" style="background:var(--green);"></div>
+              <span>Public node range</span>
+            </div>
+          </div>
+        </div>
+
+        <p class="completeness-note" id="completenessNote">--</p>
+      </div>
+    </section>
+
+    <!-- FRESHNESS -->
+    <section class="audit-section">
+      <div class="container">
+        <div class="section-label">Freshness</div>
+        <p class="section-narrative">When the data was last regenerated and what changed.</p>
+
+        <div class="data-grid" style="margin-bottom:2rem;">
+          <div class="data-cell">
+            <div class="data-label">Last Updated</div>
+            <div class="data-value small" id="lastUpdated">--</div>
+            <div class="data-sub" id="lastUpdatedAgo">--</div>
+          </div>
+          <div class="data-cell">
+            <div class="data-label">Refresh Cadence</div>
+            <div class="data-value small" id="cadence">--</div>
+          </div>
+        </div>
+
+        <div class="section-label" style="margin-bottom:1rem;">Delta Since Last Update</div>
+        <div class="delta-grid">
+          <div class="delta-cell">
+            <div class="delta-label">Accounts</div>
+            <div class="delta-value" id="deltaAccounts">--</div>
+          </div>
+          <div class="delta-cell">
+            <div class="delta-label">Transactions</div>
+            <div class="delta-value" id="deltaTxns">--</div>
+          </div>
+          <div class="delta-cell">
+            <div class="delta-label">Edges</div>
+            <div class="delta-value" id="deltaEdges">--</div>
+          </div>
+          <div class="delta-cell">
+            <div class="delta-label">Memos</div>
+            <div class="delta-value" id="deltaMemos">--</div>
+          </div>
+        </div>
+
+        <a href="/lens/audit.json" class="machine-link" style="margin-top:0.5rem;">Machine-readable delta: /lens/audit.json</a>
+      </div>
+    </section>
+
+    <!-- METHODOLOGY -->
+    <section class="audit-section">
+      <div class="container">
+        <div class="section-label">Methodology</div>
+        <p class="section-narrative">How accounts are discovered, classified, and flagged.</p>
+
+        <div class="method-list" id="methodList">
+          <!-- populated dynamically -->
+        </div>
+      </div>
+    </section>
+
+    <!-- TOTALS -->
+    <section class="audit-section">
+      <div class="container">
+        <div class="section-label">Network Totals</div>
+        <p class="section-narrative">Aggregate counts from the current index.</p>
+
+        <div class="data-grid" id="totalsGrid">
+          <!-- populated dynamically -->
+        </div>
+      </div>
+    </section>
+
+    <!-- SAMPLE PROFILE -->
+    <section class="audit-section">
+      <div class="container">
+        <div class="section-label">Sample Profile</div>
+        <p class="section-narrative">One contributor record, shown in full, to demonstrate the depth of per-account data.</p>
+
+        <div class="profile-card">
+          <div class="profile-address" id="profileAddr">--</div>
+
+          <div class="profile-meta" id="profileMeta">
+            <!-- populated dynamically -->
+          </div>
+
+          <div class="section-label" style="margin-bottom:0.8rem;">Top Relationships</div>
+          <div class="rel-table-wrap">
+            <table class="rel-table">
+              <thead>
+                <tr>
+                  <th>Peer</th>
+                  <th>Label</th>
+                  <th>Transactions</th>
+                  <th>Memos</th>
+                </tr>
+              </thead>
+              <tbody id="relTableBody">
+                <!-- populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MACHINE READABLE -->
+    <section class="audit-section" style="border-bottom:none;">
+      <div class="container">
+        <div class="section-label">Machine-Readable Data</div>
+        <p class="section-narrative">Full audit payload available as structured JSON for programmatic consumption.</p>
+        <a href="/lens/audit.json" class="machine-link">/lens/audit.json</a>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="loading-state" id="loadingState">Loading audit data...</div>
+
+  <footer>
+    <div class="container footer-inner">
+      <div class="footer-brand"><a href="https://permanentupperclass.com">permanentupperclass.com</a></div>
+      <div class="footer-right">
+        <a href="https://permanentupperclass.com/brand-identity">Brand</a>
+        <a href="https://github.com/P-U-C">GitHub</a>
+        <div class="footer-clock" id="clock">--</div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+  (function() {
+    /* Clock */
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clock').textContent =
+        now.toISOString().slice(0, 19).replace('T', ' ') + ' UTC';
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    /* Helpers */
+    function fmt(n) {
+      if (n == null) return '--';
+      return Number(n).toLocaleString('en-US');
+    }
+
+    function fmtDelta(n) {
+      if (n == null) return { text: '--', cls: 'delta-zero' };
+      const num = Number(n);
+      if (num > 0) return { text: '+' + fmt(num), cls: 'delta-positive' };
+      if (num < 0) return { text: fmt(num), cls: 'delta-negative' };
+      return { text: '0', cls: 'delta-zero' };
+    }
+
+    function timeAgo(dateStr) {
+      const now = new Date();
+      const then = new Date(dateStr);
+      const diffMs = now - then;
+      const mins = Math.floor(diffMs / 60000);
+      if (mins < 1) return 'just now';
+      if (mins < 60) return mins + 'm ago';
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return hrs + 'h ' + (mins % 60) + 'm ago';
+      const days = Math.floor(hrs / 24);
+      return days + 'd ' + (hrs % 24) + 'h ago';
+    }
+
+    function shortDate(dateStr) {
+      if (!dateStr) return '--';
+      const d = new Date(dateStr);
+      return d.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
+    }
+
+    /* Fetch and render */
+    fetch('/lens/audit.json')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('auditContent').style.display = 'block';
+
+        var c = data.coverage || {};
+        var t = data.totals || {};
+        var d = data.deltas_since_last_update || {};
+        var m = data.methodology || {};
+        var sp = data.sample_profile || {};
+
+        /* -- Coverage -- */
+        document.getElementById('indexedRange').textContent = c.indexed_ledger_range || '--';
+        document.getElementById('nodeRange').textContent = c.node_ledger_range || '--';
+        document.getElementById('publicRange').textContent = c.public_node_range || '--';
+        document.getElementById('depthAdvantage').textContent = c.our_depth_advantage || '--';
+        document.getElementById('nodePeers').textContent = c.node_peers != null ? c.node_peers : '--';
+
+        if (c.indexed_time_range) {
+          document.getElementById('timeRange').textContent =
+            shortDate(c.indexed_time_range.from) + ' to ' + shortDate(c.indexed_time_range.to);
+        }
+
+        document.getElementById('completenessNote').textContent = c.completeness_note || '';
+
+        /* Coverage bar */
+        var nodeRange = (c.node_ledger_range || '').split('-').map(Number);
+        var publicStr = c.public_node_range || '';
+        var publicStart = parseInt(publicStr.replace(/[^0-9\-]/g, ''));
+
+        if (nodeRange.length === 2 && nodeRange[1] > 0) {
+          var total = nodeRange[1];
+          var indexedParts = (c.indexed_ledger_range || '').split('-').map(Number);
+
+          /* Our bar: from start to end of indexed range */
+          if (indexedParts.length === 2) {
+            var oursLeft = (indexedParts[0] / total) * 100;
+            var oursWidth = ((indexedParts[1] - indexedParts[0]) / total) * 100;
+            var oursEl = document.getElementById('coverageOurs');
+            oursEl.style.left = oursLeft + '%';
+            oursEl.style.width = oursWidth + '%';
+          }
+
+          /* Public bar: from public start to latest */
+          if (publicStart > 0) {
+            var pubLeft = (publicStart / total) * 100;
+            var pubWidth = 100 - pubLeft;
+            var pubEl = document.getElementById('coveragePublic');
+            pubEl.style.left = pubLeft + '%';
+            pubEl.style.width = pubWidth + '%';
+          }
+        }
+
+        /* -- Freshness -- */
+        document.getElementById('lastUpdated').textContent = shortDate(data.generated_at);
+        document.getElementById('lastUpdatedAgo').textContent = timeAgo(data.generated_at);
+        document.getElementById('cadence').textContent =
+          (data.refresh_cadence || 'hourly').charAt(0).toUpperCase() +
+          (data.refresh_cadence || 'hourly').slice(1);
+
+        /* Deltas */
+        var deltaFields = [
+          { id: 'deltaAccounts', key: 'accounts' },
+          { id: 'deltaTxns', key: 'transactions' },
+          { id: 'deltaEdges', key: 'edges' },
+          { id: 'deltaMemos', key: 'memos' }
+        ];
+        deltaFields.forEach(function(f) {
+          var result = fmtDelta(d[f.key]);
+          var el = document.getElementById(f.id);
+          el.textContent = result.text;
+          el.className = 'delta-value ' + result.cls;
+        });
+
+        /* -- Methodology -- */
+        var methodMap = [
+          { key: 'indexing', title: 'Indexing Approach' },
+          { key: 'classification', title: 'Classification (Human / Bot / Infrastructure)' },
+          { key: 'sybil_detection', title: 'Sybil Detection (4 Heuristics)' },
+          { key: 'bot_detection', title: 'Bot Detection' },
+          { key: 'data_source', title: 'Data Source' }
+        ];
+        var methodHtml = '';
+        methodMap.forEach(function(item) {
+          if (m[item.key]) {
+            methodHtml += '<div class="method-item">' +
+              '<div class="method-title">' + item.title + '</div>' +
+              '<div class="method-desc">' + m[item.key] + '</div>' +
+              '</div>';
+          }
+        });
+        document.getElementById('methodList').innerHTML = methodHtml;
+
+        /* -- Totals -- */
+        var totalFields = [
+          { key: 'accounts', label: 'Accounts' },
+          { key: 'transactions', label: 'Transactions' },
+          { key: 'edges', label: 'Edges' },
+          { key: 'memos', label: 'Memos' },
+          { key: 'bots_detected', label: 'Bots Detected' },
+          { key: 'infrastructure_wallets', label: 'Infrastructure' },
+          { key: 'sybil_clusters', label: 'Sybil Clusters' },
+          { key: 'sybil_flagged_addresses', label: 'Sybil-Flagged Addresses' }
+        ];
+        var totalsHtml = '';
+        totalFields.forEach(function(f) {
+          var val = t[f.key];
+          var cls = '';
+          if (f.key === 'bots_detected' || f.key === 'sybil_clusters' || f.key === 'sybil_flagged_addresses') cls = ' red';
+          totalsHtml += '<div class="data-cell">' +
+            '<div class="data-label">' + f.label + '</div>' +
+            '<div class="data-value' + cls + '">' + fmt(val) + '</div>' +
+            '</div>';
+        });
+        document.getElementById('totalsGrid').innerHTML = totalsHtml;
+
+        /* -- Sample Profile -- */
+        document.getElementById('profileAddr').textContent = sp.address || '--';
+
+        var metaFields = [
+          { key: 'balance_pft', label: 'Balance (PFT)', format: function(v) { return fmt(v); } },
+          { key: 'tx_count', label: 'Transactions', format: fmt },
+          { key: 'memo_count', label: 'Memos', format: fmt },
+          { key: 'first_activity', label: 'First Activity', format: shortDate },
+          { key: 'last_activity', label: 'Last Activity', format: shortDate }
+        ];
+        var metaHtml = '';
+        metaFields.forEach(function(f) {
+          var val = sp[f.key] != null ? f.format(sp[f.key]) : '--';
+          metaHtml += '<div class="profile-meta-cell">' +
+            '<div class="profile-meta-label">' + f.label + '</div>' +
+            '<div class="profile-meta-value">' + val + '</div>' +
+            '</div>';
+        });
+        document.getElementById('profileMeta').innerHTML = metaHtml;
+
+        /* Relationships table */
+        var rels = sp.relationships || [];
+        var relHtml = '';
+        rels.forEach(function(r) {
+          var labelCell = r.peer_label
+            ? '<span class="label-tag">' + r.peer_label + '</span>'
+            : '<span style="color:var(--text-dim);">--</span>';
+          relHtml += '<tr>' +
+            '<td class="addr">' + r.peer + '</td>' +
+            '<td>' + labelCell + '</td>' +
+            '<td>' + fmt(r.tx_count) + '</td>' +
+            '<td>' + fmt(r.memo_count) + '</td>' +
+            '</tr>';
+        });
+        document.getElementById('relTableBody').innerHTML = relHtml;
+
+      })
+      .catch(function(err) {
+        document.getElementById('loadingState').textContent =
+          'Failed to load audit data. Ensure /lens/audit.json is available.';
+        console.error('Audit fetch error:', err);
+      });
+  })();
+  </script>
+</body>
+</html>
