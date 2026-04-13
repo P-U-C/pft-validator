@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SUBS — Post Fiat Service Marketplace</title>
+  <style>
+    :root {
+      --bg: #0a0a0a; --surface: #111; --near-black: #0d0d0d;
+      --text: #e8e6e1; --text-secondary: #c4c0b8; --text-dim: #6b6860; --text-muted: #8a867e;
+      --accent: #dbb85c; --green: #5eea96; --red: #e85454; --purple: #8b5cf6;
+      --border-subtle: #1a1a1a;
+      --mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      --serif: 'Iowan Old Style', 'Palatino Linotype', 'Georgia', serif;
+      --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.6; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code { font-family: var(--mono); font-size: 0.85em; color: var(--accent); background: var(--surface); padding: 0.15em 0.4em; border-radius: 3px; }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 0 2rem; }
+
+    /* Header */
+    .header { border-bottom: 1px solid var(--border-subtle); padding: 1.2rem 0; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; }
+    .header-brand { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.08em; color: var(--accent); }
+    .header-brand span { color: var(--text-dim); font-weight: 400; font-size: 0.7rem; margin-left: 0.5rem; }
+    .header-nav { display: flex; gap: 1.5rem; }
+    .header-nav a { font-size: 0.65rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); }
+    .header-nav a:hover, .header-nav a.active { color: var(--accent); text-decoration: none; }
+
+    /* Hero */
+    .hero { padding: 4rem 0 3rem; text-align: center; border-bottom: 1px solid var(--border-subtle); }
+    .hero h1 { font-size: 2.2rem; font-weight: 300; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+    .hero h1 strong { font-weight: 700; color: var(--accent); }
+    .hero p { font-family: var(--serif); font-style: italic; color: var(--text-muted); max-width: 600px; margin: 0 auto; font-size: 0.95rem; }
+
+    /* Protocol stats */
+    .protocol-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; padding: 2rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .stat-card { text-align: center; padding: 1rem; }
+    .stat-value { font-size: 1.5rem; font-weight: 700; font-family: var(--mono); }
+    .stat-value.accent { color: var(--accent); }
+    .stat-value.green { color: var(--green); }
+    .stat-value.purple { color: var(--purple); }
+    .stat-label { font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-top: 0.3rem; }
+
+    /* Service cards */
+    .services-section { padding: 3rem 0; }
+    .section-title { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 2rem; }
+    .service-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+    .service-card { background: var(--near-black); border: 1px solid var(--border-subtle); padding: 2rem; position: relative; transition: border-color 0.2s; }
+    .service-card:hover { border-color: var(--accent); }
+    .service-status { position: absolute; top: 1.2rem; right: 1.2rem; font-size: 0.45rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.2rem 0.6rem; border: 1px solid; }
+    .service-status.active { color: var(--green); border-color: var(--green); }
+    .service-status.paused { color: var(--accent); border-color: var(--accent); }
+    .service-status.retired { color: var(--red); border-color: var(--red); }
+    .service-name { font-size: 1.2rem; font-weight: 600; color: var(--accent); margin-bottom: 0.3rem; }
+    .service-provider { font-size: 0.6rem; color: var(--text-dim); margin-bottom: 0.8rem; }
+    .service-desc { font-family: var(--serif); font-style: italic; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.2rem; line-height: 1.5; }
+    .service-pricing { display: flex; gap: 2rem; align-items: baseline; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-subtle); }
+    .service-price { font-size: 1.8rem; font-weight: 700; color: var(--green); font-family: var(--mono); }
+    .service-price-unit { font-size: 0.6rem; color: var(--text-dim); }
+    .service-subs { font-size: 1.2rem; font-weight: 600; color: var(--text-secondary); font-family: var(--mono); }
+    .service-subs-unit { font-size: 0.6rem; color: var(--text-dim); }
+    .feature-list { list-style: none; margin-bottom: 1rem; }
+    .feature-list li { font-size: 0.75rem; color: var(--text-secondary); padding: 0.25rem 0; }
+    .feature-list li::before { content: "\2713 "; color: var(--green); font-weight: 600; }
+    .free-features { border-top: 1px solid var(--border-subtle); padding-top: 0.8rem; margin-top: 0.5rem; }
+    .free-features li::before { content: "\25CB "; color: var(--text-dim); }
+    .subscribe-hint { font-size: 0.6rem; color: var(--text-dim); margin-top: 1rem; padding: 0.8rem; background: var(--surface); text-align: center; }
+
+    /* How it works */
+    .how-section { padding: 3rem 0; border-top: 1px solid var(--border-subtle); }
+    .how-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+    .how-step { padding: 1.5rem; background: var(--near-black); border: 1px solid var(--border-subtle); }
+    .how-num { font-size: 2rem; font-weight: 700; color: var(--accent); font-family: var(--mono); opacity: 0.3; }
+    .how-title { font-size: 0.75rem; font-weight: 600; margin: 0.5rem 0 0.3rem; }
+    .how-text { font-size: 0.7rem; color: var(--text-muted); }
+
+    /* Protocol info */
+    .protocol-section { padding: 3rem 0; border-top: 1px solid var(--border-subtle); }
+    .protocol-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
+    .protocol-item { font-size: 0.7rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border-subtle); }
+    .protocol-key { color: var(--text-dim); font-size: 0.55rem; letter-spacing: 0.08em; text-transform: uppercase; }
+    .protocol-val { color: var(--text-secondary); font-family: var(--mono); font-size: 0.7rem; margin-top: 0.2rem; word-break: break-all; }
+
+    /* Footer */
+    .footer { padding: 2rem 0; border-top: 1px solid var(--border-subtle); text-align: center; }
+    .footer-links { display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; }
+    .footer-links a { font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 1.5rem; }
+      .protocol-detail { grid-template-columns: 1fr; }
+      .service-pricing { flex-direction: column; gap: 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="container header-inner">
+      <div class="header-brand">SUBS<span>Post Fiat Service Marketplace</span></div>
+      <nav class="header-nav">
+        <a href="/">Validator</a>
+        <a href="/lens/">Lens</a>
+        <a href="/subs/" class="active">SUBS</a>
+        <a href="/lens/audit.html">Audit</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container">
+      <h1>On-Chain <strong>Subscriptions</strong></h1>
+      <p>Pay in PFT. Verify on-chain. No accounts, no intermediaries. The ledger is the subscription database.</p>
+    </div>
+  </section>
+
+  <div class="container">
+    <div class="protocol-stats" id="protocolStats">
+      <div class="stat-card">
+        <div class="stat-value accent" id="statServices">--</div>
+        <div class="stat-label">Services</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value green" id="statSubscribers">--</div>
+        <div class="stat-label">Active Subscribers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value purple" id="statRevenue">--</div>
+        <div class="stat-label">30d Volume (PFT)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statFee" style="color:var(--text-secondary);">2.5%</div>
+        <div class="stat-label">Protocol Fee</div>
+      </div>
+    </div>
+  </div>
+
+  <section class="services-section">
+    <div class="container">
+      <div class="section-title">Available Services</div>
+      <div class="service-grid" id="serviceGrid">
+        <div style="text-align:center;color:var(--text-dim);padding:3rem;grid-column:1/-1;">Loading services...</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="how-section">
+    <div class="container">
+      <div class="section-title">How It Works</div>
+      <div class="how-grid">
+        <div class="how-step">
+          <div class="how-num">1</div>
+          <div class="how-title">Browse</div>
+          <div class="how-text">Send <code>/services</code> to the SUBS bot or browse this page. Each service lists features, price, and period.</div>
+        </div>
+        <div class="how-step">
+          <div class="how-num">2</div>
+          <div class="how-title">Subscribe</div>
+          <div class="how-text">Send PFT to the SUBS protocol address with memo <code>subs.subscribe</code> and the service ID. One transaction.</div>
+        </div>
+        <div class="how-step">
+          <div class="how-num">3</div>
+          <div class="how-title">Access</div>
+          <div class="how-text">The service verifies your subscription on-chain. No passwords, no API keys. Your payment IS your credential.</div>
+        </div>
+        <div class="how-step">
+          <div class="how-num">4</div>
+          <div class="how-title">Cancel</div>
+          <div class="how-text">Stop paying. When your period expires, access ends. No forms, no emails, no retention dark patterns.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="protocol-section">
+    <div class="container">
+      <div class="section-title">Protocol Details</div>
+      <div class="protocol-detail" id="protocolDetail">
+        <div class="protocol-item">
+          <div class="protocol-key">Protocol Address</div>
+          <div class="protocol-val" id="protoAddr">--</div>
+        </div>
+        <div class="protocol-item">
+          <div class="protocol-key">Fee Model</div>
+          <div class="protocol-val">2.5% of each subscription, deducted from provider share</div>
+        </div>
+        <div class="protocol-item">
+          <div class="protocol-key">Memo Type (Subscribe)</div>
+          <div class="protocol-val">subs.subscribe</div>
+        </div>
+        <div class="protocol-item">
+          <div class="protocol-key">Memo Type (Forward)</div>
+          <div class="protocol-val">subs.forward</div>
+        </div>
+        <div class="protocol-item">
+          <div class="protocol-key">Verification</div>
+          <div class="protocol-val">7-condition canonical chain query</div>
+        </div>
+        <div class="protocol-item">
+          <div class="protocol-key">Cancellation</div>
+          <div class="protocol-val">Non-renewal (stop paying)</div>
+        </div>
+        <div class="protocol-item">
+          <div class="protocol-key">Payment Semantics</div>
+          <div class="protocol-val">One payment = one period. Overpayment does not extend.</div>
+        </div>
+        <div class="protocol-item">
+          <div class="protocol-key">Rounding</div>
+          <div class="protocol-val">floor(amount x fee_bps / 10000)</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="how-section">
+    <div class="container">
+      <div class="section-title">For Service Providers</div>
+      <div class="how-grid">
+        <div class="how-step">
+          <div class="how-num">+</div>
+          <div class="how-title">List Free</div>
+          <div class="how-text">No registration fee. Send a <code>subs.register</code> memo with your service details. You earn from subscribers, not from us.</div>
+        </div>
+        <div class="how-step">
+          <div class="how-num">$</div>
+          <div class="how-title">Earn PFT</div>
+          <div class="how-text">97.5% of each subscription payment is forwarded to your address. The protocol retains 2.5% for infrastructure.</div>
+        </div>
+        <div class="how-step">
+          <div class="how-num">?</div>
+          <div class="how-title">Verify Easily</div>
+          <div class="how-text">Import <code>subs-verify.ts</code> and call one function to check if a wallet is subscribed. Three lines of code.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-links">
+        <a href="/lens/subs.json">subs.json</a>
+        <a href="https://github.com/P-U-C/pft-validator/blob/main/subs-protocol.md">Protocol Spec</a>
+        <a href="https://github.com/P-U-C/pft-validator/tree/main/subs">Source Code</a>
+        <a href="/lens/">Lens Dashboard</a>
+        <a href="/lens/health.json">Health API</a>
+      </div>
+      <div style="margin-top:1rem;font-size:0.5rem;color:var(--text-dim);">
+        SUBS Protocol v1.0.0 &mdash; Permanent Upper Class
+      </div>
+    </div>
+  </footer>
+
+  <script>
+  (function() {
+    fetch('/lens/subs.json')
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(data) {
+        if (!data) return;
+
+        // Stats
+        document.getElementById('statServices').textContent = data.stats.total_services;
+        document.getElementById('statSubscribers').textContent = data.stats.total_active_subscriptions;
+        document.getElementById('statRevenue').textContent = data.stats.total_revenue_30d_pft.toLocaleString();
+        document.getElementById('protoAddr').textContent = data.protocol_address;
+
+        // Services
+        var grid = document.getElementById('serviceGrid');
+        var services = data.services || [];
+        if (services.length === 0) {
+          grid.innerHTML = '<div style="text-align:center;color:var(--text-dim);padding:3rem;grid-column:1/-1;">No services registered yet. Be the first.</div>';
+          return;
+        }
+
+        grid.innerHTML = services.map(function(svc) {
+          var features = (svc.features || []).map(function(f) {
+            return '<li>' + f + '</li>';
+          }).join('');
+          var freeFeatures = (svc.free_features || []).map(function(f) {
+            return '<li>' + f + '</li>';
+          }).join('');
+
+          return '<div class="service-card">'
+            + '<div class="service-status ' + svc.status + '">' + svc.status + '</div>'
+            + '<div class="service-name">' + svc.name + '</div>'
+            + '<div class="service-provider">by ' + (svc.provider || 'unknown') + '</div>'
+            + '<div class="service-desc">' + svc.description + '</div>'
+            + '<div class="service-pricing">'
+            + '  <div><span class="service-price">' + svc.price_pft + '</span> <span class="service-price-unit">PFT / ' + svc.period_days + ' days</span></div>'
+            + '  <div><span class="service-subs">' + (svc.subscribers_active || 0) + '</span> <span class="service-subs-unit">subscribers</span></div>'
+            + '</div>'
+            + (features ? '<ul class="feature-list">' + features + '</ul>' : '')
+            + (freeFeatures ? '<ul class="feature-list free-features">' + freeFeatures + '</ul>' : '')
+            + '<div class="subscribe-hint">Send <code>/subscribe ' + svc.service_id + '</code> with ' + svc.price_pft + ' PFT to <code>' + data.protocol_address.substring(0, 12) + '...</code></div>'
+            + '</div>';
+        }).join('');
+      })
+      .catch(function(err) {
+        console.error('Failed to load subs.json:', err);
+      });
+  })();
+  </script>
+
+  <noscript>
+    <div style="max-width:600px;margin:3rem auto;padding:2rem;text-align:center;color:var(--text-dim);">
+      <p>SUBS requires JavaScript to load service data from subs.json.</p>
+      <p><a href="/lens/subs.json">View raw registry data</a></p>
+    </div>
+  </noscript>
+
+</body>
+</html>
