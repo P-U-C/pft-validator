@@ -660,6 +660,7 @@
         <a href="/">Validator</a>
         <a href="/lens/" class="active">Lens</a>
         <a href="/lens/audit.html">Audit</a>
+        <a href="#subs" onclick="document.querySelector('.subs-section').scrollIntoView({behavior:'smooth'});return false;">SUBS</a>
       </nav>
     </div>
   </header>
@@ -879,6 +880,27 @@
           <div class="health-value" id="healthUpdated" style="font-size:1rem;">--</div>
           <div class="health-sub" id="healthUpdatedSub">--</div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="subs-section reveal" style="padding:4rem 0;border-bottom:1px solid var(--border-subtle);">
+    <div class="container">
+      <div class="section-label">SUBS — Service Marketplace</div>
+      <div class="section-narrative">
+        On-chain subscription protocol. Contributors list paid services, subscribers pay in PFT, entitlement verified by chain query. 2.5% protocol fee, services list free.
+      </div>
+      <div id="subsServices" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;margin-top:1.5rem;">
+        <div style="text-align:center;color:var(--text-dim);padding:2rem;">Loading services...</div>
+      </div>
+      <div style="margin-top:1.5rem;text-align:center;">
+        <span style="font-size:0.5rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);">
+          Send <code style="color:var(--accent);">/services</code> to the bot to browse &mdash;
+          <code style="color:var(--accent);">/subscribe &lt;id&gt;</code> with PFT to activate
+        </span>
+        <br><a href="/lens/subs.json" style="font-size:0.5rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);text-decoration:none;margin-top:0.5rem;display:inline-block;">subs.json</a>
+        &nbsp;&middot;&nbsp;
+        <a href="https://github.com/P-U-C/pft-validator/blob/main/subs-protocol.md" style="font-size:0.5rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);text-decoration:none;">protocol spec</a>
       </div>
     </div>
   </section>
@@ -1910,6 +1932,41 @@
               + '<div style="font-size:0.45rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);">' + c.label + '</div>'
               + '<div style="font-size:0.75rem;color:var(--accent);margin:0.3rem 0;font-family:var(--mono);">' + c.value + '</div>'
               + '<div style="font-size:0.5rem;color:var(--text-muted);font-family:var(--serif);font-style:italic;">' + c.sub + '</div>'
+              + '</div>';
+          }).join('');
+        }).catch(function() {});
+
+      // Load SUBS registry
+      fetch('/lens/subs.json')
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(s) {
+          if (!s) return;
+          var el = document.getElementById('subsServices');
+          if (!el) return;
+          var services = s.services || [];
+          if (services.length === 0) {
+            el.innerHTML = '<div style="text-align:center;color:var(--text-dim);padding:2rem;">No services registered yet.</div>';
+            return;
+          }
+          el.innerHTML = services.map(function(svc) {
+            var statusColor = svc.status === 'active' ? 'var(--green)' : (svc.status === 'paused' ? 'var(--accent)' : 'var(--red)');
+            var features = (svc.features || []).slice(0, 3).map(function(f) {
+              return '<div style="font-size:0.5rem;color:var(--text-muted);padding:0.15rem 0;">&bull; ' + f + '</div>';
+            }).join('');
+            var freeFeatures = (svc.free_features || []).map(function(f) {
+              return '<div style="font-size:0.45rem;color:var(--text-dim);padding:0.1rem 0;">&bull; ' + f + ' (free)</div>';
+            }).join('');
+            return '<div style="background:var(--near-black);border:1px solid var(--border-subtle);padding:1.5rem;position:relative;">'
+              + '<div style="position:absolute;top:1rem;right:1rem;font-size:0.45rem;letter-spacing:0.08em;text-transform:uppercase;color:' + statusColor + ';border:1px solid ' + statusColor + ';padding:0.2rem 0.5rem;">' + svc.status + '</div>'
+              + '<div style="font-size:0.9rem;color:var(--accent);font-weight:600;">' + svc.name + '</div>'
+              + '<div style="font-size:0.55rem;color:var(--text-secondary);margin:0.3rem 0 0.8rem;">' + svc.description + '</div>'
+              + '<div style="display:flex;gap:1.5rem;margin-bottom:0.8rem;">'
+              + '<div><span style="font-size:1rem;color:var(--green);font-weight:600;">' + svc.price_pft + '</span><span style="font-size:0.5rem;color:var(--text-dim);"> PFT/' + svc.period_days + 'd</span></div>'
+              + '<div><span style="font-size:1rem;color:var(--text-secondary);">' + (svc.subscribers_active || 0) + '</span><span style="font-size:0.5rem;color:var(--text-dim);"> subscribers</span></div>'
+              + '</div>'
+              + features
+              + (freeFeatures ? '<div style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border-subtle);">' + freeFeatures + '</div>' : '')
+              + '<div style="margin-top:0.8rem;font-size:0.45rem;color:var(--text-dim);">Send <code style="color:var(--accent);">/subscribe ' + svc.service_id + '</code> with ' + svc.price_pft + ' PFT to the bot</div>'
               + '</div>';
           }).join('');
         }).catch(function() {});
