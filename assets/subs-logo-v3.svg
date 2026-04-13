@@ -1,21 +1,52 @@
 <svg width="100%" viewBox="0 0 680 690" xmlns="http://www.w3.org/2000/svg">
-<title style="fill:rgb(0, 0, 0);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">PFT SUBS logo — full size</title>
-<desc style="fill:rgb(0, 0, 0);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">SUBS subscription protocol logo on black</desc>
+<title style="fill:rgb(0, 0, 0);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">PFT SUBS logo</title>
+<desc style="fill:rgb(0, 0, 0);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">SUBS subscription protocol logo</desc>
 <rect width="680" height="680" fill="#000000" style="fill:rgb(0, 0, 0);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
 
-<!-- Input dot -->
-<circle cx="430" cy="170" r="7" fill="#5EEA96" style="fill:rgb(94, 234, 150);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+<!--
+  v6 bounds (with dot radii):
+  Left: 216.5, Right: 350, Top: 185, Bottom: 458.5
+  Content center: x=283.25, y=321.75
+  
+  Scale to fit width AND height with equal padding:
+  Content w=133.5, h=273.5
+  Aspect ratio of content: 133.5/273.5 = 0.488
+  Canvas is square 680x680
+  
+  Height-limited: scale = (680-120)/273.5 = 2.048, scaled w = 273.4
+  Width-limited: scale = (680-120)/133.5 = 4.19 — too big
+  
+  Use height scale 2.048.
+  Scaled content width: 273.4 — centered in 680 means (680-273.4)/2 = 203.3 padding each side
+  
+  To center: canvas center (340,340) = content center scaled
+  tx = 340 - 283.25*2.048 = -240.2
+  ty = 340 - 321.75*2.048 = -319.3
+  
+  That IS centered. The issue is the S path itself isn't symmetric —
+  the right side (input dot at x=345) extends further right than the 
+  left side (output dots at x=220) extends left from the S midpoint.
+  
+  The visual center of the S curves themselves is around x=310.
+  Let me use the visual center of just the S stroke: x range ~220 to ~400
+  Visual center x = 310, y = 310
+  
+  tx = 340 - 310*2.048 = 340 - 635 = -295
+  ty = 340 - 310*2.048 = 340 - 635 = -295
+-->
+<g transform="translate(-295,-295) scale(2.048)" style="fill:rgb(0, 0, 0);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">
 
-<!-- The S — scaled up, proper orientation -->
-<path d="M430,170 C310,170 240,200 240,275 C240,340 340,355 340,355 C340,355 440,370 440,435 C440,500 370,530 250,530" fill="none" stroke="#5EEA96" stroke-width="8" stroke-linecap="round" style="fill:none;stroke:rgb(94, 234, 150);color:rgb(0, 0, 0);stroke-width:8px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <circle cx="345" cy="190" r="3.8" fill="#5EEA96" style="fill:rgb(94, 234, 150);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
 
-<!-- Output fan from bottom-left terminal -->
-<path d="M250,530 L180,495" fill="none" stroke="#5EEA96" stroke-width="7" stroke-linecap="round" style="fill:none;stroke:rgb(94, 234, 150);color:rgb(0, 0, 0);stroke-width:7px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
-<path d="M250,530 L172,530" fill="none" stroke="#5EEA96" stroke-width="7" stroke-linecap="round" style="fill:none;stroke:rgb(94, 234, 150);color:rgb(0, 0, 0);stroke-width:7px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
-<path d="M250,530 L180,565" fill="none" stroke="#5EEA96" stroke-width="7" stroke-linecap="round" style="fill:none;stroke:rgb(94, 234, 150);color:rgb(0, 0, 0);stroke-width:7px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <path d="M345,190 C265,190 220,210 220,255 C220,300 310,310 310,310 C310,310 400,320 400,365 C400,410 355,430 275,430" fill="none" stroke="#5EEA96" stroke-width="3.6" stroke-linecap="round" style="fill:none;stroke:rgb(94, 234, 150);color:rgb(0, 0, 0);stroke-width:3.6px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
 
-<!-- Output dots -->
-<circle cx="180" cy="495" r="5" fill="#5EEA96" style="fill:rgb(94, 234, 150);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
-<circle cx="172" cy="530" r="5" fill="#5EEA96" style="fill:rgb(94, 234, 150);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
-<circle cx="180" cy="565" r="5" fill="#5EEA96" style="fill:rgb(94, 234, 150);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <path d="M275,430 L225,405" fill="none" stroke="#5EEA96" stroke-width="3" stroke-linecap="round" style="fill:none;stroke:rgb(94, 234, 150);color:rgb(0, 0, 0);stroke-width:3px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <path d="M275,430 L220,430" fill="none" stroke="#5EEA96" stroke-width="3" stroke-linecap="round" style="fill:none;stroke:rgb(94, 234, 150);color:rgb(0, 0, 0);stroke-width:3px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <path d="M275,430 L225,455" fill="none" stroke="#5EEA96" stroke-width="3" stroke-linecap="round" style="fill:none;stroke:rgb(94, 234, 150);color:rgb(0, 0, 0);stroke-width:3px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <circle cx="225" cy="405" r="2.4" fill="#5EEA96" style="fill:rgb(94, 234, 150);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <circle cx="220" cy="430" r="2.4" fill="#5EEA96" style="fill:rgb(94, 234, 150);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <circle cx="225" cy="455" r="2.4" fill="#5EEA96" style="fill:rgb(94, 234, 150);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+</g>
 </svg>
