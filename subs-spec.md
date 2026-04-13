@@ -1,14 +1,18 @@
-# SUBS — On-Chain Subscription Protocol for Post Fiat
+# SUBS — Monetization and Coordination Rail for the Post Fiat Contributor Economy
 
 ## Overview
 
-SUBS is a composable subscription layer for the PFTL chain. Any service provider registers an address and price. Any user subscribes by sending PFT. Any service verifies by querying the chain. No accounts, no APIs, no intermediaries. The ledger is the subscription database.
+SUBS is the billing primitive underneath the Post Fiat service economy. It turns PFT from a reward token into a working unit of account for on-chain services, with subscription state derived from ledger activity instead of app-side accounts.
+
+The protocol is deliberately thin: subscription = payment, verification = chain query, cancellation = inaction. Everything else — discovery, UX, bundling — is layered on top without modifying the core primitive.
+
+The first service built on SUBS is **Alpha Terminal**: a paid decision layer for maximizing PFT yield per hour of contributor effort.
 
 ---
 
 ## Protocol Design
 
-### Subscription = Payment
+### Core Primitive: Subscription = Payment
 
 A subscription is a standard XRPL Payment transaction with a structured memo:
 
@@ -23,11 +27,21 @@ Transaction: Payment
   }]
 ```
 
-That's it. One transaction. The subscriber is now active for that service's billing period.
+One transaction. The subscriber is now active for that service's billing period.
 
-### Verification = Chain Query
+### Canonical Verification Rule
 
-Any service checks subscription status with one query against the chain index:
+A subscription is active if and only if ALL of the following are true:
+
+| Condition | Field | Operator | Value |
+|-----------|-------|----------|-------|
+| Correct destination | `destination` | `=` | service address |
+| Correct subscriber | `account` | `=` | subscriber address |
+| Correct memo type | `memo_type` | `=` | `subs.subscribe` |
+| Correct service | `memo_data_preview` | `LIKE` | `%<service_id>%` |
+| Sufficient payment | `amount_drops` | `>=` | service minimum price (drops) |
+| Successful transaction | `tx_type` | `=` | `Payment` |
+| Within billing period | `timestamp_iso` | `>` | `now - period_days` |
 
 ```sql
 SELECT COUNT(*) > 0 as is_active
@@ -35,25 +49,51 @@ FROM transactions
 WHERE destination = :service_address
   AND account = :subscriber_address
   AND memo_type = 'subs.subscribe'
+  AND memo_data_preview LIKE '%' || :service_id || '%'
   AND CAST(amount_drops AS INTEGER) >= :min_price_drops
-  AND timestamp_iso > datetime('now', :period)
+  AND tx_type = 'Payment'
+  AND timestamp_iso > datetime('now', :period_clause)
 ```
 
-Returns `true` if the subscriber has paid at least the minimum price within the billing period. Deterministic, replayable, no API call needed.
+All seven conditions must match. A payment to the same address without the correct `service_id` in the memo does not grant access.
+
+### Payment Semantics
+
+- **One qualifying payment buys one period.** A payment of 500 PFT for a 30-day service grants 30 days from the payment timestamp.
+- **Overpayment does not extend duration.** Sending 1,500 PFT still buys one 30-day period. (Accrual mode is a future extension, not v1.)
+- **Early renewal resets the window.** If a subscriber pays again before expiry, the new period starts from the new payment timestamp. The remaining days from the prior payment are forfeited. (Stacking is a future extension.)
+- **Multiple payments within a period are idempotent** for access purposes. The subscriber is active if any qualifying payment exists within the rolling window.
 
 ### Cancellation = Inaction
 
 Stop paying. When the billing period expires, verification returns `false`. No unsubscribe flow, no forms, no retention dark patterns.
 
-### Renewal = Re-payment
+### Freshness Model
 
-Send the same transaction again. The verification query checks the rolling window, so any payment within the period keeps the subscription active.
+- **Registry and export** (`subs.json`) updates hourly via the existing indexer pipeline.
+- **Entitlement checks** in the bot use the chain index, which is refreshed hourly. Activation lag is up to 60 minutes after payment.
+- **Live-chain fallback**: For time-sensitive verification, services may query the node's `account_tx` RPC directly to check for recent subscription payments not yet indexed. The bot implements this fallback for immediate activation.
+- **All UI and bot responses must disclose freshness**: "Data as of {last_indexed_at}."
+
+---
+
+## Authority Model
+
+The chain and registry serve different roles:
+
+| Layer | Authoritative For | Trust Basis |
+|-------|-------------------|-------------|
+| **Chain (ledger)** | Payment truth — who paid whom, when, how much | Consensus, immutable |
+| **Registry (`subs.json`)** | Discovery metadata — service names, descriptions, features | Signed by registry publisher |
+| **Bot** | UX convenience — commands, formatting, alerts | Client of the above |
+
+If the registry disappears, subscriptions still work via direct chain queries. If the bot goes offline, subscriptions still work via direct chain queries. The protocol is the memo/payment convention plus the verification rule. Everything else is a client.
 
 ---
 
 ## Service Registry
 
-A public JSON file (`subs.json`) hosted on GitHub Pages alongside the Lens feeds. This is the canonical directory of available services on the network.
+A public JSON file (`subs.json`) hosted on GitHub Pages. Informational for discovery. The chain remains authoritative for payment state.
 
 ### Registry Schema
 
@@ -61,145 +101,170 @@ A public JSON file (`subs.json`) hosted on GitHub Pages alongside the Lens feeds
 {
   "schema_version": "1.0.0",
   "updated_at": "2026-04-13T02:00:00Z",
-  "registry_address": "<SUBS registry address>",
+  "publisher": "Permanent Upper Class",
+  "publisher_address": "rsS2Y6CK9dz9dVFjJvRyD2gBdoLPqjaXRZ",
   "services": [
     {
       "service_id": "alpha",
-      "name": "Task Alpha",
-      "description": "AI co-pilot for PFT task completion. Task analysis, timing signals, earnings optimizer.",
+      "name": "Alpha Terminal",
+      "description": "AI-powered decision layer for maximizing PFT earnings. Task analysis, timing signals, competition heatmap, earnings optimizer.",
       "provider": "Permanent Upper Class",
-      "address": "r3hH6UNw1eVQYiXbDVoarp2kN6JKyTYveT",
+      "provider_address": "rsS2Y6CK9dz9dVFjJvRyD2gBdoLPqjaXRZ",
+      "service_address": "r3hH6UNw1eVQYiXbDVoarp2kN6JKyTYveT",
       "price_pft": 500,
       "period_days": 30,
-      "tier": "premium",
       "features": [
-        "AI task analysis and drafting",
-        "Personal earnings profile",
-        "Optimal submission timing",
-        "Network competition alerts",
-        "Leaderboard access"
+        "Task EV ranking and probability-of-acceptance estimate",
+        "Competition density heatmap by hour",
+        "Personal earnings analytics and win-rate dashboard",
+        "Network timing alerts (low competition, high reward cycles)",
+        "AI-assisted task drafting"
       ],
       "free_features": [
         "Basic rank lookup",
         "Network status"
       ],
       "status": "active",
+      "verified": true,
       "registered_at": "2026-04-13T00:00:00Z",
-      "subscribers": 0,
-      "memo_type": "subs.subscribe",
-      "memo_data": "alpha"
+      "subscribers_active": 0,
+      "revenue_30d_pft": 0
     }
   ],
+  "bundles": [],
   "protocol": {
-    "memo_type": "subs.subscribe",
-    "memo_data_format": "<service_id>",
-    "payment_currency": "PFT (drops, 1 PFT = 1,000,000 drops)",
-    "verification_method": "chain_query",
-    "cancellation": "non-renewal"
+    "memo_type_subscribe": "subs.subscribe",
+    "memo_type_register": "subs.register",
+    "memo_data_format": "service_id (plain text, no delimiters)",
+    "payment_currency": "PFT (1 PFT = 1,000,000 drops)",
+    "verification_method": "canonical_chain_query",
+    "cancellation": "non-renewal",
+    "overpayment": "does_not_extend_period",
+    "early_renewal": "resets_window",
+    "activation_lag": "up_to_60_minutes_or_live_fallback"
   }
 }
 ```
 
 ### Service Registration (via Bot)
 
-All registration happens through the SUBS bot on-chain. Send a memo to the bot address:
+All registration happens through the SUBS bot. Send a Payment to the bot address with:
 
 ```
 MemoType:  "subs.register"
-MemoData:  "<service_id>:<name>:<price_pft>:<period_days>:<description>"
-Amount:    100 PFT (registration fee, prevents spam)
+MemoData:  JSON payload (hex-encoded)
+Amount:    100 PFT (registration fee)
 ```
 
-The bot confirms registration by replying on-chain with the service details. The service is immediately live in the registry.
-
-**Bot commands for registration:**
+Registration payload (JSON in memo data):
+```json
+{
+  "id": "myservice",
+  "name": "My Service",
+  "price": 200,
+  "period": 30,
+  "description": "What this service does"
+}
 ```
-/register <service_id> <price> <period_days> <description>
-```
 
-The bot validates the input, charges the 100 PFT registration fee from the incoming payment, and adds the service to the registry. All on-chain.
+Using JSON instead of delimited text avoids parsing ambiguity. The bot validates the payload, confirms registration on-chain, and adds the service to the next registry export.
+
+**Uniqueness**: `service_id` must be unique across the registry. Multiple services per provider address are allowed — the `memo_data` match on `service_id` ensures correct routing.
 
 ---
 
 ## Verification Library
 
-A lightweight module that any PFTL service can import to check subscriptions.
+Drop-in module for any PFTL service to check subscriptions.
 
-### TypeScript (for bots/services on Node.js)
+### TypeScript
 
 ```typescript
 // subs-verify.ts
 
 interface SubsConfig {
-  dbPath: string;          // path to chain-index.db
-  serviceAddress: string;  // your service's XRPL address
-  serviceId: string;       // your service_id in the registry
-  pricePft: number;        // minimum payment in PFT
-  periodDays: number;      // billing period
+  serviceAddress: string;
+  serviceId: string;
+  pricePft: number;
+  periodDays: number;
 }
 
 interface SubsStatus {
   active: boolean;
   subscriber: string;
-  lastPayment: string | null;     // ISO timestamp
-  lastAmount: number | null;      // PFT
-  expiresAt: string | null;       // ISO timestamp
-  totalPaid: number;              // lifetime PFT
-  subscriptionCount: number;      // number of payments
+  lastPayment: string | null;
+  lastAmount: number | null;
+  expiresAt: string | null;
+  totalPaid: number;
+  subscriptionCount: number;
+  verifiedAt: string;
+  freshnessNote: string;
 }
 
 function checkSubscription(
   db: Database,
   config: SubsConfig,
-  subscriberAddress: string
+  subscriberAddress: string,
 ): SubsStatus {
   const periodClause = `-${config.periodDays} days`;
   const minDrops = config.pricePft * 1_000_000;
+  const verifiedAt = new Date().toISOString();
 
-  // Find most recent qualifying payment
+  // Canonical verification: all 7 conditions
+  const active = db.prepare(`
+    SELECT COUNT(*) as c FROM transactions
+    WHERE destination = ?
+      AND account = ?
+      AND memo_type = 'subs.subscribe'
+      AND memo_data_preview LIKE '%' || ? || '%'
+      AND CAST(amount_drops AS INTEGER) >= ?
+      AND tx_type = 'Payment'
+      AND timestamp_iso > datetime('now', ?)
+  `).get(
+    config.serviceAddress, subscriberAddress,
+    config.serviceId, minDrops, periodClause
+  );
+
+  // Most recent qualifying payment
   const latest = db.prepare(`
     SELECT timestamp_iso, CAST(amount_drops AS INTEGER) as amount_drops
     FROM transactions
-    WHERE destination = ?
-      AND account = ?
+    WHERE destination = ? AND account = ?
       AND memo_type = 'subs.subscribe'
+      AND memo_data_preview LIKE '%' || ? || '%'
       AND CAST(amount_drops AS INTEGER) >= ?
-    ORDER BY timestamp_iso DESC
-    LIMIT 1
-  `).get(config.serviceAddress, subscriberAddress, minDrops);
-
-  // Check if within billing period
-  const activePayment = db.prepare(`
-    SELECT COUNT(*) as c
-    FROM transactions
-    WHERE destination = ?
-      AND account = ?
-      AND memo_type = 'subs.subscribe'
-      AND CAST(amount_drops AS INTEGER) >= ?
-      AND timestamp_iso > datetime('now', ?)
-  `).get(config.serviceAddress, subscriberAddress, minDrops, periodClause);
+      AND tx_type = 'Payment'
+    ORDER BY timestamp_iso DESC LIMIT 1
+  `).get(
+    config.serviceAddress, subscriberAddress,
+    config.serviceId, minDrops
+  );
 
   // Lifetime stats
   const lifetime = db.prepare(`
     SELECT COUNT(*) as payments,
-           SUM(CAST(amount_drops AS INTEGER)) as total_drops
+           COALESCE(SUM(CAST(amount_drops AS INTEGER)), 0) as total_drops
     FROM transactions
-    WHERE destination = ?
-      AND account = ?
+    WHERE destination = ? AND account = ?
       AND memo_type = 'subs.subscribe'
-  `).get(config.serviceAddress, subscriberAddress);
+      AND memo_data_preview LIKE '%' || ? || '%'
+  `).get(config.serviceAddress, subscriberAddress, config.serviceId);
 
-  const isActive = (activePayment?.c ?? 0) > 0;
+  const isActive = (active?.c ?? 0) > 0;
   const lastTs = latest?.timestamp_iso ?? null;
   const lastAmt = latest ? latest.amount_drops / 1_000_000 : null;
 
-  // Calculate expiry
   let expiresAt = null;
   if (lastTs) {
     const expiry = new Date(lastTs);
     expiry.setDate(expiry.getDate() + config.periodDays);
     expiresAt = expiry.toISOString();
   }
+
+  // Freshness: when was the index last updated?
+  const lastCrawl = db.prepare(
+    "SELECT value FROM crawl_state WHERE key = 'last_crawl_at'"
+  ).get();
 
   return {
     active: isActive,
@@ -209,61 +274,85 @@ function checkSubscription(
     expiresAt,
     totalPaid: (lifetime?.total_drops ?? 0) / 1_000_000,
     subscriptionCount: lifetime?.payments ?? 0,
+    verifiedAt,
+    freshnessNote: `Index as of ${lastCrawl?.value ?? 'unknown'}`,
   };
 }
 ```
 
-### Python (for API services)
+### Python
 
 ```python
-def check_subscription(db, service_address, subscriber, price_pft, period_days):
+def check_subscription(db, service_address, service_id, subscriber, price_pft, period_days):
+    """Canonical SUBS verification. Returns True if subscriber is active."""
     min_drops = price_pft * 1_000_000
     row = db.execute("""
         SELECT COUNT(*) as c FROM transactions
         WHERE destination = ? AND account = ?
         AND memo_type = 'subs.subscribe'
+        AND memo_data_preview LIKE '%' || ? || '%'
         AND CAST(amount_drops AS INTEGER) >= ?
+        AND tx_type = 'Payment'
         AND timestamp_iso > datetime('now', ?)
-    """, (service_address, subscriber, min_drops, f'-{period_days} days')).fetchone()
+    """, (service_address, subscriber, service_id,
+          min_drops, f'-{period_days} days')).fetchone()
     return row['c'] > 0
 ```
 
-Three lines. Any Python service can verify subscriptions.
-
-### Shell (one-liner for scripts)
+### Shell
 
 ```bash
-# Check if $USER_ADDR is subscribed to $SERVICE_ADDR (500 PFT / 30 days)
 sqlite3 ~/.pf-scout/chain-index.db \
   "SELECT COUNT(*)>0 FROM transactions \
    WHERE destination='$SERVICE_ADDR' AND account='$USER_ADDR' \
    AND memo_type='subs.subscribe' \
+   AND memo_data_preview LIKE '%$SERVICE_ID%' \
    AND CAST(amount_drops AS INTEGER)>=500000000 \
+   AND tx_type='Payment' \
    AND timestamp_iso > datetime('now','-30 days')"
 ```
 
 ---
 
+## Signed Entitlement Receipts
+
+After verification, services may generate a short-lived receipt for downstream systems to consume without repeated DB reads:
+
+```json
+{
+  "subscriber": "rsS2Y6CK9dz9...",
+  "service_id": "alpha",
+  "verified_at": "2026-04-13T02:15:00Z",
+  "expires_at": "2026-05-13T00:00:00Z",
+  "last_tx_hash": "A1B2C3D4...",
+  "receipt_valid_until": "2026-04-13T03:15:00Z",
+  "signature": "<service provider signs with their XRPL key>"
+}
+```
+
+Receipts are a caching optimization, not a trust replacement. The chain remains authoritative. Receipt validity should be short (1 hour) to limit stale-state risk.
+
+---
+
 ## Bot Interface
 
-The SUBS bot is the primary interface for everything — subscribing, registering, managing, and discovering services. All interactions happen on-chain via memos to the bot address.
+The bot is the primary UX client. It is not the protocol — it is one client of the protocol. If the bot dies, the protocol still functions via direct chain queries and any alternative client.
 
-### User Commands (send as memo to bot)
+### User Commands
 
 ```
-/services                        → List all available services
+/services                        → List all available services with prices
 /subscribe <service_id>          → Subscribe (send with required PFT amount)
 /status                          → Your active subscriptions + expiry dates
 /status <service_id>             → Check specific subscription status
-/cancel <service_id>             → Reminder of expiry (no action needed — just stop paying)
 ```
 
 ### Provider Commands
 
 ```
-/register <id> <price> <period> <description>   → Register new service (send 100 PFT)
-/dashboard                                       → Your service stats: subscribers, revenue
-/update <service_id> <field> <value>             → Update service details
+/register                        → Register a new service (send 100 PFT + JSON memo)
+/dashboard                       → Your service stats: active subs, revenue, churn
+/update <service_id>             → Update service metadata
 ```
 
 ### Example Interaction
@@ -273,8 +362,8 @@ Contributor → Bot:  /services
 Bot → Contributor:  
   SUBS — 2 services available:
   
-  1. alpha | Task Alpha | 500 PFT/30d
-     AI co-pilot for PFT task completion
+  1. alpha | Alpha Terminal | 500 PFT/30d
+     AI decision layer for PFT earnings
      3 subscribers | by Permanent Upper Class
   
   2. alerts | Network Alerts | 200 PFT/30d
@@ -285,62 +374,98 @@ Bot → Contributor:
 
 Contributor → Bot:  /subscribe alpha  [+ 500 PFT payment]
 Bot → Contributor:
-  Subscribed to Task Alpha.
+  Subscribed to Alpha Terminal.
   Active until: 2026-05-13
-  Features unlocked: task analysis, timing signals, leaderboard
-```
-
-### Dashboard Page (subs.html)
-
-A static read-only page on GitHub Pages for public visibility. Shows the service directory, subscriber counts, and protocol documentation. Not interactive — the bot handles all actions.
-
-```
-┌─────────────────────────────────────────────────────────┐
-│  SUBS — Post Fiat Service Marketplace                    │
-├─────────────────────────────────────────────────────────┤
-│                                                          │
-│  How it works:                                           │
-│  1. Message the SUBS bot: r3hH6UNw1eVQ...               │
-│  2. Send /services to browse                             │
-│  3. Send /subscribe <id> with PFT payment               │
-│  4. Done. Your subscription is on-chain.                 │
-│                                                          │
-│  Services:                                               │
-│  ┌─────────────────────────────────────────────┐        │
-│  │  Task Alpha                    500 PFT/mo   │        │
-│  │  3 subscribers │ 1,500 PFT revenue          │        │
-│  └─────────────────────────────────────────────┘        │
-│                                                          │
-│  Protocol:                                               │
-│  Verification: deterministic chain query                 │
-│  Cancellation: non-renewal                               │
-│  Registry: subs.json (machine-readable)                  │
-│                                                          │
-└─────────────────────────────────────────────────────────┘
+  Features unlocked: task EV ranking, competition heatmap,
+    earnings analytics, timing alerts, AI drafting
+  
+  Data as of: 2026-04-13T02:00:00Z
 ```
 
 ---
 
-## Indexer Integration
+## Bundle Primitives
 
-The existing hourly indexer pipeline needs one addition: detect `subs.subscribe` and `subs.register` memo types.
+Cross-service bundling is supported from v1 via the registry:
 
-### Changes to crawler.ts
-
-The memo parser already extracts `memoType` and `memoData`. No changes needed to indexing — these transactions are already stored in the `transactions` table.
-
-### New export: export-subs.sh
-
-Added to the hourly cron pipeline:
-
+```json
+{
+  "bundle_id": "contributor_pro",
+  "name": "Contributor Pro Bundle",
+  "included_service_ids": ["alpha", "alerts"],
+  "individual_total_pft": 700,
+  "bundle_price_pft": 550,
+  "bundle_discount_bps": 2143,
+  "period_days": 30,
+  "proof_rule": "subscriber must have active subs.subscribe for each included service_id within the bundle period"
+}
 ```
-crawl → classify → sybil → export audit → export graph → export health → export auth → export subs
+
+Services can check each other's subscribers via cross-service queries. A bundle discount is verified by confirming the subscriber holds active subscriptions to all included services.
+
+---
+
+## Earnings Uplift Tracking
+
+The most powerful marketing surface for SUBS services: provable performance data.
+
+```json
+{
+  "service_id": "alpha",
+  "uplift_metrics": {
+    "period": "30d",
+    "subscriber_cohort_size": 12,
+    "non_subscriber_cohort_size": 41,
+    "metrics": {
+      "median_pft_per_submission": {
+        "subscribers": 3200,
+        "non_subscribers": 2450,
+        "uplift_pct": 30.6
+      },
+      "completion_rate": {
+        "subscribers": 0.48,
+        "non_subscribers": 0.39,
+        "uplift_pct": 23.1
+      },
+      "tasks_completed_30d": {
+        "subscribers": 18,
+        "non_subscribers": 14,
+        "uplift_pct": 28.6
+      }
+    },
+    "methodology": "cohort comparison of subscribers vs non-subscribers on identical time window. No self-selection correction in v1.",
+    "caveat": "Uplift may reflect subscriber self-selection (higher-performing contributors more likely to subscribe). Causal claims require controlled comparison."
+  }
+}
 ```
 
-Generates `subs.json` with:
-- Service registry (static config + on-chain registrations)
-- Per-service subscriber counts and revenue (from chain queries)
-- Protocol metadata
+This is included in `subs.json` once subscriber cohorts are large enough (minimum 5 subscribers for statistical relevance). The caveat is mandatory — honest reporting builds trust faster than inflated claims.
+
+---
+
+## Decision Trace Schema
+
+How an address becomes a subscriber or is denied service:
+
+```json
+{
+  "decision_trace_schema": {
+    "inputs": ["destination", "account", "memo_type", "memo_data", "amount_drops", "tx_type", "timestamp_iso"],
+    "verification_rules_in_order": [
+      "match_destination",
+      "match_subscriber",
+      "match_memo_type_subs_subscribe",
+      "match_service_id_in_memo_data",
+      "meet_minimum_payment",
+      "transaction_type_is_payment",
+      "within_billing_period"
+    ],
+    "grant_condition": "ALL seven rules pass",
+    "deny_condition": "ANY rule fails",
+    "freshness_fallback": "if index stale >60min, check live node account_tx"
+  }
+}
+```
 
 ---
 
@@ -348,70 +473,71 @@ Generates `subs.json` with:
 
 | Phase | What | Time | Output |
 |-------|------|------|--------|
-| 1 | Verification library (TS + Python) | 2h | `subs-verify.ts`, `subs_verify.py` |
-| 2 | Bot command router — /services, /subscribe, /status, /register, /dashboard | 4h | SUBS bot handles all interactions on-chain |
-| 3 | `export-subs.sh` — registry + subscriber stats from chain data | 2h | `subs.json` on GitHub Pages |
-| 4 | `subs.html` — read-only public directory page | 2h | Static dashboard |
-| 5 | Alpha Bot (first SUBS service) — task analysis + timing gated by subscription | 4h | Premium features behind /subscribe alpha |
+| 1 | Verification library (`subs-verify.ts`) + canonical query | 2h | Drop-in module for bot |
+| 2 | Bot command router — /services, /subscribe, /status, /register, /dashboard | 4h | Bot handles all SUBS interactions on-chain |
+| 3 | `export-subs.sh` — registry + subscriber stats + uplift metrics | 2h | `subs.json` on GitHub Pages |
+| 4 | `subs.html` — read-only public directory + protocol docs | 2h | Static page for review |
+| 5 | Alpha Terminal (first service) — task EV, timing, earnings, AI drafting | 4h | Premium features gated by /subscribe alpha |
 
-**Total: ~14 hours. SUBS platform (phases 1-4): ~10 hours. Alpha as first service (phase 5): ~4 hours.**
-
-Everything runs through the bot. The dashboard is a read-only window into the registry for public visibility and review.
+**Total: ~14 hours. SUBS platform (phases 1-4): ~10 hours. Alpha Terminal (phase 5): ~4 hours.**
 
 ---
 
 ## Protocol Properties
 
-### Why this works on PFTL specifically
+### Why PFTL specifically
 
-1. **Memos are native**. XRPL/PFTL has first-class memo support on every transaction. No smart contracts needed.
+1. **Memos are native**. XRPL has first-class memo support on every transaction. No smart contracts needed.
 2. **Chain index exists**. We already index every transaction hourly. Subscription verification is just another query.
 3. **PFT is the unit of account**. Services price in PFT, subscribers pay in PFT, revenue stays in the ecosystem.
-4. **Full history available**. Our archive node means subscription verification works retroactively — we can see every payment ever made.
+4. **Full history available**. Our archive node means verification works retroactively.
 
 ### What makes it composable
 
-- **Cross-service queries**: Service A can check if a user is subscribed to Service B. Enables bundles, loyalty tiers, partner discounts.
-- **On-chain proof**: Subscription status is publicly verifiable. A service can prove its subscriber count without trust.
-- **No vendor lock-in**: Any service can verify subscriptions independently using the chain. If our indexer goes down, anyone with a node can verify.
-- **Permissionless registration**: Anyone can register a service. The registry is a convenience layer, not a gatekeeper.
+- **Cross-service queries**: Service A can check if a user subscribes to Service B.
+- **On-chain proof**: Subscriber counts are publicly verifiable.
+- **No vendor lock-in**: Any node operator can verify subscriptions independently.
+- **Permissionless registration**: Anyone can register a service via the bot.
 
-### Trust model
+### Resilience
 
-- **Subscribers trust the chain**, not the service provider. Payment is on-chain, verification is deterministic.
-- **Services trust the chain**, not subscribers. No fake subscriptions, no chargebacks, no stolen credentials.
-- **The registry is informational**, not authoritative. Even if `subs.json` disappeared, subscriptions would still work via direct chain queries.
+- **Bot goes offline?** Subscriptions still work. Anyone with a node runs the canonical query.
+- **Registry disappears?** Subscriptions still work. The chain has all payment data.
+- **Indexer stops?** Subscriptions still work via direct `account_tx` RPC against any node.
+- **Our node goes down?** Any PFTL node can serve the same data.
 
 ---
 
-## Future Extensions (not building now)
+## Future Extensions (documented, deferred)
 
-- **Tiered subscriptions**: Multiple price points per service (free/basic/premium)
+- **Tiered subscriptions**: Multiple price points per service (free/basic/premium) via different `service_id` suffixes
+- **Accrual mode**: Overpayment extends duration (opt-in per service)
+- **Stacking renewals**: Early renewal adds to remaining days instead of resetting
 - **Trial periods**: First N days free, tracked by first-seen timestamp
-- **Referral credits**: Memo field `subs.subscribe:alpha:ref:rsS2Y6...` — referrer gets a credit
+- **Referral credits**: Memo field `subs.subscribe:alpha:ref:rsS2Y6...`
 - **Usage-based billing**: Pay-per-query instead of flat monthly
-- **DAO governance**: Service registry managed by PFT holders voting on-chain
-- **Subscription NFTs**: Mint an NFT as proof of active subscription (XRPL has native NFTs)
+- **Subscription NFTs**: Mint an NFT as proof of active subscription
 
-These are documented but explicitly deferred. The protocol is designed to accommodate them without breaking changes.
+These are designed to be additive — they extend the memo data format without breaking existing verification queries.
 
 ---
 
 ## The Bigger Picture
 
-SUBS turns Post Fiat from a task-reward network into a **service economy**.
+SUBS is the billing rail for a closed-loop contributor economy.
 
-Right now: Task Node → proposes work → contributors complete → earn PFT → hold or sell.
+```
+Tasks pay contributors in PFT
+    → contributors spend PFT on services that improve task performance
+        → service providers earn PFT from subscribers
+            → service providers reinvest into the network
+                → more services → more reasons to hold PFT → more network value
+```
 
-With SUBS: Task Node → proposes work → contributors complete → earn PFT → **spend PFT on services that help them earn more PFT**.
+That is a flywheel, not a SaaS feature.
 
-The circular economy:
-1. Contributors earn PFT from tasks
-2. They spend PFT on services (Alpha, analytics, alerts, AI tools)
-3. Service providers earn PFT from subscribers
-4. Service providers are also contributors who earn from tasks
-5. More services → more reasons to hold PFT → more network value
+The first killer app is **Alpha Terminal**: a premium contributor edge product that measurably improves PFT earnings. SUBS handles payment and entitlement. Alpha Terminal is the product with teeth.
 
-SUBS is the plumbing that makes PFT useful beyond "task completion token." It becomes the currency of an on-chain service marketplace.
+The endgame is the **Contributor Operating System**: task sourcing, drafting assistance, competition analysis, earnings optimization, reputation building, collaborator matching — all paid in PFT, all verified on-chain, all composable.
 
-**The one-liner**: "Stripe for crypto services, but the blockchain is the database and PFT is the only currency."
+**The one-liner**: "The monetization and coordination rail for turning contributors into operators and operators into businesses."
