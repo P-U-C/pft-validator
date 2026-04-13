@@ -13,11 +13,111 @@
 
 SUBS defines a subscription primitive for the Post Fiat network that lets pseudonymous contributors list paid services, accept PFT-denominated subscriptions, and expose deterministic entitlement checks — all using native XRPL memo fields. No smart contracts, no external infrastructure, no identity layer.
 
-This document specifies the protocol layer only: schemas, state machines, event payloads, entitlement resolution, and implementation handoff interfaces. It is designed so that indexer, API, and client implementers can ship against stable interfaces without inventing bespoke payment logic.
+All subscription payments route through the SUBS protocol address. The protocol takes a 2.5% fee and forwards the remainder to the service provider. This creates a self-sustaining economic model: services list for free, revenue scales with usage, and the protocol funds itself from the value it facilitates.
+
+This document specifies the protocol layer only: schemas, state machines, event payloads, payment routing, entitlement resolution, and implementation handoff interfaces. It is designed so that indexer, API, and client implementers can ship against stable interfaces without inventing bespoke payment logic.
 
 ---
 
-## 2. Schemas
+## 2. Protocol Economics
+
+### 2.1 Payment Routing
+
+All subscription payments flow through the **SUBS protocol address** as a settlement layer. Subscribers never pay the service provider directly.
+
+```
+Subscriber ──── 500 PFT ────► SUBS Protocol Address
+                                    │
+                                    ├── 12.5 PFT (2.5%) ──► SUBS Treasury
+                                    │
+                                    └── 487.5 PFT (97.5%) ──► Service Provider
+```
+
+**Subscription transaction (from subscriber):**
+
+```
+Transaction: Payment
+  Account:     <subscriber address>
+  Destination: <SUBS protocol address>
+  Amount:      <service price in drops>
+  Memos: [{
+    MemoType:  "subs.subscribe"          (hex-encoded)
+    MemoData:  "<service_id>"            (hex-encoded)
+  }]
+```
+
+**Forwarding transaction (from SUBS protocol to service provider):**
+
+```
+Transaction: Payment
+  Account:     <SUBS protocol address>
+  Destination: <service provider address>
+  Amount:      <97.5% of subscription payment>
+  Memos: [{
+    MemoType:  "subs.forward"            (hex-encoded)
+    MemoData:  "<service_id>:<original_tx_hash>"  (hex-encoded)
+  }]
+```
+
+One transaction from the subscriber. Two on-chain records (subscription + forwarding). Fully auditable.
+
+### 2.2 Protocol Fee
+
+| Parameter | Value |
+|-----------|-------|
+| Fee rate | 2.5% |
+| Rounding | Down to nearest drop |
+| Deducted from | Service provider's share (subscriber pays advertised price) |
+| Treasury address | Published in `subs.json` |
+| Fee visibility | Exposed in registry, verifiable on-chain |
+
+**The fee is not added to the subscriber's price.** A service priced at 500 PFT costs the subscriber exactly 500 PFT. The provider receives 487.5 PFT. The protocol retains 12.5 PFT.
+
+### 2.3 Revenue Model
+
+Services list for free. The protocol earns only when services have paying subscribers. Revenue scales with ecosystem usage:
+
+| Scenario | Services | Avg Subscribers | Avg Price | Monthly Volume | Protocol Revenue (2.5%) |
+|----------|----------|-----------------|-----------|----------------|------------------------|
+| Launch | 1 | 5 | 500 PFT | 2,500 PFT | 62.5 PFT |
+| Early growth | 5 | 10 | 400 PFT | 20,000 PFT | 500 PFT |
+| Established | 20 | 25 | 500 PFT | 250,000 PFT | 6,250 PFT |
+| At scale | 100 | 50 | 500 PFT | 2,500,000 PFT | 62,500 PFT |
+
+**Why services accept 2.5%:**
+- Free to list (no registration fee)
+- SUBS handles payment routing, verification, discovery, subscriber management
+- 2.5% is lower than any traditional payment processor or app store
+- Services get access to composable subscriber infrastructure
+- The protocol does their billing for them
+
+### 2.4 On-Chain Auditability
+
+Every fee is verifiable:
+
+```sql
+-- Protocol revenue for a given period
+SELECT SUM(CAST(amount_drops AS INTEGER)) / 1000000 as protocol_revenue_pft
+FROM transactions
+WHERE account = :subs_protocol_address
+  AND destination = :subs_treasury_address
+  AND memo_type = 'subs.fee'
+  AND timestamp_iso > datetime('now', '-30 days');
+
+-- Verify fee rate on any subscription
+SELECT
+  sub.amount_drops as subscriber_paid,
+  fwd.amount_drops as provider_received,
+  sub.amount_drops - fwd.amount_drops as protocol_fee,
+  ROUND((sub.amount_drops - fwd.amount_drops) * 100.0 / sub.amount_drops, 2) as fee_pct
+FROM transactions sub
+JOIN transactions fwd ON fwd.memo_data_preview LIKE '%' || sub.tx_hash || '%'
+WHERE sub.tx_hash = :subscription_tx_hash;
+```
+
+---
+
+## 3. Schemas
 
 ### 2.1 `service_offer` Schema
 
@@ -30,7 +130,7 @@ A service offer describes a paid service available for subscription on the netwo
   "name": "string — human-readable service name, max 64 chars",
   "description": "string — what the service provides, max 256 chars",
   "provider_address": "string — XRPL address of the service provider",
-  "service_address": "string — XRPL address that receives subscription payments",
+  "service_address": "string — XRPL address that receives forwarded payments (97.5% of subscription)",
   "price_drops": "integer — minimum payment in drops (1 PFT = 1,000,000 drops)",
   "price_pft": "number — price in PFT (derived: price_drops / 1,000,000)",
   "period_seconds": "integer — billing period duration in seconds",
@@ -154,13 +254,15 @@ A Payment transaction qualifies as a subscription event if and only if ALL condi
 
 | # | Condition | Field | Operator | Value |
 |---|-----------|-------|----------|-------|
-| 1 | Correct destination | `destination` | `=` | `service_offer.service_address` |
+| 1 | Routed through protocol | `destination` | `=` | SUBS protocol address |
 | 2 | Correct subscriber | `account` | `=` | subscriber's XRPL address |
 | 3 | Subscription memo type | `memo_type` | `=` | `subs.subscribe` |
 | 4 | Correct service ID | `memo_data` | `contains` | `service_offer.service_id` |
 | 5 | Sufficient payment | `amount_drops` | `>=` | `service_offer.price_drops` |
 | 6 | Valid transaction type | `tx_type` | `=` | `Payment` |
 | 7 | Transaction succeeded | `meta.TransactionResult` | `=` | `tesSUCCESS` |
+
+Note: Condition 1 checks the SUBS protocol address, not the service provider address. All subscription payments route through the protocol for fee settlement.
 
 ### 3.4 Payment Semantics
 
@@ -295,7 +397,7 @@ FUNCTION resolve_entitlement(subscriber, service_offer, data_source):
   STEPS:
 
   1. QUERY data_source for the most recent transaction matching ALL of:
-       destination     = service_offer.service_address
+       destination     = subs_protocol_address
        account         = subscriber
        memo_type       = "subs.subscribe"
        memo_data       CONTAINS service_offer.service_id
@@ -355,7 +457,7 @@ SELECT CASE
   ELSE 0
 END as entitled
 FROM transactions
-WHERE destination = :service_address
+WHERE destination = :subs_protocol_address
   AND account = :subscriber
   AND memo_type = 'subs.subscribe'
   AND memo_data_preview LIKE '%' || :service_id || '%'
@@ -378,7 +480,7 @@ SELECT
     ELSE 'expired'
   END as state
 FROM transactions
-WHERE destination = :service_address
+WHERE destination = :subs_protocol_address
   AND account = :subscriber
   AND memo_type = 'subs.subscribe'
   AND memo_data_preview LIKE '%' || :service_id || '%'
@@ -394,13 +496,13 @@ LIMIT 1;
 
 ### 6.1 Registration Transaction
 
-A service provider registers by sending a Payment to the SUBS bot address:
+A service provider registers by sending a memo to the SUBS protocol address. Registration is free — the protocol earns from subscriber fees, not provider fees.
 
 ```
 Transaction: Payment
   Account:     <provider address>
-  Destination: <SUBS bot address>
-  Amount:      100,000,000 drops (100 PFT registration fee)
+  Destination: <SUBS protocol address>
+  Amount:      1,000,000 drops (1 PFT — minimum to carry memo, not a fee)
   Memos: [{
     MemoType:  "subs.register"                    (hex-encoded)
     MemoData:  <JSON payload>                     (hex-encoded)
@@ -433,7 +535,7 @@ Compact keys to fit within XRPL memo size limits. The bot validates, confirms on
 | `period` range | `>= 1` and `<= 365` days |
 | `name` length | 1-64 characters |
 | `desc` length | 1-256 characters |
-| Payment amount | `>= 100 PFT` |
+| Payment amount | `>= 1 PFT` (minimum to carry memo) |
 
 ### 6.4 Service Lifecycle States
 
@@ -479,12 +581,12 @@ At this point, the contributor's subscription state for `alpha` is:
 
 ### Step 2: Subscribe
 
-Contributor sends a Payment transaction:
+Contributor sends a Payment transaction to the SUBS protocol address:
 
 ```
 Transaction: Payment
   Account:     rContrib123...
-  Destination: r3hH6UNw1eVQYiXbDVoarp2kN6JKyTYveT
+  Destination: <SUBS protocol address>
   Amount:      500000000 (500 PFT)
   Memos: [{
     MemoType:  7375622e737562736372696265    ("subs.subscribe" hex)
@@ -496,6 +598,25 @@ TxHash: AAA111...
 Timestamp: 2026-04-13T10:00:00Z
 ```
 
+**SUBS protocol processes the payment:**
+
+```
+1. Receive 500 PFT from rContrib123...
+2. Compute fee: floor(500,000,000 × 0.025) = 12,500,000 drops (12.5 PFT)
+3. Forward to provider: 500,000,000 - 12,500,000 = 487,500,000 drops (487.5 PFT)
+
+Transaction: Payment (forwarding)
+  Account:     <SUBS protocol address>
+  Destination: r3hH6UNw1eVQYiXbDVoarp2kN6JKyTYveT  (Alpha Terminal provider)
+  Amount:      487500000 (487.5 PFT)
+  Memos: [{
+    MemoType:  "subs.forward"
+    MemoData:  "alpha:AAA111..."
+  }]
+
+Protocol retains: 12.5 PFT
+```
+
 **Event detected by indexer:**
 
 ```json
@@ -504,7 +625,10 @@ Timestamp: 2026-04-13T10:00:00Z
   "service_id": "alpha",
   "subscriber": "rContrib123...",
   "amount_pft": 500,
+  "protocol_fee_pft": 12.5,
+  "provider_received_pft": 487.5,
   "tx_hash": "AAA111...",
+  "forward_tx_hash": "AAA112...",
   "period_started_at": "2026-04-13T10:00:00Z",
   "period_expires_at": "2026-05-13T10:00:00Z",
   "previous_state": "inactive",
@@ -691,7 +815,7 @@ The chain indexer must detect and store SUBS-related transactions. The existing 
 -- All subscription payments for a service
 SELECT account, timestamp_iso, amount_drops, tx_hash, memo_data_preview
 FROM transactions
-WHERE destination = :service_address
+WHERE destination = :subs_protocol_address
   AND memo_type = 'subs.subscribe'
   AND tx_type = 'Payment'
 ORDER BY timestamp_iso DESC;
@@ -861,20 +985,28 @@ All extensions are designed to be additive — they do not modify the core verif
 │                     SUBS Protocol v1.0.0                         │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  SUBSCRIBE:  Payment + memo_type="subs.subscribe"               │
+│  SUBSCRIBE:  Payment to SUBS protocol address                    │
+│              + memo_type="subs.subscribe"                        │
 │              + memo_data="<service_id>"                          │
 │              + amount >= service price                            │
 │                                                                  │
+│  ROUTING:    Protocol retains 2.5% fee                           │
+│              Forwards 97.5% to service provider                  │
+│              Both transactions on-chain, auditable                │
+│                                                                  │
 │  VERIFY:     7-condition canonical chain query                   │
-│              (destination, subscriber, memo_type, memo_data,     │
+│              (protocol_addr, subscriber, memo_type, memo_data,   │
 │               amount, tx_type, time_window)                      │
 │                                                                  │
 │  CANCEL:     Stop paying. Period expires. Done.                  │
 │                                                                  │
 │  REGISTER:   Payment + memo_type="subs.register"                │
-│              + memo_data=JSON + 100 PFT fee                     │
+│              + memo_data=JSON (free to list)                     │
 │                                                                  │
 │  STATES:     inactive → active → expiring → expired → (renew)   │
+│                                                                  │
+│  ECONOMICS:  Services list free. Revenue from usage.             │
+│              Protocol scales with ecosystem growth.               │
 │                                                                  │
 │  TRUST:      Chain is authoritative. Everything else is a client.│
 │                                                                  │
