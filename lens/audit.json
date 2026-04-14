@@ -1,39 +1,39 @@
 {
-  "schema_version": "2.1.0",
+  "schema_version": "2.0.0",
   "methodology_version": "2.1.0",
   "classification_ruleset_version": "1.2.0",
   "sybil_ruleset_version": "1.1.0",
-  "generated_at": "2026-04-14T18:00:02.145Z",
+  "generated_at": "2026-04-14T19:00:02.108Z",
   "refresh_cadence": "hourly",
   "coverage": {
-    "node_ledger_range": "1921523-1927163",
+    "node_ledger_range": "567889-1928360",
     "node_peers": 10,
-    "indexed_ledger_range": "571858-1926688",
+    "indexed_ledger_range": "567949-1928226",
     "indexed_time_range": {
-      "from": "2026-02-26T11:36:52Z",
-      "to": "2026-04-14T17:39:31Z"
+      "from": "2026-02-26T08:34:10.000Z",
+      "to": "2026-04-14T18:53:30.000Z"
     },
     "public_node_range": "1750054-latest (~90K ledgers)",
-    "our_depth_advantage": "1,178,196 additional ledgers",
+    "our_depth_advantage": "1,182,105 additional ledgers",
     "completeness_note": "Deepest node on Post Fiat testnet. Backfill ongoing."
   },
   "totals": {
     "accounts": 846,
-    "transactions": 369981,
-    "edges": 2914,
-    "memos": 8270,
-    "bots_detected": 728,
+    "transactions": 370062,
+    "edges": 2915,
+    "memos": 8340,
+    "bots_detected": 729,
     "infrastructure_wallets": 7,
     "sybil_clusters": 3,
     "sybil_flagged_addresses": 70,
-    "humans": 111
+    "humans": 110
   },
   "deltas_since_last_update": {
     "summary": {
-      "accounts": 671,
-      "transactions": 339158,
+      "accounts": 0,
+      "transactions": 81,
       "edges": 1254,
-      "memos": 27
+      "memos": 70
     },
     "completeness_window_changed": false,
     "methodology_version_changed": false
@@ -173,16 +173,5 @@
       "tx_gte_memo": true,
       "first_lte_last": true
     }
-  },
-  "superseded_by": {
-    "case_id": "CASE-001-SYBIL-SUPERSESSION",
-    "url": "https://pft.permanentupperclass.com/forensics/",
-    "reason": "Deep crawl from botfather revealed 712 high-confidence bot wallets (previously reported: 73). The 73-count was directionally correct but numerically understated by ~10x.",
-    "corrected_bot_count_high_confidence": 712,
-    "corrected_bot_count_medium_confidence": 738,
-    "corrected_bot_count_low_confidence": 764,
-    "supersession_date": "2026-04-14T17:50:00Z",
-    "previous_bot_count": 73
-  },
-  "report_version": "2.1.0"
+  }
 }
