@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Hive Herald — Archive</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;800;900&family=UnifrakturMaguntia&family=Lora:ital,wght@0,400;0,600;1,400&family=IM+Fell+English:ital@0;1&display=swap');
+  :root { --paper: #f4e8cd; --ink: #1a1209; --ink-light: #3a2a15; --ink-faded: #6b5a42; --rule: #2a1f0e; --rule-light: #a08c6a; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #2c2417; display: flex; justify-content: center; padding: 40px 20px; min-height: 100vh; }
+  .newspaper { background: var(--paper); width: 100%; max-width: 800px; padding: 30px 40px 50px;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.05), 0 4px 20px rgba(0,0,0,0.3), inset 0 0 80px rgba(139,109,62,0.15); }
+  .masthead { text-align: center; padding: 18px 0 14px; border-bottom: 4px double var(--rule); }
+  .masthead h1 { font-family: 'UnifrakturMaguntia', cursive; font-size: 48px; color: var(--ink); }
+  .masthead-sub { font-family: 'IM Fell English', serif; font-size: 11px; letter-spacing: 4px; text-transform: uppercase; color: var(--ink-faded); margin-top: 4px; }
+  h2 { font-family: 'Playfair Display', serif; font-weight: 800; font-size: 28px; color: var(--ink); margin: 24px 0 16px; text-align: center; }
+  .edition-list { list-style: none; padding: 0; }
+  .edition-list li { border-bottom: 1px solid var(--rule-light); padding: 12px 0; }
+  .edition-list li:last-child { border-bottom: none; }
+  .edition-list a { font-family: 'Lora', serif; font-size: 15px; color: var(--ink-light); text-decoration: none; display: flex; justify-content: space-between; align-items: center; }
+  .edition-list a:hover { color: var(--ink); }
+  .edition-num { font-family: 'IM Fell English', serif; font-size: 11px; color: var(--ink-faded); text-transform: uppercase; letter-spacing: 1px; }
+  .edition-date { font-family: 'Playfair Display', serif; font-weight: 700; }
+  .edition-summary { font-family: 'Lora', serif; font-size: 12px; font-style: italic; color: var(--ink-faded); margin-top: 4px; }
+  .back-link { text-align: center; margin-top: 20px; }
+  .back-link a { font-family: 'IM Fell English', serif; font-size: 12px; color: var(--ink-faded); text-decoration: none; letter-spacing: 2px; text-transform: uppercase; }
+  .footer { margin-top: 20px; border-top: 3px double var(--rule); padding-top: 10px; text-align: center;
+    font-family: 'IM Fell English', serif; font-size: 9px; color: var(--ink-faded); text-transform: uppercase; letter-spacing: 2px; }
+</style>
+</head>
+<body>
+<div class="newspaper">
+  <div class="masthead">
+    <h1>The Hive Herald</h1>
+    <div class="masthead-sub">Archive of All Editions</div>
+  </div>
+
+  <h2>Past Editions</h2>
+
+  <ul class="edition-list" id="editionList">
+    <li style="text-align:center;color:var(--ink-faded);font-family:'Lora',serif;font-style:italic;padding:24px;">Loading archive...</li>
+  </ul>
+
+  <div class="back-link">
+    <a href="/herald/">&larr; Today's Edition</a> &nbsp;&bull;&nbsp;
+    <a href="/subs/">Subscribe via SUBS</a> &nbsp;&bull;&nbsp;
+    <a href="/lens/">Lens Dashboard</a>
+  </div>
+
+  <div class="footer">The Hive Herald &copy; MMXXVI &bull; Permanent Upper Class</div>
+</div>
+
+<script>
+(function() {
+  // Scan for archived editions by trying recent dates
+  var editions = [];
+  var checked = 0;
+  var today = new Date();
+
+  function checkDate(date) {
+    var dateStr = date.toISOString().substring(0, 10);
+    fetch('/herald/' + dateStr + '.json')
+      .then(function(r) {
+        if (r.ok) return r.json();
+        return null;
+      })
+      .then(function(d) {
+        checked++;
+        if (d) {
+          editions.push({
+            date: dateStr,
+            edition: d.edition,
+            title: d.title,
+            summary: d.summary ? d.summary.substring(0, 120) + '...' : ''
+          });
+        }
+        if (checked >= 30) renderList();
+      })
+      .catch(function() {
+        checked++;
+        if (checked >= 30) renderList();
+      });
+  }
+
+  for (var i = 0; i < 30; i++) {
+    var d = new Date(today);
+    d.setDate(d.getDate() - i);
+    checkDate(d);
+  }
+
+  function renderList() {
+    var el = document.getElementById('editionList');
+    editions.sort(function(a, b) { return b.date.localeCompare(a.date); });
+
+    if (editions.length === 0) {
+      el.innerHTML = '<li style="text-align:center;color:var(--ink-faded);font-family:Lora,serif;font-style:italic;padding:24px;">No archived editions found yet. Check back tomorrow.</li>';
+      return;
+    }
+
+    el.innerHTML = editions.map(function(e) {
+      var dateObj = new Date(e.date + 'T12:00:00Z');
+      var opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      var dateStr = dateObj.toLocaleDateString('en-US', opts);
+      return '<li>'
+        + '<a href="/herald/' + e.date + '.json" target="_blank">'
+        + '<span class="edition-date">' + dateStr + '</span>'
+        + '<span class="edition-num">Edition #' + e.edition + '</span>'
+        + '</a>'
+        + (e.summary ? '<div class="edition-summary">' + e.summary + '</div>' : '')
+        + '</li>';
+    }).join('');
+  }
+})();
+</script>
+</body>
+</html>
