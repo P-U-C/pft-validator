@@ -1580,7 +1580,7 @@
     /* -- Rich List -- */
     function buildRichList(data) {
       var contributors = data.nodes
-        .filter(function(n) { return n.type !== 'infrastructure'; })
+        .filter(function(n) { return n.type === 'contributor'; })
         .sort(function(a, b) { return b.balance_pft - a.balance_pft; })
         .slice(0, 10);
 
