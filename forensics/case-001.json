@@ -12,7 +12,13 @@
     "duration_days": 47,
     "node_complete_ledgers": "571583-1927673",
     "data_source": "postfiatd full-history archive node + chain-index.db deep crawl from Botfather vertex",
-    "note": "Ledger range 571,858 to 1,926,688 \u2014 approximately 1.35 million ledgers spanning 47 days. Node currently reports complete_ledgers 571,583-1,927,673 (wider than our indexed range at the extremes)."
+    "note": "Ledger range 571,858 to 1,926,688 \u2014 approximately 1.35 million ledgers spanning 47 days. Node currently reports complete_ledgers 571,583-1,927,673 (wider than our indexed range at the extremes).",
+    "earliest_botfather_state_verifiable": {
+      "ledger_index": 571172,
+      "balance_at_that_ledger_pft": 88219.37,
+      "account_sequence_at_that_ledger": 314400,
+      "tx_count_before_our_window": 314400
+    }
   },
   "title": "Forensic Sybil Supersession Report",
   "subtitle": "Expanded investigation of the Post Fiat testnet sybil network",
@@ -45,7 +51,9 @@
     "root_funding_wallet_alias": "Botfather",
     "reward_leakage_verdict": "CONFIRMED_ZERO",
     "reward_leakage_basis": "Direct infrastructure-to-bot transactions queried across all 7 infra wallets \u00d7 712 high-confidence bots: 0 matches. No indirect path identified within the 47-day visible window.",
-    "headline_finding": "The bot network is operationally ISOLATED from the task reward economy. PFT under bot control did not originate from task rewards within the visible window."
+    "headline_finding": "The bot network is operationally ISOLATED from the task reward economy. PFT under bot control did not originate from task rewards within the visible window.",
+    "botfather_tx_count_before_visible_window": 314400,
+    "botfather_balance_at_window_start_pft": 88219.37
   },
   "root_funding_wallet_profile": {
     "address": "r9k51cJFVaYRST5vMUsdokiYcwdpQdUJGR",
@@ -63,8 +71,9 @@
       "total_outbound_pft": 162700,
       "net_flow_in_visible_window_pft": -19129,
       "current_balance_pft": 69150,
-      "implied_pre_window_capital_pft": 88279,
-      "interpretation": "Net flow is negative over the visible window, yet balance is positive. This means approximately 88,279 PFT was injected BEFORE our earliest indexed transaction on 2026-02-26. The origin of this pre-window capital is outside the reach of our archive node's online ledger range."
+      "implied_pre_window_capital_pft": 88219,
+      "interpretation": "The Botfather entered our visible window (ledger 571,172) already holding 88,219 PFT and having already issued 314,400 transactions. Its preceding tx at ledger 571,078 is below our node range. The origin of this pre-window capital is in ledger history BEFORE 571,078 \u2014 approximately ledger 1 to 571,077 \u2014 which is not available from our current archive node. This is the DEEP history gap.",
+      "verified_at_ledger": 571172
     },
     "funding_topology": {
       "direct_funders_count": 706,
@@ -87,6 +96,26 @@
       "hourly_activity_spread_hours": 22,
       "sleep_pattern": "none \u2014 24/7 activity",
       "conclusion": "Mechanical distribution signature consistent with scripted capital distribution for sybil wallet activation"
+    },
+    "balance_at_earliest_visible_ledger": {
+      "ledger_index": 571172,
+      "balance_drops": 88219369488,
+      "balance_pft": 88219.37,
+      "sequence": 314400,
+      "previous_tx_id": "E990FEA8EF7A2C2C4922C8976770D23E13BA62B060C422BE1FFE2305DF87A384",
+      "previous_tx_ledger_seq": 571078,
+      "note": "The Botfather already existed at 571,172 with 88,219 PFT balance and had already issued 314,400 transactions. Ledger 571,078 (where its PreviousTxnID resolves) is before our node accessible range, meaning the account was fully established before our earliest visible history."
+    },
+    "first_visible_activity": {
+      "ledger_index": 573016,
+      "timestamp": "2026-02-26T12:48:40Z",
+      "tx_hash": "9874E6453D65D57A25D0DB6DB1C9CE88AFC5FE4C3FCE97ED887EF231D85F63A6",
+      "type": "Payment",
+      "direction": "outbound",
+      "amount_pft": 100,
+      "destination": "r92wri6N7TTa5gNMZZxSE2VFuprWNwMsw6",
+      "destination_state_change": "new account CREATED in this tx",
+      "significance": "The first tx we can see is the Botfather creating and seeding a new wallet with 100 PFT. The Botfather was already a funding vertex when our visibility began."
     }
   },
   "methodology": {

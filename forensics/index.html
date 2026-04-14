@@ -189,11 +189,16 @@
       <tr><td>Total outbound (indexed)</td><td class="num">162,700</td><td>793 unique recipients</td></tr>
       <tr><td>Net flow (in &minus; out)</td><td class="num">&minus;19,129</td><td>sent more than received</td></tr>
       <tr><td>Current balance (node)</td><td class="num">69,150</td><td>verified via account_info RPC</td></tr>
-      <tr><td><strong>Implied pre-window capital</strong></td><td class="num"><strong>88,279</strong></td><td>external injection before indexed range</td></tr>
+      <tr><td><strong>Balance at earliest visible ledger (571,172)</strong></td><td class="num"><strong>88,219</strong></td><td>verified via account_info at ledger 571172</td></tr>
+      <tr><td><strong>Sequence at earliest visible ledger</strong></td><td class="num"><strong>314,400</strong></td><td>tx count BEFORE our window began</td></tr>
     </tbody>
   </table>
 
-  <p>The negative net flow over 47 days, combined with a positive current balance, implies approximately <strong>88,279 PFT</strong> was injected into the Botfather <em>before</em> our earliest indexed transaction on 2026-02-26. The origin of this pre-window capital falls outside the archive node's ledger retention window and cannot be traced from public chain data available to this investigation.</p>
+  <div class="supersession-banner">
+    <strong>CRITICAL FINDING:</strong> Querying the node for the Botfather's state at ledger 571,172 (our earliest accessible ledger) returns <code>Balance: 88,219 PFT</code> and <code>Sequence: 314,400</code>. The Botfather had <strong>already issued 314,400 transactions</strong> and already held <strong>88,219 PFT</strong> before our visibility begins. Its <code>PreviousTxnLgrSeq</code> at that moment is <code>571,078</code> &mdash; below our node's range. The operation's genesis is entirely pre-window.
+  </div>
+
+  <p>The first transaction we can observe from the Botfather (at ledger 573,016, 2026-02-26T12:48:40Z, tx hash <code>9874E6453D65D57A</code>) is an <em>outbound</em> 100 PFT payment that <strong>creates and seeds a new wallet</strong> (<code>r92wri6N7TTa5gNMZZxSE2VFuprWNwMsw6</code>). The Botfather was already operating as a funding vertex when our visibility began. The origin of its 88,219 PFT pre-window capital is in ledger history <em>before ledger 571,078</em> — a range that is not available from our current archive node and cannot be traced from public chain data accessible to this investigation.</p>
 
   <h4>Funding topology &mdash; the circular pattern</h4>
   <p>Of the Botfather's 706 direct funders:</p>
