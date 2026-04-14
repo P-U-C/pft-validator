@@ -1,5 +1,5 @@
 {
-  "schema_version": "2.0.0",
+  "schema_version": "2.1.0",
   "methodology_version": "2.1.0",
   "classification_ruleset_version": "1.2.0",
   "sybil_ruleset_version": "1.1.0",
@@ -173,5 +173,16 @@
       "tx_gte_memo": true,
       "first_lte_last": true
     }
-  }
+  },
+  "superseded_by": {
+    "case_id": "CASE-001-SYBIL-SUPERSESSION",
+    "url": "https://pft.permanentupperclass.com/forensics/",
+    "reason": "Deep crawl from botfather revealed 712 high-confidence bot wallets (previously reported: 73). The 73-count was directionally correct but numerically understated by ~10x.",
+    "corrected_bot_count_high_confidence": 712,
+    "corrected_bot_count_medium_confidence": 738,
+    "corrected_bot_count_low_confidence": 764,
+    "supersession_date": "2026-04-14T17:50:00Z",
+    "previous_bot_count": 73
+  },
+  "report_version": "2.1.0"
 }
