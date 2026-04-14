@@ -5,25 +5,25 @@
   "published_at": "2026-04-14T17:50:00Z",
   "classification_methodology_version": "2.0.0",
   "ledger_window": {
-    "indexed_range_low": 1343459,
+    "indexed_range_low": 571858,
     "indexed_range_high": 1926688,
     "time_start": "2026-02-26T11:36:52Z",
     "time_end": "2026-04-14T17:39:31Z",
     "duration_days": 47,
-    "data_source": "postfiatd full-history archive node + chain-index.db deep crawl"
+    "node_complete_ledgers": "571583-1927673",
+    "data_source": "postfiatd full-history archive node + chain-index.db deep crawl from Botfather vertex",
+    "note": "Ledger range 571,858 to 1,926,688 \u2014 approximately 1.35 million ledgers spanning 47 days. Node currently reports complete_ledgers 571,583-1,927,673 (wider than our indexed range at the extremes)."
   },
   "title": "Forensic Sybil Supersession Report",
   "subtitle": "Expanded investigation of the Post Fiat testnet sybil network",
   "author": "Permanent Upper Class",
   "operator_address": "rsS2Y6CK9dz9dVFjJvRyD2gBdoLPqjaXRZ",
-
   "supersedes": {
     "earlier_claim": "73 bot wallets in one sybil cluster",
     "earlier_source": "audit.json v1.0 and health.json v1.0 (pre-2026-04-14)",
     "reason_superseded": "Prior index captured only ~5% of the botfather's transaction history. Deep crawl from r9k51cJFVaYRST5vMUsdokiYcwdpQdUJGR revealed ~10x more bot-signature wallets than originally indexed.",
     "impact": "The 73-bot count was directionally correct but numerically understated. The corrected count is 712 high-confidence bot wallets."
   },
-
   "executive_summary": {
     "corrected_cluster_size": {
       "high_confidence": 712,
@@ -44,10 +44,9 @@
     "root_funding_wallet": "r9k51cJFVaYRST5vMUsdokiYcwdpQdUJGR",
     "root_funding_wallet_alias": "Botfather",
     "reward_leakage_verdict": "CONFIRMED_ZERO",
-    "reward_leakage_basis": "Direct infrastructure-to-bot transactions queried across all 7 infra wallets × 712 high-confidence bots: 0 matches. No indirect path identified within the 47-day visible window.",
+    "reward_leakage_basis": "Direct infrastructure-to-bot transactions queried across all 7 infra wallets \u00d7 712 high-confidence bots: 0 matches. No indirect path identified within the 47-day visible window.",
     "headline_finding": "The bot network is operationally ISOLATED from the task reward economy. PFT under bot control did not originate from task rewards within the visible window."
   },
-
   "root_funding_wallet_profile": {
     "address": "r9k51cJFVaYRST5vMUsdokiYcwdpQdUJGR",
     "alias": "Botfather",
@@ -59,7 +58,6 @@
     "first_seen_in_index": "2026-02-26T12:48:40Z",
     "last_seen_in_index": "2026-04-14T17:39:31Z",
     "active_duration_days": 47,
-
     "balance_accounting": {
       "total_inbound_pft": 143571,
       "total_outbound_pft": 162700,
@@ -68,7 +66,6 @@
       "implied_pre_window_capital_pft": 88279,
       "interpretation": "Net flow is negative over the visible window, yet balance is positive. This means approximately 88,279 PFT was injected BEFORE our earliest indexed transaction on 2026-02-26. The origin of this pre-window capital is outside the reach of our archive node's online ledger range."
     },
-
     "funding_topology": {
       "direct_funders_count": 706,
       "direct_funders_self_originated_pct": 95.7,
@@ -78,19 +75,20 @@
       "recipients_zero_memo_signature": 650,
       "recipients_other": 80
     },
-
     "behavioral_fingerprint": {
       "payment_amount_uniformity": "100.00 PFT x 73 seed transactions (100% uniform for the initial seed batch)",
-      "payment_amount_range_pft": [5.67, 1151.37],
-      "payment_amount_median_pft": 131.90,
+      "payment_amount_range_pft": [
+        5.67,
+        1151.37
+      ],
+      "payment_amount_median_pft": 131.9,
       "memo_usage_pct": 0,
       "unique_destinations_total": 793,
       "hourly_activity_spread_hours": 22,
-      "sleep_pattern": "none — 24/7 activity",
+      "sleep_pattern": "none \u2014 24/7 activity",
       "conclusion": "Mechanical distribution signature consistent with scripted capital distribution for sybil wallet activation"
     }
   },
-
   "methodology": {
     "classification_confidence_bands": {
       "HIGH": {
@@ -109,7 +107,6 @@
         "count": 764
       }
     },
-
     "source_query_examples": [
       {
         "id": "Q1",
@@ -121,7 +118,7 @@
       },
       {
         "id": "Q2",
-        "purpose": "Verify zero direct infrastructure→bot reward transactions",
+        "purpose": "Verify zero direct infrastructure\u2192bot reward transactions",
         "type": "SQL",
         "query": "SELECT COUNT(*) FROM transactions t JOIN accounts a ON t.destination = a.address WHERE t.account IN (<7 infra addresses>) AND a.memo_tx_count = 0 AND a.tx_count >= 10 AND CAST(t.amount_drops AS INTEGER) > 0 AND t.has_memo = 1",
         "result": 0,
@@ -135,30 +132,47 @@
           "SELECT SUM(CAST(amount_drops AS INTEGER))/1e6 FROM transactions WHERE destination = 'r9k51cJFVaYRST5vMUsdokiYcwdpQdUJGR' AND CAST(amount_drops AS INTEGER) > 0",
           "SELECT SUM(CAST(amount_drops AS INTEGER))/1e6 FROM transactions WHERE account = 'r9k51cJFVaYRST5vMUsdokiYcwdpQdUJGR' AND CAST(amount_drops AS INTEGER) > 0"
         ],
-        "results": { "inbound_pft": 143571, "outbound_pft": 162700, "net_pft": -19129 }
+        "results": {
+          "inbound_pft": 143571,
+          "outbound_pft": 162700,
+          "net_pft": -19129
+        }
       },
       {
         "id": "Q4",
         "purpose": "Retrieve live balance from node (authoritative source)",
         "type": "RPC",
         "method": "account_info",
-        "params": { "account": "r9k51cJFVaYRST5vMUsdokiYcwdpQdUJGR", "ledger_index": "validated" },
+        "params": {
+          "account": "r9k51cJFVaYRST5vMUsdokiYcwdpQdUJGR",
+          "ledger_index": "validated"
+        },
         "endpoint": "http://127.0.0.1:5015",
-        "result": { "balance_drops": 69150360000, "sequence": 316036 }
+        "result": {
+          "balance_drops": 69150360000,
+          "sequence": 316036
+        }
       },
       {
         "id": "Q5",
         "purpose": "Deep crawl to expand index from 175 to 846 active accounts",
         "type": "RPC iterative",
         "method": "account_tx",
-        "parameters": { "account": "r9k51cJFVaYRST5vMUsdokiYcwdpQdUJGR", "limit": 100, "recursive": true, "max_depth": 1 },
+        "parameters": {
+          "account": "r9k51cJFVaYRST5vMUsdokiYcwdpQdUJGR",
+          "limit": 100,
+          "recursive": true,
+          "max_depth": 1
+        },
         "pages_fetched": 18,
         "transactions_retrieved": 713404,
         "new_accounts_discovered": 671,
-        "result_state": { "total_accounts_after_crawl": 925, "active_accounts_after_crawl": 846 }
+        "result_state": {
+          "total_accounts_after_crawl": 925,
+          "active_accounts_after_crawl": 846
+        }
       }
     ],
-
     "chain_of_custody": {
       "primary_source": "postfiatd node (testnet-full-latest image) running on local infrastructure",
       "index_database": "~/.pf-scout/chain-index.db (SQLite, WAL mode)",
@@ -166,47 +180,99 @@
       "data_integrity": "All balance figures cross-verified against node account_info at validated ledger",
       "transaction_immutability": "Each cited tx_hash is immutable on the PFTL ledger and verifiable by any node operator"
     },
-
     "example_transactions": {
       "earliest_botfather_inbound": [
-        { "tx_hash": "2A461DF8DE1C6696", "timestamp": "2026-02-26T12:50:11Z", "from": "rna1dPPvyCk1RYBsMc6sPxmw7", "amount_pft": 323.32 },
-        { "tx_hash": "2D1BEDFD454C042D", "timestamp": "2026-02-26T13:17:22Z", "from": "r3zSaWsp5c1THJPRpvTFjk8nk", "amount_pft": 230.11 },
-        { "tx_hash": "5219AF13F17DE1AF", "timestamp": "2026-02-26T13:39:50Z", "from": "rYtcWnr1n5fMCRpP2xwcqRq5c", "amount_pft": 52.16 }
+        {
+          "tx_hash": "2A461DF8DE1C6696",
+          "timestamp": "2026-02-26T12:50:11Z",
+          "from": "rna1dPPvyCk1RYBsMc6sPxmw7",
+          "amount_pft": 323.32
+        },
+        {
+          "tx_hash": "2D1BEDFD454C042D",
+          "timestamp": "2026-02-26T13:17:22Z",
+          "from": "r3zSaWsp5c1THJPRpvTFjk8nk",
+          "amount_pft": 230.11
+        },
+        {
+          "tx_hash": "5219AF13F17DE1AF",
+          "timestamp": "2026-02-26T13:39:50Z",
+          "from": "rYtcWnr1n5fMCRpP2xwcqRq5c",
+          "amount_pft": 52.16
+        }
       ],
       "botfather_100_pft_seed_distributions": [
-        { "tx_hash": "9874E6453D65D57A", "timestamp": "2026-02-26T12:48:40Z", "to": "r92wri6N7TTa5gN", "amount_pft": 100.00 },
-        { "tx_hash": "5281510E05B8C7F5", "timestamp": "2026-02-26T13:04:41Z", "to": "rU3s6WHDngeHjea", "amount_pft": 100.00 },
-        { "tx_hash": "D37E3C4D622D8D0C", "timestamp": "2026-02-26T13:04:42Z", "to": "rGfr9SLsvLndA7m", "amount_pft": 100.00 }
+        {
+          "tx_hash": "9874E6453D65D57A",
+          "timestamp": "2026-02-26T12:48:40Z",
+          "to": "r92wri6N7TTa5gN",
+          "amount_pft": 100.0
+        },
+        {
+          "tx_hash": "5281510E05B8C7F5",
+          "timestamp": "2026-02-26T13:04:41Z",
+          "to": "rU3s6WHDngeHjea",
+          "amount_pft": 100.0
+        },
+        {
+          "tx_hash": "D37E3C4D622D8D0C",
+          "timestamp": "2026-02-26T13:04:42Z",
+          "to": "rGfr9SLsvLndA7m",
+          "amount_pft": 100.0
+        }
       ],
       "high_confidence_bot_samples": [
-        { "address": "rBijKC7D3CiBBaTUnL81xdn6jB3bA3tp68", "tx_count": 944, "balance_pft": 15.0000, "memo_count": 0 },
-        { "address": "rwkMYAymjzfJfvFY9W1BsLhFwcFGfdU3tQ", "tx_count": 900, "balance_pft": 15.0000, "memo_count": 0 },
-        { "address": "rGeDyvo1Em9doSWmgLQ2K5T5ZuCJzjTUvh", "tx_count": 891, "balance_pft": 15.0000, "memo_count": 0 },
-        { "address": "rBh4GGwzrq7q2H94Sh88bnBXNSPvwu8CFe", "tx_count": 887, "balance_pft": 15.0000, "memo_count": 0 },
-        { "address": "r3VJK1T6NYC3bEKBpG7UbsMRmMaXZgwGbf", "tx_count": 882, "balance_pft": 15.0000, "memo_count": 0 }
+        {
+          "address": "rBijKC7D3CiBBaTUnL81xdn6jB3bA3tp68",
+          "tx_count": 944,
+          "balance_pft": 15.0,
+          "memo_count": 0
+        },
+        {
+          "address": "rwkMYAymjzfJfvFY9W1BsLhFwcFGfdU3tQ",
+          "tx_count": 900,
+          "balance_pft": 15.0,
+          "memo_count": 0
+        },
+        {
+          "address": "rGeDyvo1Em9doSWmgLQ2K5T5ZuCJzjTUvh",
+          "tx_count": 891,
+          "balance_pft": 15.0,
+          "memo_count": 0
+        },
+        {
+          "address": "rBh4GGwzrq7q2H94Sh88bnBXNSPvwu8CFe",
+          "tx_count": 887,
+          "balance_pft": 15.0,
+          "memo_count": 0
+        },
+        {
+          "address": "r3VJK1T6NYC3bEKBpG7UbsMRmMaXZgwGbf",
+          "tx_count": 882,
+          "balance_pft": 15.0,
+          "memo_count": 0
+        }
       ]
     }
   },
-
   "reward_leakage_verdict": {
     "verdict": "NO LEAKAGE DETECTED WITHIN VISIBLE WINDOW",
     "confidence": "high",
     "evidence": [
-      "Query Q2 executed against all 7 infrastructure wallets × 712 high-confidence bots: 0 matching transactions",
+      "Query Q2 executed against all 7 infrastructure wallets \u00d7 712 high-confidence bots: 0 matching transactions",
       "All reward payments from rJNwqDPKSk (airdrop), rGBKxoTcav (distribution), rKt4peDozp (distribution 2) verified to land only on wallets with non-zero memo counts (real contributors)",
       "The bot network's funding is circular (bots funding bots) with external capital injected before the visible window"
     ],
     "limitation": "Verdict is bounded by the 47-day visible window (2026-02-26 to 2026-04-14). Any reward leakage BEFORE 2026-02-26 is outside the scope of this analysis due to online_delete ledger retention on the archive node.",
     "implication": "The network integrity guarantee holds for the period audited. The auth.json 'zero leaks' claim is now verified at the 712-bot scale, not just 73."
   },
-
   "limitations": {
     "ledger_window_limit": {
       "description": "postfiatd node uses online_delete retention; historical ledgers before ~1925705 are not queryable via account_tx unless the bot manually backfills from the NuDB archive. We rely on what was indexed during the active crawl window.",
       "impact": "Approximately 88,279 PFT of pre-window external capital injected into the botfather is not traceable. Its original source is unknown."
     },
     "classification_method_boundaries": {
-      "false_positive_risk": "Low — a real contributor with zero memos and exactly 15 PFT balance plus 10+ txns would need to be bulk-transferring PFT without any messaging, which is not observed among the 68 known contributors",
+      "false_positive_risk": "Low \u2014 a real contributor with zero memos and exactly 15 PFT balance plus 10+ txns would need to be bulk-transferring PFT without any messaging, which is not observed among the 68 known contributors",
       "false_negative_risk": "Some bots may have slightly above-15 PFT balance from concurrent funding chains; these fall into the MEDIUM confidence band (26 additional accounts)",
       "cluster_attribution": "All 712 high-confidence bots are attributed to a single operator inference only. Multi-operator overlap is not proven."
     },
@@ -221,7 +287,6 @@
       "note": "The botfather is infrastructure (a funding vertex), not a person. No off-chain identity linkage is possible from public ledger data alone."
     }
   },
-
   "superseded_references": {
     "audit_json": {
       "url": "https://pft.permanentupperclass.com/lens/audit.json",
@@ -242,7 +307,6 @@
       "note": "Dashboard will rebuild on next hourly cron with the expanded dataset. Current display is post-supersession."
     }
   },
-
   "references": {
     "protocol_spec": "https://github.com/P-U-C/pft-validator/blob/main/multi-agent-registry-spec.md",
     "subs_protocol_spec": "https://github.com/P-U-C/pft-validator/blob/main/subs-protocol.md",
@@ -251,7 +315,6 @@
     "health_surface": "https://pft.permanentupperclass.com/lens/health.json",
     "auth_surface": "https://pft.permanentupperclass.com/lens/auth.json"
   },
-
   "version_history": [
     {
       "version": "1.0.0",
