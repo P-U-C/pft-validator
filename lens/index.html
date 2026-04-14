@@ -709,7 +709,7 @@
           <label><input type="checkbox" id="filterHideInfra"> Hide infra</label>
         </div>
         <div class="filter-group">
-          <label><input type="checkbox" id="filterHideBots"> Hide bots</label>
+          <label><input type="checkbox" id="filterHideBots" checked> Hide bots</label>
         </div>
       </div>
       <div class="graph-layout">
@@ -1724,7 +1724,7 @@
           document.getElementById('filterMinTx').value = 1;
           document.getElementById('filterMinTxVal').textContent = '1';
           document.getElementById('filterHideInfra').checked = false;
-          document.getElementById('filterHideBots').checked = false;
+          document.getElementById('filterHideBots').checked = true;
           document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
           document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
           // Re-run layout
