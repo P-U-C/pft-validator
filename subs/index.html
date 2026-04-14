@@ -285,11 +285,16 @@
             return '<li>' + f + '</li>';
           }).join('');
 
+          var previewImg = svc.preview_image ? '<a href="' + (svc.url || '#') + '" style="display:block;margin:1rem 0;"><img src="' + svc.preview_image + '" alt="' + svc.name + ' preview" style="width:100%;border:1px solid var(--border-subtle);"></a>' : '';
+          var urlLink = svc.url ? '<div style="margin-bottom:0.8rem;"><a href="' + svc.url + '" style="font-size:0.75rem;color:var(--accent);">' + svc.url.replace('https://','') + '</a></div>' : '';
+
           return '<div class="service-card">'
             + '<div class="service-status ' + svc.status + '">' + svc.status + '</div>'
             + '<div class="service-name">' + svc.name + '</div>'
             + '<div class="service-provider">by ' + (svc.provider || 'unknown') + '</div>'
             + '<div class="service-desc">' + svc.description + '</div>'
+            + urlLink
+            + previewImg
             + '<div class="service-pricing">'
             + '  <div><span class="service-price">' + svc.price_pft + '</span> <span class="service-price-unit">PFT / ' + svc.period_days + ' days</span></div>'
             + '  <div><span class="service-subs">' + (svc.subscribers_active || 0) + '</span> <span class="service-subs-unit">subscribers</span></div>'
