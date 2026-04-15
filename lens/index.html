@@ -1053,20 +1053,16 @@
       var allNodes = data.nodes;
       var edges = data.edges;
 
-      // Identify isolated nodes (no edges) — render them as a separate "fringe" cluster
+      // Only render connected nodes in the graph — orphans (no edges) belong
+      // in stats, not the topology. They show up once the indexer finds their edges.
       var connectedIds = {};
       edges.forEach(function(e) {
         connectedIds[e.source] = true;
         connectedIds[e.target] = true;
       });
+      var nodes = allNodes.filter(function(n) { return connectedIds[n.id]; });
 
-      // Tag nodes as connected or orphan
-      var nodes = allNodes.map(function(n) {
-        var isOrphan = !connectedIds[n.id];
-        return Object.assign({}, n, { isOrphan: isOrphan });
-      });
-
-      // Build type lookup for fast edge coloring
+      // Build type lookup for fast edge coloring (use all so panel lookups still work)
       nodeTypeMap = {};
       allNodes.forEach(function(n) { nodeTypeMap[n.id] = n.type; });
 
@@ -1080,15 +1076,13 @@
           group: 'nodes',
           data: {
             id: n.id,
-            label: n.isOrphan ? '' : (n.label || truncAddr(n.id)),
-            nodeSize: n.isOrphan ? 6 : nodeSize(n.memo_count, allNodeMemos),
-            bgColor: n.isOrphan ? '#3a3a3a' : nodeColor(n),
-            borderColor: n.isOrphan ? '#555' : nodeBorderColor(n),
-            borderWidth: n.isOrphan ? 0 : nodeBorderWidth(n),
-            shape: n.isOrphan ? 'ellipse' : nodeShape(n),
+            label: n.label || truncAddr(n.id),
+            nodeSize: nodeSize(n.memo_count, allNodeMemos),
+            bgColor: nodeColor(n),
+            borderColor: nodeBorderColor(n),
+            borderWidth: nodeBorderWidth(n),
+            shape: nodeShape(n),
             isNew: n.is_new === true,
-            isOrphan: n.isOrphan,
-            opacity: n.isOrphan ? 0.35 : 1,
             raw: n
           }
         });
@@ -1133,7 +1127,7 @@
               'width': 'data(nodeSize)',
               'height': 'data(nodeSize)',
               'background-color': 'data(bgColor)',
-              'background-opacity': 'data(opacity)',
+              'background-opacity': 0.85,
               'border-color': 'data(borderColor)',
               'border-width': 'data(borderWidth)',
               'border-opacity': 0.6,
@@ -1155,13 +1149,6 @@
               'overlay-opacity': 0,
               'transition-property': 'border-color, border-width, background-opacity, width, height',
               'transition-duration': '0.25s'
-            }
-          },
-          {
-            selector: 'node[?isOrphan]',
-            style: {
-              'background-opacity': 0.35,
-              'label': ''
             }
           },
           {
@@ -1287,20 +1274,17 @@
         wheelSensitivity: 0.2
       });
 
-      /* -- Custom layout: connected nodes above, orphans in grid below -- */
-      var connectedNodes = cy.nodes().filter(function(n) { return !n.data('isOrphan'); });
-      var orphanNodes = cy.nodes().filter(function(n) { return n.data('isOrphan'); });
-
-      function runMainLayout(cb) {
-        if (connectedNodes.length === 0) { if (cb) cb(); return; }
-
-        var useLargeLayout = connectedNodes.length > 150;
+      /* -- Run layout on connected network -- */
+      function runMainLayout() {
+        var nodeCount = cy.nodes().length;
+        var edgeCount = graphData.edges ? graphData.edges.length : 0;
         var layoutOpts;
-        if (useLargeLayout) {
+
+        if (nodeCount > 150) {
           layoutOpts = {
             name: 'cose-bilkent',
             animate: false,
-            fit: false,
+            fit: true,
             padding: 30,
             nodeRepulsion: 8000,
             idealEdgeLength: 80,
@@ -1320,51 +1304,17 @@
             levelWidth: function() { return 20; },
             minNodeSpacing: 18,
             spacingFactor: 1.35,
-            animate: false,
-            fit: false,
+            animate: edgeCount <= 200,
+            animationDuration: 800,
+            fit: true,
             padding: 20
           };
         }
-
-        var layoutObj = connectedNodes.layout(layoutOpts);
-        layoutObj.on('layoutstop', function() { if (cb) cb(); });
-        layoutObj.run();
-      }
-
-      function positionOrphans() {
-        if (orphanNodes.length === 0) { cy.fit(null, 30); return; }
-
-        // Get bounding box of the main network
-        var bb = connectedNodes.length > 0
-          ? connectedNodes.boundingBox()
-          : { x1: 0, x2: 800, y1: 0, y2: 400, w: 800, h: 400 };
-
-        // Grid settings
-        var spacing = 14;
-        var gridWidth = Math.min(bb.w, 800);
-        var cols = Math.max(1, Math.floor(gridWidth / spacing));
-        var rows = Math.ceil(orphanNodes.length / cols);
-
-        // Position orphans below the main network with a gap
-        var startX = bb.x1 + (bb.w - cols * spacing) / 2;
-        var startY = bb.y2 + 80; // 80px gap below
-
-        orphanNodes.forEach(function(n, i) {
-          var col = i % cols;
-          var row = Math.floor(i / cols);
-          n.position({
-            x: startX + col * spacing,
-            y: startY + row * spacing
-          });
-        });
-
-        // Fit everything
-        cy.fit(null, 30);
+        cy.layout(layoutOpts).run();
       }
 
       runMainLayoutFn = runMainLayout;
-      positionOrphansFn = positionOrphans;
-      runMainLayout(positionOrphans);
+      runMainLayout();
 
       /* -- Pulsing glow for new nodes -- */
       var newNodes = cy.nodes('[?isNew]');
@@ -1827,8 +1777,8 @@
           document.getElementById('filterHideBots').checked = true;
           document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
           document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
-          // Re-run split layout (connected nodes + orphans below)
-          if (runMainLayoutFn && positionOrphansFn) runMainLayoutFn(positionOrphansFn);
+          // Re-run layout
+          if (runMainLayoutFn) runMainLayoutFn();
         }
       });
     }
