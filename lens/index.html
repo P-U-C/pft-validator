@@ -1048,12 +1048,20 @@
 
     function buildGraph(data) {
       graphData = data;
-      var nodes = data.nodes;
+      var allNodes = data.nodes;
       var edges = data.edges;
 
-      // Build type lookup for fast edge coloring
+      // Filter out isolated nodes (no edges) — they make the graph look chaotic
+      var connectedIds = {};
+      edges.forEach(function(e) {
+        connectedIds[e.source] = true;
+        connectedIds[e.target] = true;
+      });
+      var nodes = allNodes.filter(function(n) { return connectedIds[n.id]; });
+
+      // Build type lookup for fast edge coloring (include all for downstream lookups)
       nodeTypeMap = {};
-      nodes.forEach(function(n) { nodeTypeMap[n.id] = n.type; });
+      allNodes.forEach(function(n) { nodeTypeMap[n.id] = n.type; });
 
       var allNodeMemos = nodes.map(function(n) { return n.memo_count; });
       var allEdgeMemos = edges.map(function(e) { return e.memo_count; });
@@ -1271,7 +1279,7 @@
               nestingFactor: 0.1,
               gravity: 0.25,
               numIter: 2500,
-              tile: true,
+              tile: false,
               tilingPaddingVertical: 10,
               tilingPaddingHorizontal: 10,
               randomize: true
@@ -1761,7 +1769,7 @@
           var nodeCount = cy.nodes().length;
           var edgeCount = graphData.edges ? graphData.edges.length : 0;
           var reLayout = nodeCount > 200
-            ? { name: 'cose-bilkent', animate: false, fit: true, padding: 30, nodeRepulsion: 8000, idealEdgeLength: 80, edgeElasticity: 0.45, nestingFactor: 0.1, gravity: 0.25, numIter: 2500, tile: true, randomize: true }
+            ? { name: 'cose-bilkent', animate: false, fit: true, padding: 30, nodeRepulsion: 8000, idealEdgeLength: 80, edgeElasticity: 0.45, nestingFactor: 0.1, gravity: 0.25, numIter: 2500, tile: false, randomize: true }
             : { name: 'concentric', concentric: function(node) { return (node.data('raw').memo_count || 0) + (node.data('raw').tx_count || 0); }, levelWidth: function() { return 8; }, minNodeSpacing: 8, animate: edgeCount <= 200, animationDuration: 600, fit: true, padding: 20 };
           cy.layout(reLayout).run();
         }
