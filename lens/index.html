@@ -1487,15 +1487,22 @@
         + '<div class="detail-row"><span class="detail-key">Sybil Status</span><span class="detail-val' + sybilClass + '">' + sybilText + '</span></div>';
 
       // Bot cluster info
-      if (n.type === 'bot' || n.sybil_cluster === 'sybil_botnet_001') {
+      if (n.type === 'bot' || (n.sybil_cluster && n.sybil_cluster.indexOf('sybil') === 0)) {
         var botMaster = 'r9k51cJFVaYRST5vMUsdokiYcwdpQdUJGR';
         var isMaster = n.id === botMaster;
-        content.innerHTML += '<div style="margin-top:0.8rem;padding:0.6rem;background:rgba(139,92,246,0.08);border-left:2px solid #8b5cf6;font-size:0.55rem;">'
+        var reportUrl = 'https://github.com/P-U-C/pft-validator/blob/main/alpha/bot-report-2026-04-15.md';
+        var auditUrl = 'https://github.com/P-U-C/pft-validator/blob/main/alpha/audit-report-2026-04-15.md';
+        content.innerHTML += '<div style="margin-top:0.8rem;padding:0.8rem;background:rgba(139,92,246,0.08);border-left:2px solid #8b5cf6;font-size:0.6rem;line-height:1.5;">'
           + (isMaster
-            ? '<strong style="color:#8b5cf6;">BOT MASTER</strong><br>Deployed and funded 63 bot wallets.<br>Wash-trading network generating fake tx volume.'
-            : '<strong style="color:#8b5cf6;">BOT</strong> — Part of botnet (63 wallets).<br>'
-              + 'Master: <a href="https://explorer.testnet.postfiat.org/accounts/' + botMaster + '" target="_blank" style="color:#8b5cf6;text-decoration:none;">' + truncAddr(botMaster) + '</a><br>'
-              + 'Pattern: zero memos, 1 PFT round-robin, 24h activity, uniform balance.')
+            ? '<strong style="color:#8b5cf6;display:block;margin-bottom:0.4rem;">BOT MASTER</strong>'
+              + 'Root of a 733-wallet wash-trading cluster. Seeded with 100,000 PFT on 2026-02-17 via a memoless transfer from an infrastructure wallet. Began fan-out 9 days later.'
+            : '<strong style="color:#8b5cf6;display:block;margin-bottom:0.4rem;">BOT — PART OF sybil_001</strong>'
+              + 'Automated wallet in a 743-member cluster. Holds ~15 PFT (XRPL minimum reserve). Zero memo participation. Cycles small amounts with sibling bots.<br><br>'
+              + 'Master: <a href="https://explorer.testnet.postfiat.org/accounts/' + botMaster + '" target="_blank" style="color:#8b5cf6;text-decoration:none;">' + truncAddr(botMaster) + '</a>')
+          + '<div style="margin-top:0.6rem;padding-top:0.5rem;border-top:1px solid rgba(139,92,246,0.2);">'
+          + '<a href="' + reportUrl + '" target="_blank" style="color:#8b5cf6;text-decoration:none;display:block;margin-bottom:0.2rem;">&rarr; Full Forensic Report</a>'
+          + '<a href="' + auditUrl + '" target="_blank" style="color:#8b5cf6;text-decoration:none;display:block;">&rarr; Data Integrity Audit (17 checks)</a>'
+          + '</div>'
           + '</div>';
       }
 
