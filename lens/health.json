@@ -4,9 +4,9 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-04-14T23:00:00Z",
-  "calculated_at": "2026-04-14T23:00:17Z",
-  "next_update_at": "2026-04-15T00:00:00Z",
+  "snapshot_id": "2026-04-15T00:00:00Z",
+  "calculated_at": "2026-04-15T00:00:16Z",
+  "next_update_at": "2026-04-15T01:00:00Z",
   "refresh_cadence": "hourly",
   "health_score": 0.7529,
   "health_score_formula": "sum(component.score * component.weight)",
@@ -16,7 +16,7 @@
       "score": 0.9973,
       "weight": 0.2,
       "contribution": 0.1995,
-      "raw_hhi": 0.051196,
+      "raw_hhi": 0.051236,
       "formula": "max(0, min(1, (hhi_bad - HHI) / (hhi_bad - hhi_good)))",
       "description": "Herfindahl-Hirschman Index of memo activity distribution. Lower HHI = more distributed = healthier."
     },
@@ -34,9 +34,9 @@
       "score": 1.0,
       "weight": 0.2,
       "contribution": 0.2,
-      "latest_day_memos": 169,
+      "latest_day_memos": 174,
       "avg_7d_daily": 164.6,
-      "velocity_ratio": 1.0269,
+      "velocity_ratio": 1.0573,
       "formula": "max(0, min(1, latest_day_count / avg_7d_daily))",
       "description": "Latest day memo count vs 7-day rolling average. Detects activity drops."
     },
@@ -45,8 +45,8 @@
       "weight": 0.15,
       "contribution": 0.15,
       "bidirectional_edges": 2502,
-      "total_edges": 2942,
-      "raw_ratio": 0.8504,
+      "total_edges": 2943,
+      "raw_ratio": 0.8502,
       "formula": "max(0, min(1, bidir_edges / total_edges / target))",
       "description": "Fraction of edges where both parties communicate. Higher = more collaborative."
     },
@@ -125,9 +125,9 @@
       "severity": "none",
       "operator": "<",
       "threshold": 0.5,
-      "current_value": 1.0269,
+      "current_value": 1.0573,
       "lookback": "7d",
-      "reason": "Today=169 memos vs 7d avg=164.6 (ratio=1.03). Memo velocity is within normal range."
+      "reason": "Today=174 memos vs 7d avg=164.6 (ratio=1.06). Memo velocity is within normal range."
     },
     {
       "rule": "NEW_SYBIL_CLUSTER",
@@ -158,48 +158,29 @@
     "clear": 2
   },
   "score_change": {
-    "vs_prior_snapshot": 0.0006,
-    "prior_health_score": 0.7523,
-    "prior_calculated_at": "2026-04-14T22:00:16Z",
-    "largest_movers": [
-      {
-        "component": "memo_velocity",
-        "delta": 0.0007,
-        "raw_delta": 0.0035,
-        "reason": "latest_day_memos=169 vs prior avg=164.6"
-      },
-      {
-        "component": "concentration",
-        "delta": -0.0002,
-        "raw_delta": -0.0009,
-        "reason": "HHI moved to 0.0512"
-      },
-      {
-        "component": "contributor_ratio",
-        "delta": -0.0001,
-        "raw_delta": -0.0003,
-        "reason": "contributor ratio=13.9% (119/857)"
-      }
-    ]
+    "vs_prior_snapshot": 0.0,
+    "prior_health_score": 0.7529,
+    "prior_calculated_at": "2026-04-14T23:00:17Z",
+    "largest_movers": []
   },
   "network_summary": {
     "total_accounts": 857,
     "contributors": 119,
     "bots": 731,
     "infrastructure": 7,
-    "total_transactions": 370736,
-    "memo_transactions": 8958,
-    "total_edges": 2942,
+    "total_transactions": 370827,
+    "memo_transactions": 9045,
+    "total_edges": 2943,
     "bidirectional_edges": 2502,
     "sybil_clusters": 3,
     "sybil_accounts": 70
   },
   "deltas": {
-    "health_score": 0.0006,
-    "accounts": 1,
-    "memo_transactions": 195,
-    "edges": 4,
-    "since": "2026-04-14T22:00:16Z"
+    "health_score": 0.0,
+    "accounts": 0,
+    "memo_transactions": 87,
+    "edges": 1,
+    "since": "2026-04-14T23:00:17Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -208,5 +189,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:420bfb9ec28e9c144f9bd57050e36249e0b6120e2f4fcb9186a69c8703f03f78"
+  "snapshot_hash": "sha256:a08fdcad4cb2926eb6d47bd9aa23f7221276d206bb98327128ebe5e04519e2a2"
 }
