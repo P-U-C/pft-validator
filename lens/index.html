@@ -939,6 +939,8 @@
 
     let cy = null;
     let graphData = null;
+    let runMainLayoutFn = null; // Set by buildGraph, callable from reset button
+    let positionOrphansFn = null;
 
     /* -- Helpers -- */
     function fmtNum(n) {
@@ -1051,15 +1053,20 @@
       var allNodes = data.nodes;
       var edges = data.edges;
 
-      // Filter out isolated nodes (no edges) — they make the graph look chaotic
+      // Identify isolated nodes (no edges) — render them as a separate "fringe" cluster
       var connectedIds = {};
       edges.forEach(function(e) {
         connectedIds[e.source] = true;
         connectedIds[e.target] = true;
       });
-      var nodes = allNodes.filter(function(n) { return connectedIds[n.id]; });
 
-      // Build type lookup for fast edge coloring (include all for downstream lookups)
+      // Tag nodes as connected or orphan
+      var nodes = allNodes.map(function(n) {
+        var isOrphan = !connectedIds[n.id];
+        return Object.assign({}, n, { isOrphan: isOrphan });
+      });
+
+      // Build type lookup for fast edge coloring
       nodeTypeMap = {};
       allNodes.forEach(function(n) { nodeTypeMap[n.id] = n.type; });
 
@@ -1073,13 +1080,15 @@
           group: 'nodes',
           data: {
             id: n.id,
-            label: n.label || truncAddr(n.id),
-            nodeSize: nodeSize(n.memo_count, allNodeMemos),
-            bgColor: nodeColor(n),
-            borderColor: nodeBorderColor(n),
-            borderWidth: nodeBorderWidth(n),
-            shape: nodeShape(n),
+            label: n.isOrphan ? '' : (n.label || truncAddr(n.id)),
+            nodeSize: n.isOrphan ? 6 : nodeSize(n.memo_count, allNodeMemos),
+            bgColor: n.isOrphan ? '#3a3a3a' : nodeColor(n),
+            borderColor: n.isOrphan ? '#555' : nodeBorderColor(n),
+            borderWidth: n.isOrphan ? 0 : nodeBorderWidth(n),
+            shape: n.isOrphan ? 'ellipse' : nodeShape(n),
             isNew: n.is_new === true,
+            isOrphan: n.isOrphan,
+            opacity: n.isOrphan ? 0.35 : 1,
             raw: n
           }
         });
@@ -1124,7 +1133,7 @@
               'width': 'data(nodeSize)',
               'height': 'data(nodeSize)',
               'background-color': 'data(bgColor)',
-              'background-opacity': 0.85,
+              'background-opacity': 'data(opacity)',
               'border-color': 'data(borderColor)',
               'border-width': 'data(borderWidth)',
               'border-opacity': 0.6,
@@ -1146,6 +1155,13 @@
               'overlay-opacity': 0,
               'transition-property': 'border-color, border-width, background-opacity, width, height',
               'transition-duration': '0.25s'
+            }
+          },
+          {
+            selector: 'node[?isOrphan]',
+            style: {
+              'background-opacity': 0.35,
+              'label': ''
             }
           },
           {
@@ -1265,27 +1281,38 @@
             }
           }
         ],
-        layout: (function() {
-          // Use cose-bilkent for large graphs, concentric for small
-          if (nodes.length > 200) {
-            return {
-              name: 'cose-bilkent',
-              animate: false,
-              fit: true,
-              padding: 30,
-              nodeRepulsion: 8000,
-              idealEdgeLength: 80,
-              edgeElasticity: 0.45,
-              nestingFactor: 0.1,
-              gravity: 0.25,
-              numIter: 2500,
-              tile: false,
-              tilingPaddingVertical: 10,
-              tilingPaddingHorizontal: 10,
-              randomize: true
-            };
-          }
-          return {
+        layout: { name: 'preset' }, // deferred — we'll run custom layout after init
+        minZoom: 0.02,
+        maxZoom: 5,
+        wheelSensitivity: 0.2
+      });
+
+      /* -- Custom layout: connected nodes above, orphans in grid below -- */
+      var connectedNodes = cy.nodes().filter(function(n) { return !n.data('isOrphan'); });
+      var orphanNodes = cy.nodes().filter(function(n) { return n.data('isOrphan'); });
+
+      function runMainLayout(cb) {
+        if (connectedNodes.length === 0) { if (cb) cb(); return; }
+
+        var useLargeLayout = connectedNodes.length > 150;
+        var layoutOpts;
+        if (useLargeLayout) {
+          layoutOpts = {
+            name: 'cose-bilkent',
+            animate: false,
+            fit: false,
+            padding: 30,
+            nodeRepulsion: 8000,
+            idealEdgeLength: 80,
+            edgeElasticity: 0.45,
+            nestingFactor: 0.1,
+            gravity: 0.25,
+            numIter: 2500,
+            tile: false,
+            randomize: true
+          };
+        } else {
+          layoutOpts = {
             name: 'concentric',
             concentric: function(node) {
               return (node.data('raw').memo_count || 0) + (node.data('raw').tx_count || 0);
@@ -1293,16 +1320,51 @@
             levelWidth: function() { return 20; },
             minNodeSpacing: 18,
             spacingFactor: 1.35,
-            animate: edges.length <= 200,
-            animationDuration: 800,
-            fit: true,
+            animate: false,
+            fit: false,
             padding: 20
           };
-        })(),
-        minZoom: 0.02,
-        maxZoom: 5,
-        wheelSensitivity: 0.2
-      });
+        }
+
+        var layoutObj = connectedNodes.layout(layoutOpts);
+        layoutObj.on('layoutstop', function() { if (cb) cb(); });
+        layoutObj.run();
+      }
+
+      function positionOrphans() {
+        if (orphanNodes.length === 0) { cy.fit(null, 30); return; }
+
+        // Get bounding box of the main network
+        var bb = connectedNodes.length > 0
+          ? connectedNodes.boundingBox()
+          : { x1: 0, x2: 800, y1: 0, y2: 400, w: 800, h: 400 };
+
+        // Grid settings
+        var spacing = 14;
+        var gridWidth = Math.min(bb.w, 800);
+        var cols = Math.max(1, Math.floor(gridWidth / spacing));
+        var rows = Math.ceil(orphanNodes.length / cols);
+
+        // Position orphans below the main network with a gap
+        var startX = bb.x1 + (bb.w - cols * spacing) / 2;
+        var startY = bb.y2 + 80; // 80px gap below
+
+        orphanNodes.forEach(function(n, i) {
+          var col = i % cols;
+          var row = Math.floor(i / cols);
+          n.position({
+            x: startX + col * spacing,
+            y: startY + row * spacing
+          });
+        });
+
+        // Fit everything
+        cy.fit(null, 30);
+      }
+
+      runMainLayoutFn = runMainLayout;
+      positionOrphansFn = positionOrphans;
+      runMainLayout(positionOrphans);
 
       /* -- Pulsing glow for new nodes -- */
       var newNodes = cy.nodes('[?isNew]');
@@ -1765,13 +1827,8 @@
           document.getElementById('filterHideBots').checked = true;
           document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
           document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
-          // Re-run layout
-          var nodeCount = cy.nodes().length;
-          var edgeCount = graphData.edges ? graphData.edges.length : 0;
-          var reLayout = nodeCount > 200
-            ? { name: 'cose-bilkent', animate: false, fit: true, padding: 30, nodeRepulsion: 8000, idealEdgeLength: 80, edgeElasticity: 0.45, nestingFactor: 0.1, gravity: 0.25, numIter: 2500, tile: false, randomize: true }
-            : { name: 'concentric', concentric: function(node) { return (node.data('raw').memo_count || 0) + (node.data('raw').tx_count || 0); }, levelWidth: function() { return 8; }, minNodeSpacing: 8, animate: edgeCount <= 200, animationDuration: 600, fit: true, padding: 20 };
-          cy.layout(reLayout).run();
+          // Re-run split layout (connected nodes + orphans below)
+          if (runMainLayoutFn && positionOrphansFn) runMainLayoutFn(positionOrphansFn);
         }
       });
     }
