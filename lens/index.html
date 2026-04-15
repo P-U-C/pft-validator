@@ -164,9 +164,9 @@
       background: var(--near-black);
       border: 1px solid var(--border-subtle);
       position: relative;
-      height: calc(100vh - 200px);
-      min-height: 400px;
-      max-height: 800px;
+      height: calc(100vh - 150px);
+      min-height: 600px;
+      max-height: 1400px;
     }
 
     #cy {
@@ -1249,20 +1249,41 @@
             }
           }
         ],
-        layout: {
-          name: 'concentric',
-          concentric: function(node) {
-            return (node.data('raw').memo_count || 0) + (node.data('raw').tx_count || 0);
-          },
-          levelWidth: function() { return 20; },
-          minNodeSpacing: 18,
-          spacingFactor: 1.35,
-          animate: edges.length <= 200,
-          animationDuration: 800,
-          fit: true,
-          padding: 20
-        },
-        minZoom: 0.06,
+        layout: (function() {
+          // Use cose-bilkent for large graphs, concentric for small
+          if (nodes.length > 200) {
+            return {
+              name: 'cose-bilkent',
+              animate: false,
+              fit: true,
+              padding: 30,
+              nodeRepulsion: 8000,
+              idealEdgeLength: 80,
+              edgeElasticity: 0.45,
+              nestingFactor: 0.1,
+              gravity: 0.25,
+              numIter: 2500,
+              tile: true,
+              tilingPaddingVertical: 10,
+              tilingPaddingHorizontal: 10,
+              randomize: true
+            };
+          }
+          return {
+            name: 'concentric',
+            concentric: function(node) {
+              return (node.data('raw').memo_count || 0) + (node.data('raw').tx_count || 0);
+            },
+            levelWidth: function() { return 20; },
+            minNodeSpacing: 18,
+            spacingFactor: 1.35,
+            animate: edges.length <= 200,
+            animationDuration: 800,
+            fit: true,
+            padding: 20
+          };
+        })(),
+        minZoom: 0.02,
         maxZoom: 5,
         wheelSensitivity: 0.2
       });
@@ -1729,19 +1750,12 @@
           document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
           document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
           // Re-run layout
+          var nodeCount = cy.nodes().length;
           var edgeCount = graphData.edges ? graphData.edges.length : 0;
-          cy.layout({
-            name: 'concentric',
-            concentric: function(node) {
-              return (node.data('raw').memo_count || 0) + (node.data('raw').tx_count || 0);
-            },
-            levelWidth: function() { return 8; },
-            minNodeSpacing: 8,
-            animate: edgeCount <= 200,
-            animationDuration: 600,
-            fit: true,
-            padding: 20
-          }).run();
+          var reLayout = nodeCount > 200
+            ? { name: 'cose-bilkent', animate: false, fit: true, padding: 30, nodeRepulsion: 8000, idealEdgeLength: 80, edgeElasticity: 0.45, nestingFactor: 0.1, gravity: 0.25, numIter: 2500, tile: true, randomize: true }
+            : { name: 'concentric', concentric: function(node) { return (node.data('raw').memo_count || 0) + (node.data('raw').tx_count || 0); }, levelWidth: function() { return 8; }, minNodeSpacing: 8, animate: edgeCount <= 200, animationDuration: 600, fit: true, padding: 20 };
+          cy.layout(reLayout).run();
         }
       });
     }
