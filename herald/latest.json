@@ -4,20 +4,20 @@
   "edition_id": "herald-2026-04-15",
   "edition_date": "2026-04-15",
   "edition_number": 2,
-  "generated_at": "2026-04-15T03:00:22Z",
+  "generated_at": "2026-04-15T04:00:52Z",
   "title": "The Hive Herald",
   "tagline": "Dispatches from the Post Fiat colony \u2014 on-chain intelligence, daily",
   "lead": {
     "headline": "Sybil labeling accelerated sharply while network activity ran dropping.",
-    "why_it_matters": "The classifier surfaced 70 new sybil-signature wallets in the last 24 hours, lifting the bot ratio to 85.6% \u2014 contributors should expect stricter review pressure.",
+    "why_it_matters": "The classifier surfaced 752 new sybil-signature wallets in the last 24 hours, lifting the bot ratio to 85.4% \u2014 contributors should expect stricter review pressure.",
     "derived_from": [
       "sections.PULSE",
       "sections.WATCH"
     ]
   },
   "data_window": {
-    "start": "2026-04-14T03:00:22Z",
-    "end": "2026-04-15T03:00:22Z",
+    "start": "2026-04-14T04:00:52Z",
+    "end": "2026-04-15T04:00:52Z",
     "duration": "24h",
     "timezone": "UTC"
   },
@@ -54,27 +54,27 @@
       "tier": "free",
       "name": "Pulse",
       "tagline": "Network vital signs",
-      "as_of": "2026-04-15T03:00:22Z",
+      "as_of": "2026-04-15T04:00:52Z",
       "lookback_window": "24h",
       "methodology_version": "1.1.0",
       "freshness_status": "fresh",
       "methodology_note": "Health score copied from the hourly health.json surface. Wallet counts and memo velocity derived from the chain-index snapshot taken at as_of.",
       "metrics": {
-        "health_score": 0.5808,
+        "health_score": 0.438,
         "health_grade": "C",
-        "total_wallets": 857,
-        "contributors": 116,
-        "bots": 734,
+        "total_wallets": 858,
+        "contributors": 118,
+        "bots": 733,
         "infrastructure": 7,
-        "memos_today": 24,
+        "memos_today": 25,
         "memos_yesterday": 174,
         "memo_7d_daily_avg": 162.7,
         "velocity_direction": "dropping",
-        "total_transactions": 371111,
-        "total_memos": 9325,
+        "total_transactions": 371399,
+        "total_memos": 9611,
         "sybil_clusters": 3
       },
-      "narrative": "Health: 0.5808 (C). 857 wallets, 116 contributors. 24 memos today vs 163 avg. Velocity dropping.",
+      "narrative": "Health: 0.438 (C). 858 wallets, 118 contributors. 25 memos today vs 163 avg. Velocity dropping.",
       "access": {
         "tier": "free",
         "subscription_required": false,
@@ -85,7 +85,7 @@
       "tier": "premium",
       "name": "Flow of Capital",
       "tagline": "Where PFT moved in the last 24 hours",
-      "as_of": "2026-04-15T03:00:22Z",
+      "as_of": "2026-04-15T04:00:52Z",
       "lookback_window": "24h",
       "methodology_version": "1.1.0",
       "freshness_status": "fresh",
@@ -114,7 +114,7 @@
       "tier": "premium",
       "name": "Who Stirs the Hive",
       "tagline": "Rising contributors, new arrivals, gone-quiet alerts",
-      "as_of": "2026-04-15T03:00:22Z",
+      "as_of": "2026-04-15T04:00:52Z",
       "lookback_window": "168h",
       "methodology_version": "1.1.0",
       "freshness_status": "fresh",
@@ -147,6 +147,10 @@
         ],
         "new_wallets_7d": [
           {
+            "address": "rP5CT3DYyKUY2KG6Dh6iCm3qaJCzk25bHU",
+            "discovered": "2026-04-15T04:00:01.520Z"
+          },
+          {
             "address": "rLksR2zqGqMDCgwDirrnhgKaUnAWfR4CAC",
             "discovered": "2026-04-14T23:00:02.106Z"
           },
@@ -160,10 +164,6 @@
           },
           {
             "address": "r4PTQW6ZExstr2h9enpoStrreWJYGxL1ZZ",
-            "discovered": "2026-04-14T21:00:01.710Z"
-          },
-          {
-            "address": "rUwGYeZGZqf2uWqCvzcnuUqT75fBeBtfaV",
             "discovered": "2026-04-14T21:00:01.710Z"
           }
         ],
@@ -210,7 +210,7 @@
       "tier": "premium",
       "name": "Sybil Watch",
       "tagline": "Anomaly alerts and enforcement state",
-      "as_of": "2026-04-15T03:00:22Z",
+      "as_of": "2026-04-15T04:00:52Z",
       "lookback_window": "24h",
       "methodology_version": "1.1.0",
       "freshness_status": "fresh",
@@ -219,15 +219,15 @@
       "classification_scope": "wallets indexed through the Lens chain crawler + expanded deep-crawl set",
       "enforcement_state_reason": "No direct infrastructure\u2192bot transactions detected in the 24h window (Q2 from CASE-001)",
       "metrics": {
-        "new_sybil_detections_24h": 70,
-        "bot_ratio_pct": 85.6,
-        "review_queue": 12,
+        "new_sybil_detections_24h": 752,
+        "bot_ratio_pct": 85.4,
+        "review_queue": 0,
         "enforcement_state": "inactive",
         "reward_leaks_ever": 0
       },
-      "narrative": "70 new sybil detection(s). Bot ratio: 85.6%. 12 wallets in review queue. Enforcement: inactive. Zero reward leaks.",
+      "narrative": "752 new sybil detection(s). Bot ratio: 85.4%. 0 wallets in review queue. Enforcement: inactive. Zero reward leaks.",
       "preview": {
-        "headline": "70 new sybil detections, bot ratio at 85.6%",
+        "headline": "752 new sybil detections, bot ratio at 85.4%",
         "locked": true
       },
       "access": {
@@ -240,7 +240,7 @@
       "tier": "premium",
       "name": "From the Archive Vault",
       "tagline": "Full-history exclusive insights only we can produce",
-      "as_of": "2026-04-15T03:00:22Z",
+      "as_of": "2026-04-15T04:00:52Z",
       "lookback_window": "24h",
       "methodology_version": "1.1.0",
       "freshness_status": "fresh",
@@ -257,9 +257,9 @@
           "hour": "2026-04-10T04",
           "memos": 79
         },
-        "first_transaction_iso": "2026-02-19T18:50:12.000Z"
+        "first_transaction_iso": "2026-02-19T01:10:30.000Z"
       },
-      "narrative": "30 days ago (2026-03-16): 7682 transactions from 82 wallets. Busiest hour ever: 2026-04-10T04:00 UTC (79 memos). First indexed transaction: 2026-02-19 from rh7eykJ99XnG...",
+      "narrative": "30 days ago (2026-03-16): 7682 transactions from 82 wallets. Busiest hour ever: 2026-04-10T04:00 UTC (79 memos). First indexed transaction: 2026-02-19 from rP5CT3DYyKUY...",
       "preview": {
         "headline": "Full-history archive reveals a historical pattern inside the network",
         "locked": true
@@ -306,15 +306,15 @@
     "positioning": "The canonical public edition contract for a subscription-native intelligence product: machine-readable, archiveable, tier-aware, downstream-stable, and auditable against live indexed network data."
   },
   "integrity": {
-    "payload_sha256": "sha256:7aea7a3e46268a2a597a160fddf4fc7fc8c57ece4db98d9e2a3301fd804e79dd",
+    "payload_sha256": "sha256:7dd11036723e8f7482cd1d7e344378c2672e90a814682fda00c7eec6f65c67bc",
     "generated_from": [
       "chain-index.db",
       "health.json",
       "auth.json"
     ],
     "source_snapshot_hashes": {
-      "health": "sha256:c79fae1c2b8d1a8a43ecaaf5061bbcd4d94df1978ce97c6e4c05d98e02a6ca27",
-      "auth": "sha256:a065c47c8b6576957971e2524c1221596a9d5d0aed8d385dbe7405687e4397f0"
+      "health": "sha256:26ea48c6aa5eece9fdc4f16f2e37331465e45ce0fa0edbcb8e875904f21783e9",
+      "auth": "sha256:9ff7ba0b4c1e1cefc2630e2b328d965d848cfd51150140ede8ee5c271cf26b50"
     },
     "determinism_note": "Edition generated from indexed public data and published analytics surfaces without manual overrides. Same chain index + same hourly crawl produces the same payload.",
     "canonical_serialization": "json_sort_keys",
