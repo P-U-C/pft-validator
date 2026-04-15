@@ -920,7 +920,15 @@
   <!-- NOTE: Add <a href="/lens/">Lens</a> to the main site header nav -->
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/cytoscape-cose-bilkent@4.1.0/cytoscape-cose-bilkent.js"></script>
+  <script src="https://unpkg.com/layout-base@2.0.1/layout-base.js"></script>
+  <script src="https://unpkg.com/cose-base@2.2.0/cose-base.js"></script>
+  <script src="https://unpkg.com/cytoscape-cose-bilkent@4.1.0/cytoscape-cose-bilkent.js"></script>
+  <script>
+    // Register the cose-bilkent layout plugin
+    if (typeof cytoscape !== 'undefined' && typeof cytoscapeCoseBilkent !== 'undefined') {
+      cytoscape.use(cytoscapeCoseBilkent);
+    }
+  </script>
   <script>
   /* =============================================
      Lens — Network Graph Visualization
