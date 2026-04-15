@@ -1762,7 +1762,7 @@
     /* -- Controls -- */
     function initControls() {
       document.getElementById('btnFit').addEventListener('click', function() {
-        if (cy) cy.fit(undefined, 40);
+        if (cy) cy.fit(cy.elements(':visible'), 40);
       });
       document.getElementById('btnReset').addEventListener('click', function() {
         if (cy && graphData) {
@@ -1777,8 +1777,10 @@
           document.getElementById('filterHideBots').checked = true;
           document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
           document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
-          // Re-run layout
-          if (runMainLayoutFn) runMainLayoutFn();
+          // Re-apply filters to the existing layout (don't re-run the layout itself)
+          applyFilters();
+          // Fit viewport to visible nodes
+          cy.fit(cy.elements(':visible'), 30);
         }
       });
     }
@@ -1861,24 +1863,13 @@
         }
       });
 
-      // Re-run layout on the visible subset so nodes re-pack without ghost
-      // spacing from hidden bots. Use :visible selector to restrict.
+      // Don't re-run the layout on filter changes — just refit the viewport
+      // to the visible subset. Re-laying out the graph every time a filter
+      // toggles clobbers the cose-bilkent positions the user is already
+      // looking at.
       var visible = cy.elements(':visible');
       if (visible.length > 0) {
-        visible.layout({
-          name: 'concentric',
-          concentric: function(node) {
-            return (node.data('raw').memo_count || 0) + (node.data('raw').tx_count || 0);
-          },
-          levelWidth: function() { return 20; },
-          minNodeSpacing: 18,
-          spacingFactor: 1.35,
-          animate: visible.length <= 300,
-          animationDuration: 500,
-          fit: true,
-          padding: 40,
-          avoidOverlap: true
-        }).run();
+        cy.fit(visible, 40);
       }
     }
 
