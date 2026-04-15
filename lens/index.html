@@ -1942,6 +1942,8 @@
             buildGraph(data);
             buildStories(data);
             buildRichList(data);
+            // Apply default filters (hide bots is checked by default)
+            applyFilters();
           } catch(err) {
             console.error('Lens: error building graph', err);
             document.getElementById('cy').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-dim);font-size:0.7rem;font-family:var(--mono);">Error rendering graph: ' + err.message + '</div>';
