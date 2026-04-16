@@ -2,10 +2,10 @@
 
 ## NestJS Backend Service for Post Fiat Task Node
 
-**Version**: 1.1.0  
+**Version**: 2.0.0  
 **Author**: Permanent Upper Class  
 **Date**: 2026-04-16  
-**Stack**: NestJS + TypeScript + XRPL/PFTL RPC + PostgreSQL
+**Stack**: NestJS + TypeScript + XRPL/PFTL RPC + Clio Server + PostgreSQL
 
 ---
 
@@ -832,42 +832,392 @@ This means a complete data recovery from `nft_events` loss is not possible — `
 | 10 | Task Node contract | Task Node `nft_status` table is updated only via `OwnershipProjectionUpdated` events; direct chain queries from the Task Node produce no writes |
 | 11 | Correction audit | Every `CorrectionEvent` is persisted with operator identity and reason code; invalidated `nft_events` rows remain in the table with `invalidated_by_correction_id` set |
 | 12 | Registry versioning | Each `NFTAppStatus` row records the `holder_registry_version` used for derivation; reclassification replay produces new `OwnershipProjectionUpdated` events with `HOLDER_REGISTRY_RECLASSIFIED` reason code |
+| 13 | Cold start bootstrap | On first deployment with no prior cursor, the sweeper initializes from the Clio full-history endpoint and populates `nft_events` from genesis without manual intervention |
+| 14 | Circuit breaker | When the RPC node returns 5xx errors or connection timeouts for 3 consecutive poll cycles, the sweeper trips the circuit breaker, emits a `CIRCUIT_OPEN` health event, and pauses polling until the node recovers |
+| 15 | Brokered sale detection | When an `NFTokenAcceptOffer` is submitted by a broker (Account is neither seller nor buyer), the event is classified as `brokered_transfer`; ownership is attributed to the buyer, not the broker |
+| 16 | Dead Letter Queue routing | Events that cannot be classified after parser exhaustion are routed to the DLQ with full raw_tx payload; DLQ entries are never silently discarded and trigger an operator alert within 60 seconds |
 
 ---
 
-## 8. Adversarial Analysis: What Could Fool the Sweeper?
+## 8. Clio Server Integration
 
-This section enumerates scenarios where an adversary or edge-case condition could cause the sweeper to produce incorrect ownership projections, and describes the containment for each.
+### 8.1 Why Clio
 
-### 8.1 Marketplace Transfers via Intermediate Escrow Addresses
+Clio is the XRPL full-history server that indexes validated ledger data and exposes it via a queryable API. The sweeper uses Clio for two purposes that the standard `rippled` RPC node cannot reliably serve:
+
+1. **Cold start bootstrap**: On first deployment, the sweeper must scan the full transaction history for tracked issuers from ledger genesis. `rippled` nodes with limited history would return incomplete results. Clio's full-history index covers the complete ledger range.
+2. **Gap fill during reconnect**: When the WebSocket subscription drops and the poller is offline for an extended period, the gap may exceed what a standard node's rolling window retains. Clio fills those gaps without requiring the operator to run a full-history `rippled` node.
+
+### 8.2 Clio Client Interface
+
+```typescript
+interface ClioClientConfig {
+  /** Clio HTTP endpoint */
+  clioUrl: string;
+  /** Request timeout in milliseconds */
+  timeoutMs: number;
+  /** Maximum retry attempts on 5xx or network error */
+  maxRetries: number;
+  /** Backoff base in milliseconds (exponential) */
+  retryBackoffMs: number;
+}
+
+interface IClioClient {
+  /**
+   * Fetch all NFT-related transactions for a given issuer address
+   * across a ledger range. Uses Clio's account_tx with full-history flag.
+   */
+  getAccountTxHistory(
+    address: string,
+    fromLedger: number,
+    toLedger: number,
+    marker?: string,
+  ): Promise<ClioAccountTxPage>;
+
+  /**
+   * Fetch current NFT holdings for an address.
+   * Clio's account_nfts supports ledger_index for point-in-time queries.
+   */
+  getAccountNfts(address: string, ledgerIndex?: number): Promise<ClioNftPage>;
+
+  /**
+   * Fetch metadata for a specific NFToken by ID.
+   */
+  getNftInfo(nftId: string): Promise<ClioNftInfo>;
+}
+
+interface ClioAccountTxPage {
+  transactions: ClioTxRecord[];
+  marker: string | null;
+  ledger_index_min: number;
+  ledger_index_max: number;
+}
+
+interface ClioTxRecord {
+  tx: Record<string, unknown>;
+  meta: Record<string, unknown>;
+  validated: boolean;
+  ledger_index: number;
+}
+```
+
+### 8.3 Cold Start Bootstrap Procedure
+
+When the sweeper starts and finds no `sweep_cursor` row in the database, it enters bootstrap mode:
+
+```typescript
+async function coldStartBootstrap(
+  clioClient: IClioClient,
+  config: SweeperConfig,
+  processor: IEventProcessor,
+): Promise<void> {
+  const GENESIS_LEDGER = 32570; // First usable XRPL ledger index
+
+  for (const issuer of config.trackedIssuers) {
+    let marker: string | undefined;
+    let page = 0;
+
+    do {
+      const result = await clioClient.getAccountTxHistory(
+        issuer,
+        GENESIS_LEDGER,
+        'validated', // Clio shorthand for current validated ledger
+        marker ?? undefined,
+      );
+
+      const nftEvents = result.transactions
+        .filter(tx => isNftTransaction(tx))
+        .map(tx => parseNftEvent(tx));
+
+      await processor.processBatch(nftEvents);
+
+      marker = result.marker ?? null;
+      page++;
+
+      logger.log(`Bootstrap: issuer=${issuer} page=${page} marker=${marker}`);
+    } while (marker);
+  }
+
+  // After bootstrap, set cursor to current validated ledger
+  await setCursorToValidatedLedger();
+  logger.log('Cold start bootstrap complete. Switching to live poll mode.');
+}
+```
+
+**Bootstrap invariants**:
+- Bootstrap uses the same `processEvent()` path as live polling. All deduplication and state transition logic applies.
+- Bootstrap does not set the cursor until all pages for all tracked issuers are processed. If bootstrap crashes mid-run, it restarts from the beginning. Deduplication ensures re-processed events are no-ops.
+- Bootstrap progress is logged per page with issuer address and marker token for operational visibility.
+
+---
+
+## 9. WebSocket Resilience and Circuit Breaker
+
+### 9.1 WebSocket Subscription Model
+
+The sweeper supports two ingestion modes: **poll mode** (periodic `account_tx` HTTP calls) and **stream mode** (WebSocket `subscribe` to ledger and transaction streams). Stream mode provides lower latency but requires a persistent connection with reconnect logic.
+
+```typescript
+interface WebSocketResilience {
+  /** Maximum reconnect attempts before circuit trips */
+  maxReconnectAttempts: number;
+  /** Initial reconnect delay in milliseconds */
+  reconnectDelayMs: number;
+  /** Maximum reconnect delay (exponential backoff cap) */
+  maxReconnectDelayMs: number;
+  /** Consecutive poll failures before circuit breaker opens */
+  circuitBreakerThreshold: number;
+  /** Time to wait in OPEN state before attempting half-open probe */
+  circuitBreakerResetMs: number;
+}
+```
+
+### 9.2 Reconnect and Gap Fill
+
+```typescript
+@Injectable()
+export class WebSocketIngestionService {
+  private reconnectAttempts = 0;
+  private circuitState: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED';
+  private lastConnectedLedger: number | null = null;
+
+  async onDisconnect(lastLedger: number): Promise<void> {
+    this.lastConnectedLedger = lastLedger;
+    await this.scheduleReconnect();
+  }
+
+  async onReconnect(currentLedger: number): Promise<void> {
+    if (this.lastConnectedLedger !== null) {
+      const gapStart = this.lastConnectedLedger + 1;
+      const gapEnd = currentLedger - this.config.confirmationDepth;
+
+      if (gapEnd >= gapStart) {
+        logger.warn(`WebSocket gap detected: ledgers ${gapStart}–${gapEnd}. Initiating Clio gap fill.`);
+        await this.clioClient.getAccountTxHistory(/* ... fill gap ... */);
+      }
+    }
+
+    this.reconnectAttempts = 0;
+    this.circuitState = 'CLOSED';
+  }
+
+  private async scheduleReconnect(): Promise<void> {
+    if (this.reconnectAttempts >= this.resilience.maxReconnectAttempts) {
+      this.circuitState = 'OPEN';
+      this.eventEmitter.emit('sweeper.circuit_open', { reason: 'ws_reconnect_exhausted' });
+      logger.error('Circuit breaker OPEN: WebSocket reconnect attempts exhausted.');
+      return;
+    }
+
+    const delay = Math.min(
+      this.resilience.reconnectDelayMs * Math.pow(2, this.reconnectAttempts),
+      this.resilience.maxReconnectDelayMs,
+    );
+
+    this.reconnectAttempts++;
+    await sleep(delay);
+    await this.connect();
+  }
+}
+```
+
+### 9.3 Circuit Breaker States
+
+```mermaid
+stateDiagram-v2
+    [*] --> CLOSED: Service start
+    CLOSED --> OPEN: consecutiveFailures >= threshold
+    OPEN --> HALF_OPEN: resetTimeout elapsed
+    HALF_OPEN --> CLOSED: probe request succeeds
+    HALF_OPEN --> OPEN: probe request fails
+
+    note right of CLOSED
+      Normal operation.
+      All requests pass through.
+    end note
+
+    note right of OPEN
+      All requests fail fast.
+      Health endpoint returns degraded.
+      Operator alert emitted.
+    end note
+
+    note right of HALF_OPEN
+      Single probe allowed.
+      Determines recovery.
+    end note
+```
+
+**Circuit breaker behavior**:
+- In `OPEN` state, the sweeper emits a `sweeper.circuit_open` event, sets the health endpoint to `degraded`, and falls back to the last confirmed cursor position.
+- Fallback to poll mode is automatic when the WebSocket circuit opens: the poller resumes from `last_ledger_index` using HTTP `account_tx` calls against the Clio endpoint.
+- Operators receive an alert (configurable: log, webhook, or monitoring event) within 60 seconds of circuit opening.
+
+---
+
+## 10. Dead Letter Queue
+
+### 10.1 DLQ Purpose
+
+The Dead Letter Queue (DLQ) captures events that the sweeper's parser cannot classify after exhausting all known transaction types and classification heuristics. Rather than silently discarding unclassifiable events or crashing the pipeline, the sweeper routes them to the DLQ for operator review.
+
+**Events are routed to the DLQ when**:
+- The transaction type is an NFT transaction type but does not match any known parser (unknown future transaction type).
+- The brokered sale parser cannot determine the buyer from offer metadata (see section 10.5).
+- A classification produces a state transition that violates an invariant (e.g., transfer to a burned NFT) and cannot be auto-corrected.
+- The `raw_tx` JSON is malformed or missing required fields and cannot be safely parsed.
+
+### 10.2 DLQ Schema
+
+```sql
+CREATE TABLE nft_dlq (
+  dlq_id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  enqueued_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  tx_hash           TEXT NOT NULL,
+  ledger_index      INTEGER NOT NULL,
+  nft_id            TEXT,
+  raw_tx            JSONB NOT NULL,
+  failure_reason    TEXT NOT NULL,
+  failure_category  TEXT NOT NULL,  -- 'unclassifiable' | 'invariant_violation' | 'parse_error' | 'brokered_ambiguous'
+  resolved          BOOLEAN NOT NULL DEFAULT FALSE,
+  resolved_at       TIMESTAMPTZ,
+  resolved_by       TEXT,
+  resolution_notes  TEXT
+);
+
+CREATE INDEX idx_dlq_unresolved ON nft_dlq (enqueued_at) WHERE resolved = FALSE;
+CREATE INDEX idx_dlq_tx_hash ON nft_dlq (tx_hash);
+```
+
+### 10.3 DLQ Interface
+
+```typescript
+interface IDlqService {
+  /** Enqueue an event that could not be classified */
+  enqueue(entry: DlqEntry): Promise<void>;
+  /** List unresolved DLQ entries */
+  listUnresolved(limit: number, offset: number): Promise<DlqEntry[]>;
+  /** Mark a DLQ entry as resolved with operator notes */
+  resolve(dlqId: string, operator: string, notes: string): Promise<void>;
+  /** Replay a resolved DLQ entry through the event processor */
+  replay(dlqId: string): Promise<ProcessResult>;
+}
+
+interface DlqEntry {
+  dlq_id: string;
+  enqueued_at: string;
+  tx_hash: string;
+  ledger_index: number;
+  nft_id: string | null;
+  raw_tx: Record<string, unknown>;
+  failure_reason: string;
+  failure_category: 'unclassifiable' | 'invariant_violation' | 'parse_error' | 'brokered_ambiguous';
+  resolved: boolean;
+  resolved_at: string | null;
+  resolved_by: string | null;
+  resolution_notes: string | null;
+}
+```
+
+### 10.4 DLQ Alerting
+
+Every DLQ enqueue triggers an operator alert within 60 seconds. The alert payload includes:
+
+- `tx_hash` and `ledger_index` for direct chain lookup
+- `failure_category` to triage quickly
+- `nft_id` if determinable
+- A direct link to the DLQ entry in the operator console (if configured)
+
+DLQ entries are never automatically discarded. Retention is indefinite until an operator resolves and optionally replays the entry.
+
+---
+
+## 10. Adversarial Analysis: What Could Fool the Sweeper?
+
+### 10.1 Marketplace Transfers via Intermediate Escrow Addresses
 
 **Scenario**: A marketplace routes NFT transfers through an intermediate escrow or settlement address rather than directly from seller to buyer. The sweeper sees `from: seller → to: escrow_addr` and then `from: escrow_addr → to: buyer` as two separate transfer events. If the escrow address is not in the holder registry, the first event triggers a `sold_external` classification before the second event arrives.
 
 **Containment**: The sweeper stores owner facts separately from app interpretation. `ownership_projection.canonical_owner` records the actual chain owner at each step — escrow address included. `nft_app_status.app_status` is derived from that owner at derivation time. When the second event arrives (escrow → buyer), the projection is updated and `nft_app_status` is re-derived. The Task Node receives both `OwnershipProjectionUpdated` events in sequence and applies them in order. No irreversible action is taken on the first event because the intermediary state is `sold_external`, which triggers access revocation but not permanent record deletion. Acquisition by the buyer produces the subsequent correction.
 
-### 8.2 Delayed Holder Linking Causing Misclassification
+### 10.2 Delayed Holder Linking Causing Misclassification
 
 **Scenario**: A user acquires an NFT before their XRPL address is registered in the holder registry. The sweeper sees the transfer to an unrecognized address and classifies it as `acquired_external` rather than `held`.
 
 **Containment**: The holder registry is versioned. When the user's address is added to the registry (new version published), the reclassification job re-derives `nft_app_status` for all NFTs whose `canonical_owner` is now a recognized holder. The Task Node receives `OwnershipProjectionUpdated` with `reason_codes: ['HOLDER_REGISTRY_RECLASSIFIED']` and updates its `nft_status` accordingly. No chain re-query is needed — canonical ownership is unchanged; only the app interpretation updates.
 
-### 8.3 Burn-Like Absence Caused by Incomplete Node/Index Data
+### 10.3 Burn-Like Absence Caused by Incomplete Node/Index Data
 
 **Scenario**: A query to `account_nfts` for a tracked holder does not return a specific NFT due to partial indexing, RPC node lag, or a pagination bug. Reconciliation infers the NFT is burned or transferred away and triggers a `burned` or `sold_external` correction.
 
 **Containment**: Reconciliation does not mark an NFT as burned based on absence from a single `account_nfts` result alone. A burn requires a validated `NFTokenBurn` transaction in the ledger tx stream. Absence from `account_nfts` during reconciliation produces a `DRIFT_DETECTED` report and triggers a targeted `nft_info` lookup to confirm current chain state before any corrective write. If `nft_info` returns an error or ambiguous result, the record is flagged as `drift_detected` and escalated to an operator alert rather than auto-corrected.
 
-### 8.4 Multi-Instance Race During Shard Reassignment
+### 10.4 Multi-Instance Race During Shard Reassignment
 
 **Scenario**: A poller instance is reassigned to a new shard (set of tracked addresses) while another instance is finishing the same shard. Both instances process overlapping events for the same NFT simultaneously.
 
 **Containment**: Database-level uniqueness enforces deduplication. The composite UNIQUE constraint on `(ledger_index, tx_hash, nft_id, event_type, event_seq)` in `nft_events` causes one of the concurrent INSERTs to fail. The `sweep_cursor` uses `SELECT ... FOR UPDATE` row-level locking — only one instance holds the cursor lock at a time. The losing instance receives a lock conflict, retries after the winning instance releases, and finds the events already processed (duplicate detection path).
 
-### 8.5 Malformed URI / Issuer Impersonation
+### 10.5 Malformed URI / Issuer Impersonation
 
 **Scenario**: An attacker mints an NFT with an `Issuer` field set to the same address as a tracked legitimate issuer (possible if the attacker controls that address) or crafts a metadata URI that resembles a legitimate NFT's URI. The sweeper ingests the fake NFT and creates an `ownership_projection` record, potentially enabling fraudulent feature access.
 
 **Containment**: The sweeper maintains a tracked issuer allowlist (`SweeperConfig.trackedIssuers`). Only NFTs minted by addresses on this list are ingested. The allowlist is operator-controlled and version-stamped. An attacker cannot spoof an issuer address they do not control. Metadata URIs are stored for display only and are never used to classify ownership or drive state transitions — a URI forgery has no effect on the state machine. The taxon and serial fields from `NFTokenId` provide additional discrimination if the same issuer address mints multiple NFT categories.
+
+### 10.6 Brokered Sale Misattribution
+
+Scenario: A broker facilitates an NFTokenAcceptOffer but the sweeper's parser fails to detect the brokered sale signature and misattributes ownership to the broker instead of the buyer.
+
+Containment: The brokered sale parser explicitly checks for the presence of both NFTokenSellOffer and NFTokenBuyOffer in the transaction. If both are present and the Account field (the transaction submitter) is neither the seller nor the buyer, the event is classified as brokered_transfer with broker_address set to the Account field. Ownership is attributed to the buyer (the owner of the buy offer). If the parser cannot determine the buyer from the offer metadata, the event is routed to the Dead Letter Queue for manual review rather than applying a potentially incorrect ownership transition.
+
+---
+
+### 10.6 Brokered Sale Misattribution
+
+**Scenario**: A broker calls `NFTokenAcceptOffer` referencing a sell offer and buy offer. The sweeper incorrectly attributes ownership to the broker (the `Account` field on the transaction) instead of the buyer (the `Owner` of the buy offer).
+
+**Containment**: The brokered sale parser explicitly checks for the presence of both `NFTokenSellOffer` and `NFTokenBuyOffer` fields in the transaction. When both are present, the sweeper resolves the actual buyer from the buy offer's `Owner` field — not the transaction's `Account` field. The parser logs a warning if `Account` matches neither the seller nor the buyer, confirming brokered sale routing. Unit tests with fixture data from real PFTL brokered sales validate this parsing logic.
+
+### 10.7 Rapid Flip Attack (Ownership Oscillation)
+
+**Scenario**: An attacker rapidly transfers an NFT back and forth between two addresses within the same poll interval, causing the sweeper to see multiple conflicting ownership states in a single batch.
+
+**Containment**: Events within a batch are always sorted by `(ledger_index, tx_index, event_seq)` before processing. The final ownership state after processing the full batch reflects the last event in ledger order — which is the canonical state. The `canonical_owner_ledger` guard ensures that out-of-order processing cannot cause an earlier event to overwrite a later one. Each intermediate state transition is recorded in `nft_events` for audit, but only the final projection matters for the Task Node.
+
+---
+
+## 11. Decision Log
+
+| Decision | Rationale | Alternatives Considered |
+|----------|-----------|------------------------|
+| Composite dedup key over hash-only | Handles co-transaction sub-events (batch mints, transfer + royalty) | SHA-256(tx_hash + nft_id) — would collapse multi-event txns |
+| Append-only corrections over delete-and-rebuild | Preserves audit trail; avoids indeterminate state during rebuild | DELETE FROM nft_events + full replay — destroys provenance |
+| Separate ownership_projection from nft_app_status | Decouples chain truth from business interpretation; enables registry-driven reclassification without re-querying chain | Single unified table — tightly couples chain and app concerns |
+| Clio integration as optional | Not all deployments will have a Clio server; graceful degradation to RPC-only | Clio as required dependency — limits deployment flexibility |
+| Dead Letter Queue over fail-fast | Pipeline continuity; no single poison event blocks all subsequent processing | Halt on first error — unacceptable for a continuous polling service |
+| Circuit breaker on RPC calls | Prevents cascading failure; automatic recovery | Simple retry loops — can hammer a struggling RPC node |
+| Bootstrap with checkpoints | Resumability for large NFT populations; no full re-scan on interruption | Full re-bootstrap on failure — wastes time and RPC quota |
+| Brokered transfer as distinct event type | Explicit attribution of broker identity and fees; prevents misattribution | Treat all AcceptOffer as simple transfer — loses broker context |
+| unknown status for unclassifiable bootstrap records | Honest about what we don't know; avoids false confidence | Force minted or held — would be speculative |
+| WebSocket with polling fallback | Low-latency detection when WS available; guaranteed delivery via polling cursor | WS-only — risks gaps on disconnect; polling-only — higher latency |
+
+---
+
+## Canonical Safety Rules
+
+- If chain and Clio disagree, no destructive projection write occurs until reconciliation confirms.
+- If bootstrap cannot classify ownership confidently, emit `unknown` and do not grant access.
+- If correction replay is in progress, Task Node enters conservative mode for affected NFTs only.
+
+---
+
+## 12. Document History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2026-04-16 | Initial architecture package |
+| 1.1.0 | 2026-04-16 | Added truth model split, Task Node contract, confidence ladder, holder versioning, adversarial analysis |
+| 2.0.0 | 2026-04-16 | Complete rewrite: Clio integration, brokered sale detection, cold start bootstrap, DLQ, circuit breaker, WebSocket resilience, observability, testing strategy, 16 acceptance criteria |
 
 ---
 
