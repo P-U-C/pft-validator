@@ -391,7 +391,7 @@
 
   <div id="premiumContent" class="hidden">
 
-    <div class="columns columns-3">
+    <div class="columns" style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
       <!-- Column 1: FLOW -->
       <div class="column">
         <div class="article">
@@ -410,7 +410,25 @@
         </div>
       </div>
 
-      <!-- Column 2: MOVERS -->
+      <!-- Column 2: AIRDROPS -->
+      <div class="column">
+        <div class="article">
+          <h3 class="article-headline">Daily Airdrops</h3>
+          <div class="article-byline">Reputation Desk</div>
+          <div class="article-body">
+            <p id="airdropsBody">Loading airdrop data...</p>
+          </div>
+        </div>
+
+        <hr class="section-rule thin">
+
+        <div class="sidebar-box">
+          <div class="box-title">7-Day Leaders</div>
+          <div class="box-content" id="airdropLeaderboard">Loading...</div>
+        </div>
+      </div>
+
+      <!-- Column 3: MOVERS -->
       <div class="column">
         <div class="article">
           <h3 class="article-headline">Who Stirs the Hive</h3>
@@ -528,6 +546,21 @@
       document.getElementById('flowBody').textContent = s.flow.reward_payments_24h + ' reward payments were recorded in the past twenty-four hours, distributing a total of ' + s.flow.total_pft_distributed_24h.toLocaleString() + ' PFT across ' + s.flow.unique_recipients_24h + ' contributors. The largest single disbursement was ' + s.flow.largest_single_payment_pft.toLocaleString() + ' PFT.';
       if (s.flow.top_earner_address) {
         document.getElementById('flowTopEarner').textContent = s.flow.top_earner_address.substring(0,12) + '... received ' + s.flow.top_earner_pft.toLocaleString() + ' PFT in the period \u2014 the day\'s most prolific earner.';
+      }
+
+      // AIRDROPS
+      if (s.airdrops) {
+        document.getElementById('airdropsBody').textContent = s.airdrops.narrative;
+
+        var lb = s.airdrops.leaderboard_7d || [];
+        if (lb.length > 0) {
+          var lbHtml = lb.map(function(r, i) {
+            return '\u2022 ' + (i+1) + '. ' + r.address.substring(0,12) + '... \u2014 ' + r.total_pft.toLocaleString() + ' PFT (' + r.active_days + 'd, ' + r.drops + ' drops)';
+          }).join('<br>');
+          document.getElementById('airdropLeaderboard').innerHTML = lbHtml;
+        } else {
+          document.getElementById('airdropLeaderboard').textContent = 'No airdrop data for the last 7 days.';
+        }
       }
 
       // MOVERS
