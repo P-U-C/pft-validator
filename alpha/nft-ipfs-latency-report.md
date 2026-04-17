@@ -51,7 +51,7 @@ This submission uses exactly three geographic regions; each region contains one 
 - **Metrics**: `-w "%{time_starttransfer} %{time_total} %{http_code} %{size_download}"`
 - **Retries**: Up to 2 retries per URL on failure (3 total attempts)
 - **Timeout**: 30 seconds hard limit per request
-- **Cache state**: Tests run sequentially with no pre-warming; first request to each gateway is a cold fetch
+- **Cache state**: Tests run sequentially with no pre-warming; Gateway-side cache state is unknown and not controlled for
 
 ### 1.4 Commands Used
 
@@ -62,7 +62,7 @@ curl -sL -o /dev/null \
   --connect-timeout 10 --max-time 30 \
   "https://ipfs-testnet.postfiat.org/ipfs/bafkreicrilwi4cugarhhpsdfsep3vcgbrja4axil7prfhkgtfexu7brqtq"
 
-# Full test script: iterates 5 CIDs × 7 gateways × 3 regions
+# Full test script: iterates 5 CIDs × 7 gateways grouped across 3 regions
 # with retry logic and structured output
 # (full script available at the bottom of this document)
 ```
@@ -86,7 +86,7 @@ curl -sL -o /dev/null \
 | `bafkreicelirehwh...` | postfiat.org | 0.226 | 0.226 | **YES** | 0 | No | 200 |
 | `bafkreicelirehwh...` | pinata.cloud | 5.357 | 5.357 | **YES** | 0 | No | 200 |
 
-**NA Summary**: 10/10 success. Post Fiat's own gateway is fastest (226-621ms). Pinata is slower (4.1-6.5s) — likely fetching from IPFS network on each cold request rather than having content pinned locally.
+**NA Summary**: 10/10 success. Post Fiat's own gateway is fastest (226-621ms). Pinata is slower (4.1-6.5s). This test does not isolate the internal cause — only that it is consistently 10-15x slower than the Post Fiat gateway.
 
 ### 2.2 Europe (EU)
 
@@ -103,7 +103,7 @@ curl -sL -o /dev/null \
 | `bafkreicelirehwh...` | dweb.link | 0.765 | 0.766 | **YES** | 0 | No | 200 |
 | `bafkreicelirehwh...` | w3s.link | 2.073 | 2.073 | **YES** | 0 | No | 200 |
 
-**EU Summary**: 10/10 success. dweb.link is consistently fast (648-837ms first byte). w3s.link is variable (551ms to 3.3s) — likely depends on whether content is already in their CDN cache.
+**EU Summary**: 10/10 success. dweb.link is consistently fast (648-837ms first byte). w3s.link is variable (551ms to 3.3s). The variance suggests gateway-internal differences across requests, but this test does not isolate cache state or routing path.
 
 ### 2.3 Asia
 
@@ -162,7 +162,7 @@ Each gateway failure mode has a distinct signature. The table below defines the 
 | Pathology | Definition |
 |-----------|------------|
 | HOT_EDGE_HIT | Content served from CDN edge or local pin; <500ms |
-| WARM_CDN_HIT | Content in CDN cache but requires origin validation; 500ms–1s |
+| WARM_CDN_HIT | Consistent sub-second response suggesting cached or near-origin serving; 500ms–1s |
 | COLD_GATEWAY_FETCH | Gateway must discover content via IPFS DHT; 1–10s |
 | REDIRECT_LOOP | Gateway redirects to subdomain that cannot resolve content; timeout |
 | SLOW_BUT_SUCCESSFUL | Retrieval succeeds but exceeds acceptable UX threshold (>2s) |
@@ -176,7 +176,7 @@ Each gateway failure mode has a distinct signature. The table below defines the 
 | nftstorage.link | HOT_EDGE_HIT | Content indexed at ingest; 208–454ms |
 | dweb.link | WARM_CDN_HIT | Consistent sub-second (648–837ms); some origin validation cost |
 | w3s.link | COLD_GATEWAY_FETCH → WARM_CDN_HIT | Variable 551ms–3.3s; cache-hit-dependent |
-| gateway.pinata.cloud | COLD_GATEWAY_FETCH | DHT lookup on every cold request; 4.1–6.5s |
+| gateway.pinata.cloud | COLD_GATEWAY_FETCH | Consistently slow (4.1–6.5s) despite 100% success; pattern consistent with on-demand retrieval |
 | 4everland.io | REDIRECT_LOOP | HTTP 301 → subdomain gateway → unresolvable → 30s timeout |
 
 ---
@@ -185,7 +185,7 @@ Each gateway failure mode has a distinct signature. The table below defines the 
 
 ### 4.1 Most Reliable Path
 
-**Post Fiat's own IPFS gateway** (`ipfs-testnet.postfiat.org`) is the most reliable and fastest for PFTL NFT content: 100% success rate, 226-621ms latency, zero retries, zero timeouts. This is expected — content is likely pinned directly on their gateway node, eliminating IPFS DHT discovery overhead.
+**Post Fiat's own IPFS gateway** (`ipfs-testnet.postfiat.org`) is the most reliable and fastest for PFTL NFT content: 100% success rate, 226-621ms latency, zero retries, zero timeouts. The observed sub-second performance is consistent with locally hosted or pinned content, though this test cannot confirm the internal gateway architecture.
 
 ### 4.2 Least Reliable Path — 4everland.io Root Cause
 
@@ -216,15 +216,15 @@ GET https://4everland.io/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgt
 
 This confirms that 4everland is **not broken in general** — it specifically cannot find PFTL NFT content through its DHT path. The content has not been pinned on 4everland's nodes, and their DHT walk does not reach a provider in time. This is a content-routing failure, not a gateway infrastructure failure.
 
-**Conclusion**: 4everland's failure is content-specific. It would likely resolve if PFTL CIDs were pinned via 4everland's pinning API. Until then, 4everland must be excluded from the production gateway list.
+**Conclusion**: 4everland's failure is content-specific — the control CID succeeds while all 5 PFTL CIDs fail. 4everland must be excluded from the production gateway list until PFTL content resolves through their subdomain path.
 
 ### 4.3 Pinata Latency
 
-**Pinata** (NA) is 10-15x slower than the Post Fiat gateway (5.2s vs 0.4s average). Pinata is a pinning service, not a dedicated gateway for PFTL content. Each cold request triggers a DHT lookup + content fetch from the IPFS network. Content would need to be explicitly pinned on Pinata for sub-second delivery.
+**Pinata** (NA) is 10-15x slower than the Post Fiat gateway (5.2s vs 0.4s average). Pinata returned 200 on every request but with 4-6.5s latency — consistently the slowest functional gateway. The latency pattern is consistent with on-demand content retrieval rather than pre-cached serving, but this test does not confirm internal gateway behavior.
 
 ### 4.4 EU vs Asia Performance
 
-EU gateways (dweb.link, w3s.link) are consistent but slower than Asia gateways (ipfs.io, nftstorage.link). This is counterintuitive if the test origin is in NA — EU should have lower RTT. The likely explanation is that ipfs.io and nftstorage.link have more aggressive edge caching (content served from a CDN edge closer to the test origin) while dweb.link and w3s.link route through their primary IPFS nodes in Europe.
+EU gateways (dweb.link, w3s.link) returned slower times than Asia gateways (ipfs.io, nftstorage.link) despite the test origin being in NA. This is an observed result; the internal CDN routing and cache topology of each gateway is not controlled for in this test.
 
 ### 4.5 Content Availability
 
