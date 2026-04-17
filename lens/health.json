@@ -4,9 +4,9 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-04-17T01:00:00Z",
-  "calculated_at": "2026-04-17T01:01:25Z",
-  "next_update_at": "2026-04-17T02:00:00Z",
+  "snapshot_id": "2026-04-17T02:00:00Z",
+  "calculated_at": "2026-04-17T02:01:23Z",
+  "next_update_at": "2026-04-17T03:00:00Z",
   "refresh_cadence": "hourly",
   "health_score": 0.4198,
   "health_score_formula": "sum(component.score * component.weight)",
@@ -158,24 +158,17 @@
     "clear": 1
   },
   "score_change": {
-    "vs_prior_snapshot": -0.1311,
-    "prior_health_score": 0.5509,
-    "prior_calculated_at": "2026-04-17T00:01:22Z",
-    "largest_movers": [
-      {
-        "component": "memo_velocity",
-        "delta": -0.1311,
-        "raw_delta": -0.6556,
-        "reason": "latest_day_memos=6 vs prior avg=157.4"
-      }
-    ]
+    "vs_prior_snapshot": 0.0,
+    "prior_health_score": 0.4198,
+    "prior_calculated_at": "2026-04-17T01:01:25Z",
+    "largest_movers": []
   },
   "network_summary": {
     "total_accounts": 871,
     "contributors": 130,
     "bots": 733,
     "infrastructure": 8,
-    "total_transactions": 373508,
+    "total_transactions": 373510,
     "memo_transactions": 11503,
     "total_edges": 41293,
     "bidirectional_edges": 39456,
@@ -183,11 +176,11 @@
     "sybil_accounts": 743
   },
   "deltas": {
-    "health_score": -0.1311,
+    "health_score": 0.0,
     "accounts": 0,
-    "memo_transactions": 6,
+    "memo_transactions": 0,
     "edges": 0,
-    "since": "2026-04-17T00:01:22Z"
+    "since": "2026-04-17T01:01:25Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -196,5 +189,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:44f6d20bebe66536722429ea75ffa76d5639e8b5300cb22f1098ea5132661a70"
+  "snapshot_hash": "sha256:8b0f86042e5197f156dda6bde4a73de6e0e005baa0e4a0558968331270727a38"
 }
