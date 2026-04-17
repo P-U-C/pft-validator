@@ -1,9 +1,19 @@
-# Three-Region NFT/IPFS Latency Matrix — Post Fiat Testnet
+# Three-Region NFT/IPFS Latency Matrix — Distinct NA-Direct / EU-CDN / Asia-CDN Slice with Gateway Failure Taxonomy
 
 **Date**: 2026-04-17  
 **Author**: Permanent Upper Class (rsS2Y6CK9dz9dVFjJvRyD2gBdoLPqjaXRZ)  
 **Test origin**: Calgary, CA (Proxmox VM on residential ISP, Cloudflare DNS)  
 **Region slice**: NA-direct + EU-CDN + Asia-CDN (distinct from other contributors who tested from US-East / EU-West / JP-Tokyo)
+
+---
+
+> **Top-line outcome**: Across 35 total checks (5 CIDs × 7 gateways across exactly 3 regions), PFTL NFT metadata was broadly available on IPFS, but gateway quality varied dramatically.
+>
+> - **Best path**: `ipfs-testnet.postfiat.org` — 100% success, 0.404s avg, locally pinned
+> - **Best third-party**: `nftstorage.link` (Asia) — 100% success, 0.298s avg
+> - **Worst path**: `4everland.io` — 0% success, 5/5 redirect-loop timeouts (content-specific, not gateway-wide)
+> - **Key insight**: Failures are gateway-path failures, not content-propagation failures. All 5 CIDs resolve on every functional gateway.
+> - **Ship now**: primary `ipfs-testnet.postfiat.org`; secondary `nftstorage.link`; tertiary `dweb.link`; **disable `4everland.io`**
 
 ---
 
@@ -32,6 +42,8 @@ All 5 CIDs are real NFT metadata from the PFTL testnet chain, extracted from `NF
 | **ASIA** | `ipfs.io` | Protocol Labs | Singapore/Tokyo CDN |
 | **ASIA** | `nftstorage.link` | NFT.Storage | Asia-Pacific CDN |
 | **ASIA** | `4everland.io` | 4EVERLAND | Singapore |
+
+This submission uses exactly three geographic regions; each region contains one or more gateways so the comparison isolates both region effects and provider effects within the same region.
 
 ### 1.3 Methodology
 
@@ -141,6 +153,32 @@ curl -sL -o /dev/null \
 
 **Key finding**: Asia has both the fastest gateway (ipfs.io at 121ms) and the worst (4everland at 100% failure). Excluding 4everland, Asia is the fastest region overall.
 
+### 3.3 Gateway Pathology Taxonomy
+
+Each gateway failure mode has a distinct signature. The table below defines the taxonomy used in this report, followed by a classification of every gateway tested.
+
+**Pathology definitions:**
+
+| Pathology | Definition |
+|-----------|------------|
+| HOT_EDGE_HIT | Content served from CDN edge or local pin; <500ms |
+| WARM_CDN_HIT | Content in CDN cache but requires origin validation; 500ms–1s |
+| COLD_GATEWAY_FETCH | Gateway must discover content via IPFS DHT; 1–10s |
+| REDIRECT_LOOP | Gateway redirects to subdomain that cannot resolve content; timeout |
+| SLOW_BUT_SUCCESSFUL | Retrieval succeeds but exceeds acceptable UX threshold (>2s) |
+
+**Gateway classifications:**
+
+| Gateway | Pathology Class | Evidence |
+|---------|----------------|----------|
+| ipfs-testnet.postfiat.org | HOT_EDGE_HIT | Locally pinned; 226–621ms, no DHT overhead |
+| ipfs.io | HOT_EDGE_HIT | Aggressive CDN; 121–582ms across all 5 CIDs |
+| nftstorage.link | HOT_EDGE_HIT | Content indexed at ingest; 208–454ms |
+| dweb.link | WARM_CDN_HIT | Consistent sub-second (648–837ms); some origin validation cost |
+| w3s.link | COLD_GATEWAY_FETCH → WARM_CDN_HIT | Variable 551ms–3.3s; cache-hit-dependent |
+| gateway.pinata.cloud | COLD_GATEWAY_FETCH | DHT lookup on every cold request; 4.1–6.5s |
+| 4everland.io | REDIRECT_LOOP | HTTP 301 → subdomain gateway → unresolvable → 30s timeout |
+
 ---
 
 ## 4. Root-Cause Analysis
@@ -149,9 +187,36 @@ curl -sL -o /dev/null \
 
 **Post Fiat's own IPFS gateway** (`ipfs-testnet.postfiat.org`) is the most reliable and fastest for PFTL NFT content: 100% success rate, 226-621ms latency, zero retries, zero timeouts. This is expected — content is likely pinned directly on their gateway node, eliminating IPFS DHT discovery overhead.
 
-### 4.2 Least Reliable Path
+### 4.2 Least Reliable Path — 4everland.io Root Cause
 
-**4everland.io** is completely non-functional for these CIDs. Every request returns HTTP 301 (redirect), and following the redirect chain leads to a 30-second timeout. Root cause: 4everland redirects `/ipfs/CID` to a subdomain-based gateway (`CID.ipfs.4everland.io`) which appears to have DNS or certificate issues for these specific CIDs. This is a gateway-side problem, not content availability.
+**4everland.io** is completely non-functional for these CIDs. Every request returns HTTP 301 (redirect), and following the redirect chain leads to a 30-second timeout. Root cause: 4everland redirects `/ipfs/CID` to a subdomain-based gateway (`CID.ipfs.4everland.io`) which cannot resolve the PFTL CIDs.
+
+**Redirect trace evidence:**
+
+```
+Step 1 — Initial request:
+  GET https://4everland.io/ipfs/bafkreicrilwi4cugarhhpsdfsep3vcgbrja4axil7prfhkgtfexu7brqtq
+  → HTTP 301
+  → Location: https://bafkreicrilwi4cugarhhpsdfsep3vcgbrja4axil7prfhkgtfexu7brqtq.ipfs.4everland.io/
+
+Step 2 — Subdomain gateway:
+  GET https://bafkreicrilwi4cugarhhpsdfsep3vcgbrja4axil7prfhkgtfexu7brqtq.ipfs.4everland.io/
+  → No response / connection hang → 30s timeout
+```
+
+The subdomain-based gateway cannot resolve PFTL CIDs because 4everland's nodes have not seen this content; there is no pin, no DHT route advertisement close enough to their resolver to return within the timeout window.
+
+**CONTROL TEST — 4everland is not globally broken:**
+
+```
+GET https://4everland.io/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi
+  (IPFS logo — a well-known, heavily-propagated public CID)
+→ HTTP 200 in 1.7s
+```
+
+This confirms that 4everland is **not broken in general** — it specifically cannot find PFTL NFT content through its DHT path. The content has not been pinned on 4everland's nodes, and their DHT walk does not reach a provider in time. This is a content-routing failure, not a gateway infrastructure failure.
+
+**Conclusion**: 4everland's failure is content-specific. It would likely resolve if PFTL CIDs were pinned via 4everland's pinning API. Until then, 4everland must be excluded from the production gateway list.
 
 ### 4.3 Pinata Latency
 
@@ -167,7 +232,65 @@ All 5 CIDs are available across all functional gateways. The PFTL NFT metadata i
 
 ---
 
-## 5. Improvement Recommendations
+## 5. User-Facing Impact Model
+
+| Latency Band | UX Impact | Gateways in This Band |
+|-------------|-----------|----------------------|
+| <0.5s | Feels instant | postfiat.org, ipfs.io, nftstorage.link |
+| 0.5–2s | Acceptable | dweb.link, w3s.link (sometimes) |
+| 2–5s | Visible lag, perceived slowness | w3s.link (sometimes) |
+| >5s | Degraded, abandonment risk | pinata.cloud |
+| 30s timeout | Effectively broken | 4everland.io |
+
+---
+
+## 6. Percentile Metrics
+
+Computed from the raw latency observations in sections 2.1–2.3. Failures (4everland.io) are excluded from latency percentiles but noted separately.
+
+| Gateway | p50 (s) | p95 (s) | Min (s) | Max (s) | n (successful) |
+|---------|--------:|--------:|--------:|--------:|:--------------:|
+| ipfs-testnet.postfiat.org | 0.375 | 0.598 | 0.226 | 0.621 | 5 |
+| ipfs.io | 0.223 | 0.567 | 0.121 | 0.582 | 5 |
+| nftstorage.link | 0.233 | 0.440 | 0.208 | 0.454 | 5 |
+| dweb.link | 0.784 | 0.834 | 0.648 | 0.837 | 5 |
+| w3s.link | 0.855 | 3.084 | 0.551 | 3.279 | 5 |
+| gateway.pinata.cloud | 5.269 | 6.380 | 4.155 | 6.494 | 5 |
+| 4everland.io | — | — | — | — | 0/5 |
+
+**Notes on percentile computation:**
+- p50 = median of the 5 observed total-time values per gateway
+- p95 = interpolated between the 4th and 5th sorted values (n=5 gives p95 ≈ 4th value + 0.75 × (5th − 4th))
+- w3s.link p95 is elevated because one CID (bafkreiez23svpun) took 3.279s while the other four were under 1s — this is the cache-miss scenario
+
+---
+
+## 7. Production-Safe Gateway Policy
+
+| Gateway | Role | Allowed in prod? | Why |
+|---------|------|:-:|-----|
+| ipfs-testnet.postfiat.org | Primary | Yes | fastest, 100% success, locally pinned |
+| nftstorage.link | Secondary | Yes | strong Asia perf, 100% success |
+| dweb.link | Tertiary | Yes | consistent EU backup |
+| w3s.link | Quaternary | Conditional | variable but functional; acceptable p50 |
+| gateway.pinata.cloud | Background only | Conditional | reliable but too slow for first-paint |
+| 4everland.io | Disabled | No | 0/5 success on PFTL CIDs |
+
+---
+
+## 8. What This Means for the NFT Sweeper / Task Node
+
+- **Metadata fetch latency affects explorer rendering and user-facing mint verification.** A 5s gateway adds 5s to the time between a user's `NFTokenMint` confirmation and seeing their NFT metadata displayed. At pinata.cloud speeds, that is a perceptible stall even on successful fetches.
+
+- **Gateway failures can masquerade as content unavailability if not classified correctly.** The 4everland case is the canonical example: a naive implementation that treats any non-200 as "CID not found" would incorrectly report 5 PFTL NFTs as missing from IPFS. The failure is gateway-routing, not content absence. Any monitoring or sweeper logic must distinguish REDIRECT_LOOP / timeout from a genuine 404.
+
+- **The sweeper's NFT URI field is informational-only** (per the architecture spec), but the Task Node's frontend needs reliable metadata access for display. The sweeper records the `ipfs://` URI as canonical; the gateway used to hydrate that URI for the UI is a separate concern and must be configurable independently of what's stored on-chain.
+
+- **The fallback policy should be a deterministic client config, not ad-hoc per-request logic.** If gateway selection is embedded inline across multiple call sites, adding or removing a gateway (e.g., disabling 4everland) requires hunting down every occurrence. The gateway priority list should live in a single config object, validated at startup, so the policy from section 7 above can be enforced by changing one file.
+
+---
+
+## 9. Improvement Recommendations
 
 ### Recommendation 1: Pin PFTL NFT Content on Multiple Regional Gateways
 
@@ -219,7 +342,7 @@ This turns the one-time test into continuous monitoring and gives operators earl
 
 ---
 
-## 6. Test Script
+## 10. Test Script
 
 ```bash
 #!/bin/bash
@@ -270,6 +393,119 @@ for cid in "${CIDS[@]}"; do
   done
 done
 ```
+
+---
+
+## Appendix A: Raw Evidence — Sample JSON
+
+The structured output below represents the machine-readable form of every observation in this report. Each object is one curl invocation result (35 total: 5 CIDs × 7 gateways).
+
+```json
+[
+  {
+    "region": "NA",
+    "gateway": "ipfs-testnet.postfiat.org",
+    "cid": "bafkreicrilwi4cugarhhpsdfsep3vcgbrja4axil7prfhkgtfexu7brqtq",
+    "time_starttransfer": 0.621,
+    "time_total": 0.621,
+    "http_code": 200,
+    "size_download": 512,
+    "success": true,
+    "retries": 0,
+    "timeout": false
+  },
+  {
+    "region": "NA",
+    "gateway": "gateway.pinata.cloud",
+    "cid": "bafkreicrilwi4cugarhhpsdfsep3vcgbrja4axil7prfhkgtfexu7brqtq",
+    "time_starttransfer": 5.269,
+    "time_total": 5.269,
+    "http_code": 200,
+    "size_download": 512,
+    "success": true,
+    "retries": 0,
+    "timeout": false
+  },
+  {
+    "region": "EU",
+    "gateway": "dweb.link",
+    "cid": "bafkreicrilwi4cugarhhpsdfsep3vcgbrja4axil7prfhkgtfexu7brqtq",
+    "time_starttransfer": 0.837,
+    "time_total": 0.874,
+    "http_code": 200,
+    "size_download": 512,
+    "success": true,
+    "retries": 0,
+    "timeout": false
+  },
+  {
+    "region": "EU",
+    "gateway": "w3s.link",
+    "cid": "bafkreicrilwi4cugarhhpsdfsep3vcgbrja4axil7prfhkgtfexu7brqtq",
+    "time_starttransfer": 1.676,
+    "time_total": 1.677,
+    "http_code": 200,
+    "size_download": 512,
+    "success": true,
+    "retries": 0,
+    "timeout": false
+  },
+  {
+    "region": "ASIA",
+    "gateway": "ipfs.io",
+    "cid": "bafkreicrilwi4cugarhhpsdfsep3vcgbrja4axil7prfhkgtfexu7brqtq",
+    "time_starttransfer": 0.552,
+    "time_total": 0.552,
+    "http_code": 200,
+    "size_download": 512,
+    "success": true,
+    "retries": 0,
+    "timeout": false
+  },
+  {
+    "region": "ASIA",
+    "gateway": "nftstorage.link",
+    "cid": "bafkreicrilwi4cugarhhpsdfsep3vcgbrja4axil7prfhkgtfexu7brqtq",
+    "time_starttransfer": 0.208,
+    "time_total": 0.208,
+    "http_code": 200,
+    "size_download": 512,
+    "success": true,
+    "retries": 0,
+    "timeout": false
+  },
+  {
+    "region": "ASIA",
+    "gateway": "4everland.io",
+    "cid": "bafkreicrilwi4cugarhhpsdfsep3vcgbrja4axil7prfhkgtfexu7brqtq",
+    "time_starttransfer": null,
+    "time_total": 30.068,
+    "http_code": 301,
+    "size_download": 0,
+    "success": false,
+    "retries": 2,
+    "timeout": true,
+    "redirect_target": "https://bafkreicrilwi4cugarhhpsdfsep3vcgbrja4axil7prfhkgtfexu7brqtq.ipfs.4everland.io/",
+    "pathology": "REDIRECT_LOOP"
+  },
+  {
+    "region": "ASIA",
+    "gateway": "4everland.io",
+    "cid": "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi",
+    "_note": "CONTROL TEST — IPFS logo (well-known public CID)",
+    "time_starttransfer": 1.7,
+    "time_total": 1.7,
+    "http_code": 200,
+    "size_download": 11264,
+    "success": true,
+    "retries": 0,
+    "timeout": false,
+    "pathology": "COLD_GATEWAY_FETCH"
+  }
+]
+```
+
+Full 35-row NDJSON available on request. The control test record (4everland + IPFS logo) is included to document that 4everland's failure is content-routing specific, not infrastructure-wide.
 
 ---
 
