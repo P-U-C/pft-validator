@@ -3,15 +3,15 @@
   "methodology_version": "2.1.0",
   "classification_ruleset_version": "1.2.0",
   "sybil_ruleset_version": "1.1.0",
-  "generated_at": "2026-04-17T21:00:01.532Z",
+  "generated_at": "2026-04-17T22:00:02.248Z",
   "refresh_cadence": "hourly",
   "coverage": {
-    "node_ledger_range": "1-2016782",
+    "node_ledger_range": "1-2017976",
     "node_peers": 10,
-    "indexed_ledger_range": "3179-2016510",
+    "indexed_ledger_range": "3179-2017387",
     "indexed_time_range": {
       "from": "2026-02-06T16:46:12.000Z",
-      "to": "2026-04-17T20:47:41.000Z"
+      "to": "2026-04-17T21:31:42.000Z"
     },
     "public_node_range": "1750054-latest (~90K ledgers)",
     "our_depth_advantage": "1,746,875 additional ledgers",
@@ -19,9 +19,9 @@
   },
   "totals": {
     "accounts": 871,
-    "transactions": 373644,
+    "transactions": 373651,
     "edges": 41293,
-    "memos": 11615,
+    "memos": 11618,
     "bots_detected": 733,
     "infrastructure_wallets": 8,
     "sybil_clusters": 1,
@@ -31,9 +31,9 @@
   "deltas_since_last_update": {
     "summary": {
       "accounts": 0,
-      "transactions": 10,
+      "transactions": 7,
       "edges": 37324,
-      "memos": 7
+      "memos": 3
     },
     "completeness_window_changed": false,
     "methodology_version_changed": false
@@ -91,22 +91,22 @@
   ],
   "sample_profile": {
     "address": "rsS2Y6CK9dz9dVFjJvRyD2gBdoLPqjaXRZ",
-    "tx_count": 479,
-    "memo_count": 447,
-    "balance_pft": 898673.24,
+    "tx_count": 481,
+    "memo_count": 449,
+    "balance_pft": 915423.24,
     "first_activity": "2026-04-08T18:10:30Z",
     "last_activity": "2026-04-11T13:46:32Z",
     "history_confidence": "high",
     "relationships": [
       {
         "peer": "rwdm72S9YVKkZjeADKU2...",
-        "label": "Task Node",
+        "label": "Task Hub",
         "type": "infrastructure",
         "in_tx": 0,
-        "out_tx": 265,
+        "out_tx": 267,
         "in_memo": 0,
-        "out_memo": 264,
-        "pft": 1.000264
+        "out_memo": 266,
+        "pft": 1.000266
       },
       {
         "peer": "r3hH6UNw1eVQYiXbDVoa...",
@@ -130,7 +130,7 @@
       },
       {
         "peer": "rGBKxoTcavpfEso7ASRE...",
-        "label": "Distribution 2",
+        "label": "Task Node (Reward 1)",
         "type": "infrastructure",
         "in_tx": 71,
         "out_tx": 0,
@@ -140,7 +140,7 @@
       },
       {
         "peer": "rKt4peDozpRW9zdYGiTZ...",
-        "label": "Task Node 2",
+        "label": "Task Node (Reward 2)",
         "type": "infrastructure",
         "in_tx": 34,
         "out_tx": 0,
