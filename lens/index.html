@@ -881,6 +881,31 @@
           <div class="health-sub" id="healthUpdatedSub">--</div>
         </div>
       </div>
+
+      <div class="section-label" style="margin-top:2rem;">Daily Airdrops</div>
+      <div class="section-narrative">Reputation-based daily payouts issued at 21:08 UTC from the task node.</div>
+      <div class="health-grid" style="margin-top:1rem;">
+        <div class="health-card">
+          <div class="health-label">Cumulative PFT</div>
+          <div class="health-value accent" id="airdropCumPft">--</div>
+          <div class="health-sub" id="airdropCumRecipients">-- recipients all-time</div>
+        </div>
+        <div class="health-card">
+          <div class="health-label">Today's Airdrops</div>
+          <div class="health-value green" id="airdropTodayPft">--</div>
+          <div class="health-sub" id="airdropTodayRecipients">-- recipients today</div>
+        </div>
+        <div class="health-card">
+          <div class="health-label">Total Drops</div>
+          <div class="health-value" id="airdropCumDrops" style="color:var(--text-secondary);">--</div>
+          <div class="health-sub">individual payments</div>
+        </div>
+        <div class="health-card">
+          <div class="health-label">Drop Time</div>
+          <div class="health-value" style="font-size:1rem;color:var(--text-secondary);">21:08 UTC</div>
+          <div class="health-sub">daily, Mon-Sun</div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -1689,6 +1714,16 @@
       document.getElementById('healthWallets').textContent = stats.total_accounts;
       document.getElementById('healthMemos').textContent = fmtNum(stats.memo_transactions);
       document.getElementById('healthSybil').textContent = stats.sybil_clusters;
+
+      // Airdrop stats
+      if (stats.airdrops) {
+        var ad = stats.airdrops;
+        document.getElementById('airdropCumPft').textContent = fmtNum(ad.cumulative_pft);
+        document.getElementById('airdropCumRecipients').textContent = ad.cumulative_recipients + ' recipients all-time';
+        document.getElementById('airdropTodayPft').textContent = ad.today_pft > 0 ? fmtNum(ad.today_pft) : 'pending';
+        document.getElementById('airdropTodayRecipients').textContent = ad.today_recipients + ' recipients today';
+        document.getElementById('airdropCumDrops').textContent = fmtNum(ad.cumulative_drops);
+      }
 
       if (stats.generated_at) {
         var d = new Date(stats.generated_at);
