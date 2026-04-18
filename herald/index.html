@@ -327,11 +327,35 @@
   .hidden { display: none; }
 
   @media (max-width: 768px) {
-    .newspaper { padding: 20px 16px 30px; }
+    body { padding: 10px 4px; }
+    .newspaper { padding: 16px 14px 24px; }
     .columns-3, .columns-2-equal { grid-template-columns: 1fr; }
-    .column { border-right: none; border-bottom: 1px solid var(--rule-light); padding: 12px 0; }
-    .column:last-child { border-bottom: none; }
-    .ticker-strip { flex-wrap: wrap; gap: 8px; justify-content: center; }
+    .column { border-right: none; border-bottom: 1px solid var(--rule-light); padding: 16px 0; }
+    .column:first-child { padding-left: 0; }
+    .column:last-child { border-bottom: none; padding-right: 0; }
+    .ticker-strip { flex-wrap: wrap; gap: 8px; justify-content: center; font-size: 13px; }
+    .top-bar { font-size: 11px; flex-wrap: wrap; gap: 4px; justify-content: center; }
+    .masthead h1 { font-size: clamp(32px, 10vw, 60px); }
+    .masthead-subtitle { font-size: 12px; letter-spacing: 3px; }
+    .masthead-rule span { font-size: 11px; letter-spacing: 2px; }
+    .date-bar { font-size: 12px; flex-wrap: wrap; gap: 4px; justify-content: center; }
+    .headline-main { font-size: clamp(24px, 7vw, 42px); }
+    .headline-sub { font-size: clamp(14px, 4vw, 18px); line-height: 1.4; }
+    .article-headline { font-size: 20px; }
+    .article-headline.large { font-size: 24px; }
+    .article-headline.small { font-size: 17px; }
+    .article-byline { font-size: 12px; }
+    .article-body { font-size: 15px; line-height: 1.7; }
+    .pullquote-text { font-size: 18px; }
+    .sidebar-box .box-title { font-size: 14px; }
+    .sidebar-box .box-content { font-size: 14px; line-height: 1.7; }
+    .premium-gate .gate-title { font-size: 18px; }
+    .premium-gate .gate-text { font-size: 14px; }
+    .premium-gate input { font-size: 15px; width: 100%; margin-bottom: 8px; }
+    .premium-gate button { font-size: 14px; margin-left: 0; width: 100%; padding: 12px; }
+    .footer { font-size: 10px; flex-wrap: wrap; gap: 6px; justify-content: center; }
+    .ticker-item { font-size: 12px; }
+    .ticker-strip .ticker-value { font-size: 13px; }
   }
 
   @media print {
@@ -391,7 +415,7 @@
 
   <div id="premiumContent" class="hidden">
 
-    <div class="columns" style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+    <div class="columns columns-2-equal">
       <!-- Column 1: FLOW -->
       <div class="column">
         <div class="article">
