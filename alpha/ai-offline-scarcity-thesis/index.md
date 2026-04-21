@@ -24,21 +24,31 @@ reward: 3000 PFT
 
 *Generated task: "Complete a distinct alpha submission with four-section feedback" — use the live alpha task flow to complete one new request-to-submission run, choosing a request shape that differs from your earlier alpha feedback pass so reviewers can compare coverage across contributors.*
 
-## Completed Alpha Run
+## Routed Alpha Task
 
-**Alpha task:** Map LLM-First Research Workflow Breakpoints (4,400 PFT)  
-**Request shape:** Practitioner channel check — direct operating observations on where LLMs replace search, what remains data-bound or human-bound, and which infrastructure layers gain value.  
+The task node routed us to the following alpha task based on our operating history (validator infrastructure, on-chain intelligence tooling, LLM-assisted development workflow):
+
+> **Map LLM-First Research Workflow Breakpoints** (4,400 PFT)
+>
+> *You have direct operating exposure to agentic software, autonomous trading systems, and workflow tooling, which gives you a practical view of where synthesized answers actually replace search, source documents, and specialized dashboards. We want a channel check on how the research funnel is changing in real use: what gets faster, what gets flatter, and which bottlenecks remain stubbornly human or data-bound. Keep it to public-shareable observations from your own workflow and omit confidential vendor metrics, private customer data, or nonpublic product plans.*
+>
+> **Alpha Question:** In your own market or crypto research workflow over the past 3-6 months, which steps are now genuinely LLM-first and which still require direct search, primary documents, onchain explorers, or specialized terminals? What failure modes around provenance, freshness, attribution, and workflow integration still block full replacement, and which infrastructure layers seem to gain value when model output itself becomes cheap?
+
+## Completed Run
+
 **Submission link:** [LLM-First Research Workflow Breakpoints](llm-research-workflow-alpha)  
-**Standalone thesis:** [LLM Outputs as the New Investment Funnel](llm-investment-funnel)
+**Standalone thesis:** [LLM Outputs as the New Investment Funnel](llm-investment-funnel)  
+**Reward:** 8,800 PFT (2x listed — reviewer noted the TypeScript snippet grounding high-level observations in engineering reality)
 
-This request shape differs from prior passes: the earlier UX stress test (March 2026) tested task node mechanics across 5 tasks; the Infinex feedback pass was product-focused. This run is a research/analysis alpha grounded in direct operating experience building on-chain intelligence infrastructure.
+This request shape differs from prior passes: the earlier UX stress test (March 2026) tested task node mechanics across 5 tasks; the Infinex feedback pass was product-focused. This run is a practitioner channel check grounded in direct operating experience building on-chain intelligence infrastructure.
 
 **Flow completed:**
 1. Submitted collaborative task request via Alpha Chat
 2. System generated task proposal (accepted Apr 20)
-3. Received the LLM breakpoints alpha task from the task routing system
+3. Task node routed us to the LLM breakpoints alpha based on our operating profile
 4. Completed full research pass: drafted thesis from two independent external sources, received external peer review with structured feedback (7.8/10 initial, specific improvement recommendations), iterated structure three times to final submission
-5. Published at public URL
+5. Submitted — rewarded 8,800 PFT
+6. Published at public URL
 
 ---
 
