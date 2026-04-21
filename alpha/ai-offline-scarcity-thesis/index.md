@@ -45,12 +45,13 @@ The system routed this request to the following alpha task based on operating pr
 ## Flow Completed
 
 1. Determined alpha topic: how LLM outputs are replacing search as the investment research funnel
-2. Submitted request to Alpha Chat
-3. System generated task proposal: "Map LLM-First Research Workflow Breakpoints"
-4. Drafted initial response grounded in two external sources ([Imas](https://aleximas.substack.com/p/what-will-be-scarce), [@moneyfetishist](https://x.com/moneyfetishist/status/2045973383280787940))
-5. Received external peer review (7.8/10 initial rating, structural recommendations)
-6. Iterated three times: reframed around faster/flatter/hard/infra breakpoints, added query-shaping as surprise breakpoint, compressed meta-thesis
-7. Submitted final version — rewarded 8,800 PFT
+2. Researched and drafted standalone thesis grounded in two external sources ([Imas](https://aleximas.substack.com/p/what-will-be-scarce), [@moneyfetishist](https://x.com/moneyfetishist/status/2045973383280787940))
+3. Submitted request to Alpha Chat
+4. System generated task proposal: "Map LLM-First Research Workflow Breakpoints"
+5. Adapted draft into alpha response format (~550 words, practitioner channel check)
+6. Received external peer review (7.8/10 initial rating, structural recommendations)
+7. Iterated three times: reframed around faster/flatter/hard/infra breakpoints, added query-shaping as surprise breakpoint, compressed meta-thesis
+8. Submitted final version — rewarded 8,800 PFT
 
 ---
 
