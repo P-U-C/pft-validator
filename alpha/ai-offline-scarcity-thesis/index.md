@@ -1,14 +1,14 @@
 ---
 layout: default
-title: "Collaborative Task Submission: Distinct Alpha Run + Four-Section Feedback"
+title: "Alpha Submission: LLM-First Research Workflow Breakpoints"
 date: 2026-04-21
-category: network
+category: alpha
 status: published
 task_id: 70a5c227-6e08-4d0e-9e19-6bea05fdfc20
 reward: 3000 PFT
 ---
 
-# Collaborative Task Submission — 70a5c227
+# Alpha Submission — Four-Section Feedback
 
 **Scenario Label:** Practitioner Channel Check — LLM-First Research Workflow  
 **Submitted by:** Zoz (Permanent Upper Class Validator)  
@@ -20,81 +20,74 @@ reward: 3000 PFT
 
 ## Request Text
 
-> I want a collaborative task
+> Write a research analysis on how LLM outputs are replacing traditional search (Google → analyst reports → Bloomberg) as the primary investment research funnel. Cover: how information asymmetry restructures (horizontal flattening, vertical deepening), who wins and loses in the transition, and what infrastructure becomes valuable when AI-generated synthesis is commodity. Ground the analysis in at least two independent external sources. Publish as a standalone piece.
 
-This generated the network task: *"Complete a distinct alpha submission with four-section feedback"* — run one full pass through the live alpha task flow, publish a four-section feedback note, and choose a request shape different from prior alpha feedback passes.
+## Task Generated
 
----
+The system routed this request to the following alpha task based on operating profile:
 
-## Alpha Run Completed
-
-To fulfill this task, we completed the following alpha submission through the live task flow:
-
-**Alpha task:** Map LLM-First Research Workflow Breakpoints  
-**Alpha task description:**
+**Map LLM-First Research Workflow Breakpoints** (4,400 PFT listed)
 
 > You have direct operating exposure to agentic software, autonomous trading systems, and workflow tooling, which gives you a practical view of where synthesized answers actually replace search, source documents, and specialized dashboards. We want a channel check on how the research funnel is changing in real use: what gets faster, what gets flatter, and which bottlenecks remain stubbornly human or data-bound.
 
-**Alpha question:**
+## Submission Artifacts
 
-> In your own market or crypto research workflow over the past 3-6 months, which steps are now genuinely LLM-first and which still require direct search, primary documents, onchain explorers, or specialized terminals? What failure modes around provenance, freshness, attribution, and workflow integration still block full replacement, and which infrastructure layers seem to gain value when model output itself becomes cheap?
+- [LLM-First Research Workflow Breakpoints](llm-research-workflow-alpha) — alpha response (~550 words)
+- [LLM Outputs as the New Investment Funnel](llm-investment-funnel) — standalone thesis
+- Subscription verification code snippet (TypeScript, amount-based matching due to keystone encryption)
 
-**Submission artifacts:**
-- [LLM-First Research Workflow Breakpoints](llm-research-workflow-alpha) — the alpha response (~550 words)
-- [LLM Outputs as the New Investment Funnel](llm-investment-funnel) — standalone thesis that informed the response
+## Outcome
 
-**Alpha outcome:** Rewarded 8,800 PFT (2x listed). Reviewer noted: *"Excellent submission. The inclusion of the TypeScript snippet in the verification step perfectly grounded your high-level observations in ground-truth engineering reality."*
+**Rewarded:** 8,800 PFT (2x listed)  
+**Reviewer feedback:** *"Excellent submission. The inclusion of the TypeScript snippet in the verification step perfectly grounded your high-level observations in ground-truth engineering reality."*  
+**Sybil similarity:** 0.346
 
-**Request shape differentiation:** Prior passes covered UX stress testing (March 2026, 5 tasks across categories) and product feedback (Infinex). This run is a practitioner channel check — direct operating observations from building on-chain intelligence infrastructure.
+## Flow Completed
 
-**Steps completed:**
-1. Received alpha task routed by the task node based on operating profile
-2. Drafted initial response grounded in two independent external sources
-3. Received external peer review (7.8/10 initial, structural recommendations)
-4. Iterated three times: reframed around faster/flatter/hard/infra breakpoints, added query-shaping as surprise breakpoint, trimmed meta-thesis
-5. Submitted final version — rewarded 8,800 PFT
-6. Published all artifacts at public URL
+1. Determined alpha topic: how LLM outputs are replacing search as the investment research funnel
+2. Submitted request to Alpha Chat
+3. System generated task proposal: "Map LLM-First Research Workflow Breakpoints"
+4. Drafted initial response grounded in two external sources ([Imas](https://aleximas.substack.com/p/what-will-be-scarce), [@moneyfetishist](https://x.com/moneyfetishist/status/2045973383280787940))
+5. Received external peer review (7.8/10 initial rating, structural recommendations)
+6. Iterated three times: reframed around faster/flatter/hard/infra breakpoints, added query-shaping as surprise breakpoint, compressed meta-thesis
+7. Submitted final version — rewarded 8,800 PFT
 
 ---
 
-## Four-Section Feedback on the Collaborative Task Flow
+## Likes
 
-The following feedback is about the collaborative network task (70a5c227) and the experience of completing it — not about the alpha task content itself.
+1. **Task routing matched operating profile accurately.** My request about LLM investment funnels was routed to a practitioner channel check that specifically called out "direct operating exposure to agentic software, autonomous trading systems, and workflow tooling." The system correctly identified that my validator/indexer/bot work made me a good fit for this particular alpha question. The routing felt earned, not random.
 
-### Likes
+2. **The verification spec is binary and testable.** The alpha task asked for 200-500 words based on direct experience with a shareability confirmation. No subjective judgment needed — the submission either meets the structural requirements or it doesn't.
 
-1. **Collaborative task routing works well.** A simple "I want a collaborative task" request produced a well-structured proposal with clear verification criteria. The system correctly identified that a feedback-collection task shape was appropriate and set a reasonable reward.
+3. **External peer review added real value.** The review rated the initial draft 7.8/10 and gave specific structural recommendations: reframe around faster/flatter/hard/infra, add query-shaping as a breakpoint, trim the meta-thesis. Three iterations later, the final version was significantly better. This feedback loop is the system working as designed.
 
-2. **The verification spec is binary and testable.** "Public URL, scenario label, exact request text, submission link, four headings with at least one point each." No subjective judgment needed for baseline compliance — the submission either has these elements or it doesn't.
+4. **The reward multiplier incentivizes depth.** Listed at 4,400 PFT, rewarded 8,800. The reviewer specifically cited the TypeScript code snippet as what elevated the submission. This signals to future producers that grounding observations in concrete engineering artifacts earns more — a quality incentive without requiring subjective tier definitions.
 
-3. **Request shape flexibility produces genuine diversity.** Requiring a "different request shape" from prior passes forces coverage across the system's surface area. Five rewarded producers each found different angles rather than duplicating the same approach.
+## Dislikes
 
-4. **The forensic timeline creates transparent accountability.** Task generation timestamp, acceptance time, each producer's join and completion timestamps — an auditable coordination record with clear provenance.
+1. **No visibility into the routing logic.** The system converted my broad research request into a specific practitioner channel check, but there's no reasoning trace. Why this particular task shape? Was it the validator work, the bot development, or the research history? Exposing the matching logic would help producers write better requests.
 
-### Dislikes
+2. **The request-to-task transformation loses intent.** I asked for a standalone research analysis covering information asymmetry, winners/losers, and infrastructure value. The generated task asked for a 200-500 word channel check from direct experience. Both are valid, but they're different scopes. The system compressed a thesis-scale request into a channel-check-scale task without surfacing that trade-off.
 
-1. **No visibility into task generation logic.** The system converted "I want a collaborative task" into a specific proposal with 3,000 PFT, but there's no reasoning trace. Exposing the logic (trigger, shape selection, reward calibration) would help producers write better requests.
+3. **No feedback until final review.** Between submission and reward, there's no intermediate signal. The peer review that improved the draft happened outside the system. If the task flow included a structured review step before final submission, the quality of first-attempt submissions across all producers would improve.
 
-2. **No cross-pollination between producers.** Five producers are already rewarded, but their submissions are invisible to remaining contributors. The task is called "collaborative" but execution is parallel-solo. Showing scenario labels from completed submissions would enable genuine collaboration.
+4. **Word count constraint is too tight for the question asked.** The alpha question covers five dimensions (LLM-first steps, direct-tool steps, provenance failures, freshness failures, infrastructure value). Doing justice to each in 200-500 words means each gets ~80 words. The constraint forces surface-level treatment of individually deep topics.
 
-3. **Deadline asymmetry creates confusion.** Task generated April 20, deadline April 24. But some producers joined April 16-17 — before the task existed in the timeline. Hard to gauge the actual work window.
+## Bugs
 
-4. **Uniform reward doesn't signal quality tiers.** 3,000 PFT regardless of depth. No mechanism to distinguish surface-level compliance from deep original research with multiple iterations and external sources.
+1. **Producer timeline inconsistency in the collaborative task view.** The forensic timeline shows task generation April 20 at 3:35 PM, but Nydiokar joined April 16 and Yuri joined April 17 — before the task existed. Either the task was re-generated from an earlier version (show version history) or join dates reference a predecessor task ID.
 
-### Bugs
+2. **Cross-task contamination in collaboration panel.** rDep8S...EQKu shows "Accepted" for "Publish the task-generation guardrail eval pack" — a different task — within this task's collaboration view. Either the system allows heterogeneous tasks in one group (undocumented) or the UI is scoping incorrectly.
 
-1. **Producer timeline inconsistency.** Forensic timeline shows task generation April 20 at 3:35 PM, but Nydiokar joined April 16 and Yuri joined April 17 — before the task existed. Either the task was re-generated (show version history) or join dates reference a predecessor task ID.
+3. **"7/12" collaboration ratio unexplained.** Visible producers: 5 rewarded + 1 accepted = 6, not 7. Denominator 12 has no visible basis. No tooltip or documentation explains this metric.
 
-2. **Cross-task contamination in collaboration panel.** rDep8S...EQKu shows "Accepted" for "Publish the task-generation guardrail eval pack" — a different task — within this task's collaboration view. Either heterogeneous tasks in one group (undocumented) or wrong scope.
+## Improvements
 
-3. **"7/12" collaboration ratio unexplained.** Visible producers: 5 rewarded + 1 accepted = 6, not 7. Denominator 12 has no visible basis. No tooltip or legend.
+1. **Surface the request-to-task transformation.** When the system converts a user request into a task proposal, show the mapping: "Your request → matched to [task shape] because [reasons]. Original scope: thesis-scale. Generated scope: channel check. Accept or refine?" This gives producers agency over the compression.
 
-### Improvements
+2. **Add structured review as a flow step.** Before final submission, route the draft through one peer review pass within the system. The review that improved this submission from 7.8 to 9+ happened externally — making it a native step would lift quality across all producers.
 
-1. **Add a "prior submissions" panel.** After N producers submit, show scenario labels and one-line summaries so later contributors can fill coverage gaps.
+3. **Flexible word budgets tied to question complexity.** A single-dimension question ("what's your take on X?") fits 200-500 words. A five-dimension question (this one) needs 500-800. Let the word budget scale with the number of explicit sub-questions in the alpha prompt.
 
-2. **Surface task generation reasoning as metadata.** Emit a reasoning trace when generating proposals — transparency for producers, training data for the system.
-
-3. **Implement structured reward tiers.** "Base: listed reward. Extended (original research, external sources, peer review): 1.5x." Structural, checkable criteria.
-
-4. **Fix forensic timeline for versioned tasks.** Show full version history if a task was re-scoped, so producers don't appear to have joined before the task existed.
+4. **Show routing confidence.** When the system matches a producer to a task, display a confidence score and the top matching signals. This helps producers understand their profile and write requests that play to their strengths.
