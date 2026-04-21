@@ -412,11 +412,12 @@
   <!-- PREMIUM CONTENT (gated) -->
   <div id="premiumGate" class="premium-gate">
     <div class="gate-title">Full Edition &mdash; Subscribers Only</div>
-    <div class="gate-text">Enter your wallet address to unlock Flow, Movers, Watch, and Deep Cut.<br>Not subscribed? Send <strong>/subscribe herald</strong> with 1,000 PFT to the SUBS bot.</div>
+    <div class="gate-text">Enter your <strong>XRPL wallet address</strong> (starts with r) to unlock Flow, Movers, Watch, and Deep Cut.<br>This is your on-chain address, not an email.</div>
     <div>
-      <input type="text" id="walletInput" placeholder="Enter your r-address...">
+      <input type="text" id="walletInput" placeholder="rYourWalletAddress..." autocomplete="off" spellcheck="false">
       <button onclick="checkAccess()">Unlock</button>
     </div>
+    <div class="gate-text" style="margin-top:12px;font-size:12px;opacity:0.8;">Not subscribed? Open your Post Fiat wallet, message the SUBS bot (r9XYDxJDbmmhSGNpUguVhea6xn3Tu2HbeF) with <strong>/subscribe herald</strong> and 1,000 PFT.</div>
     <div id="gateStatus" style="font-family:'Lora',serif;font-size:11px;color:var(--accent);margin-top:8px;"></div>
   </div>
 
@@ -630,7 +631,9 @@
   window.checkAccess = function() {
     var wallet = document.getElementById('walletInput').value.trim();
     if (!wallet || !wallet.startsWith('r')) {
-      document.getElementById('gateStatus').textContent = 'Please enter a valid r-address.';
+      document.getElementById('gateStatus').textContent = wallet && wallet.includes('@')
+        ? 'This uses your XRPL wallet address (starts with r), not an email. Find it in your Post Fiat wallet app.'
+        : 'Please enter a valid XRPL wallet address (starts with r).';
       return;
     }
 
