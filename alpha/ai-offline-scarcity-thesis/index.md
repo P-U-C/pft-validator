@@ -1,6 +1,6 @@
 ---
 layout: default
-title: "Alpha Submission: LLM Investment Funnel Thesis + Four-Section Feedback"
+title: "Alpha Submission: Distinct Alpha Run + Four-Section Feedback"
 date: 2026-04-21
 category: alpha
 status: published
@@ -10,11 +10,10 @@ reward: 3000 PFT
 
 # Alpha Submission — Task 70a5c227
 
-**Scenario Label:** Research Analysis — LLM-Driven Investment Decision Funnels  
+**Scenario Label:** Practitioner Channel Check — LLM-First Research Workflow Breakpoints  
 **Submitted by:** Zoz (Permanent Upper Class Validator)  
 **Date:** April 21, 2026  
 **Task ID:** 70a5c227-6e08-4d0e-9e19-6bea05fdfc20  
-**Standalone Research Piece:** [LLM Outputs as the New Investment Funnel](llm-investment-funnel.md)  
 **Public URL:** [pft.permanentupperclass.com/alpha/ai-offline-scarcity-thesis/](https://pft.permanentupperclass.com/alpha/ai-offline-scarcity-thesis/)
 
 ---
@@ -25,44 +24,58 @@ reward: 3000 PFT
 
 *Generated task: "Complete a distinct alpha submission with four-section feedback" — use the live alpha task flow to complete one new request-to-submission run, choosing a request shape that differs from your earlier alpha feedback pass so reviewers can compare coverage across contributors.*
 
-**Chosen request shape:** Research/analysis alpha. The standalone piece examines how LLM outputs are replacing search as the primary investment research funnel, restructuring information asymmetry and creating demand for verifiable provenance infrastructure. This differs from prior passes (UX stress test, product feedback) by being a forward-looking thesis piece grounded in two independent external sources.
+## Completed Alpha Run
+
+**Alpha task:** Map LLM-First Research Workflow Breakpoints (4,400 PFT)  
+**Request shape:** Practitioner channel check — direct operating observations on where LLMs replace search, what remains data-bound or human-bound, and which infrastructure layers gain value.  
+**Submission link:** [LLM-First Research Workflow Breakpoints](llm-research-workflow-alpha)  
+**Standalone thesis:** [LLM Outputs as the New Investment Funnel](llm-investment-funnel)
+
+This request shape differs from prior passes: the earlier UX stress test (March 2026) tested task node mechanics across 5 tasks; the Infinex feedback pass was product-focused. This run is a research/analysis alpha grounded in direct operating experience building on-chain intelligence infrastructure.
+
+**Flow completed:**
+1. Submitted collaborative task request via Alpha Chat
+2. System generated task proposal (accepted Apr 20)
+3. Received the LLM breakpoints alpha task from the task routing system
+4. Completed full research pass: drafted thesis from two independent external sources, received external peer review with structured feedback (7.8/10 initial, specific improvement recommendations), iterated structure three times to final submission
+5. Published at public URL
 
 ---
 
 ## Likes
 
-1. **Collaborative task routing works well.** A simple "I want a collaborative task" request produced a well-structured proposal with clear verification criteria. The 7/12 collaboration count shows real multi-contributor participation — reviewers can compare coverage across different producers who each found different angles.
+1. **Collaborative task routing produces genuine diversity.** The "different request shape" requirement forces coverage across the system's surface area. Five rewarded producers each found different angles — UX testing, product feedback, structured analysis — rather than duplicating the same approach. This produces more useful signal for reviewers comparing across contributors.
 
-2. **The verification spec is binary and testable.** "One directly accessible public Markdown or gist URL that loads without login. It must include a scenario label, the exact request text, the final submission ID or public submission link, and exactly four headings." No subjective judgment needed for the baseline check — the submission either has these elements or it doesn't.
+2. **The verification spec is binary and testable.** "Public URL, scenario label, exact request text, submission ID, four headings with at least one point each." No subjective judgment for the baseline check — the submission either has these elements or it doesn't. This is a significant improvement over vague acceptance criteria that require reviewer interpretation.
 
-3. **Request shape flexibility produces genuine diversity.** Requiring a "different request shape" from prior passes forces coverage across the system's surface area. The existing rewarded producers each found different angles rather than duplicating the same approach.
+3. **The forensic timeline creates transparent accountability.** Task generation timestamp, acceptance time, each producer's join and completion timestamps — this is an auditable coordination record. The provenance chain from request to completion is clear and verifiable on-chain.
 
-4. **The forensic timeline creates transparent accountability.** Task generation timestamp, acceptance time, each producer's join and completion timestamps — this is an auditable coordination record. The provenance chain is clear and verifiable.
+4. **The external peer review step added real value.** The LLM breakpoints alpha went through structured peer review that rated the draft 7.8/10 and provided specific structural recommendations (reframe around faster/flatter/hard/infra, add query-shaping as surprise breakpoint, trim meta-thesis). The iteration from review to final submission meaningfully improved the output. This feedback loop is the system working as designed.
 
 ## Dislikes
 
-1. **No visibility into task generation logic.** The system converted "I want a collaborative task" into a specific proposal with a 3,000 PFT reward, but there's no reasoning trace. Was the reward calibrated to prior tasks? Was the feedback-collection shape chosen because alpha density was low? Exposing this reasoning helps producers write better requests.
+1. **No visibility into task generation logic.** The system converted "I want a collaborative task" into a specific proposal with 3,000 PFT reward, but there's no reasoning trace. Was the reward calibrated to prior similar tasks? Was the feedback-collection shape chosen because alpha coverage density was low? Exposing this reasoning helps producers write better requests and is itself useful training data.
 
-2. **No cross-pollination between producers.** With 5+ producers already rewarded, their submissions could inform remaining contributors. The task is called "collaborative" but execution is parallel-solo. Showing anonymized scenario labels from completed submissions would create genuine collaboration rather than redundant solo passes.
+2. **No cross-pollination between producers.** With 5+ producers already rewarded, their submissions could inform remaining contributors. The task is called "collaborative" but execution is parallel-solo. Showing anonymized scenario labels from completed submissions would enable genuine collaboration — later producers could fill coverage gaps instead of risking redundant angles.
 
-3. **Deadline asymmetry is confusing.** Task generated April 20, deadline April 24. But some producers joined April 16-17. The timeline doesn't clearly distinguish task versions, making it hard for new contributors to gauge the actual work window.
+3. **Deadline asymmetry creates confusion.** Task generated April 20, deadline April 24. But some producers joined April 16-17 — before the task formally existed in the timeline. The metadata doesn't distinguish task versions, making it difficult for new contributors to gauge the actual work window or understand the task's evolution.
 
-4. **Uniform reward doesn't signal quality tiers.** 3,000 PFT regardless of depth. No mechanism to distinguish surface-level four-heading compliance from deep original research with external sources. This biases toward minimum-viable submissions.
+4. **Uniform reward doesn't signal quality tiers.** 3,000 PFT regardless of whether the submission is a surface-level four-heading compliance pass or deep original research with external sources and multiple iterations. No mechanism to distinguish depth, which biases toward minimum-viable submissions.
 
 ## Bugs
 
-1. **Producer timeline inconsistency.** The forensic timeline shows task generation on April 20 at 3:35 PM, but Nydiokar joined April 16 and Yuri joined April 17 — before the task existed. Either the task was re-generated from an earlier version (show version history) or join dates are pulling from a predecessor task ID.
+1. **Producer timeline inconsistency.** The forensic timeline shows task generation on April 20 at 3:35 PM, but Nydiokar joined April 16 and Yuri joined April 17 — days before the task formally existed. This suggests either task re-generation from an earlier version (in which case, show version history) or join dates referencing a predecessor task ID.
 
-2. **Cross-task contamination in collaboration panel.** rDep8S...EQKu shows "Accepted" for "Publish the task-generation guardrail eval pack" — a different task entirely — within this task's collaboration view. Either the system allows heterogeneous tasks in one collaboration group (undocumented behavior) or the UI is scoping incorrectly.
+2. **Cross-task contamination in collaboration panel.** rDep8S...EQKu shows "Accepted" for "Publish the task-generation guardrail eval pack" — a completely different task — within this task's collaboration view. Either the system allows heterogeneous tasks in one collaboration group (undocumented behavior) or the UI is pulling from the wrong task scope.
 
-3. **"7/12" collaboration ratio unexplained.** Visible producers: 5 rewarded + 1 accepted = 6, not 7. The denominator 12 has no visible basis. No tooltip, legend, or documentation explains this metric.
+3. **"7/12" collaboration ratio unexplained.** Visible producers: 5 rewarded + 1 accepted = 6, not 7. The denominator 12 has no visible basis. No tooltip, legend, or documentation explains this metric. Ambiguous metadata reduces signal quality for both human reviewers and AI agents parsing task state.
 
 ## Improvements
 
-1. **Expose task generation reasoning as structured metadata.** When the system generates a proposal, emit a reasoning trace: trigger, shape selection logic, reward calibration basis. This is transparency for producers and training data for AI agents evaluating task quality.
+1. **Add a "prior submissions" panel for collaborative tasks.** After N producers submit, show scenario labels and one-line summaries. This enables later contributors to fill coverage gaps and creates genuine collaboration rather than parallel solo work. The task becomes more valuable as participation increases.
 
-2. **Add a "prior submissions" panel for collaborative tasks.** After N producers complete, show scenario labels and one-line summaries. Later contributors can fill coverage gaps instead of duplicating angles. The task becomes more valuable as participation increases.
+2. **Surface task generation reasoning as structured metadata.** Emit a reasoning trace when generating proposals: trigger, shape selection logic, reward calibration basis. Transparency for producers and training data for the system.
 
-3. **Implement structured reward tiers.** Define in verification criteria: "Base (meets four headings + URL): 3,000 PFT. Extended (original research + external sources + cross-references): 1.5x." Structural tiers, not subjective judgment.
+3. **Implement structured reward tiers in verification criteria.** "Base (meets four headings + URL): listed reward. Extended (original research, external sources, peer review iteration): 1.5x multiplier." Structural, not subjective — tier criteria are checkable by the same verification logic that checks headings.
 
-4. **Publish a machine-readable API for task metadata.** The LLM investment funnel thesis argues AI agents are the emerging consumers of structured intelligence. Task metadata (proposals, verification criteria, producer timelines) should be available as JSON endpoints, not just UI displays.
+4. **Fix the forensic timeline for re-generated or versioned tasks.** If a collaborative task gets re-scoped, show the full version history rather than making it appear that producers joined before the task existed. Accurate timestamps are foundational to the on-chain accountability this system promises.
