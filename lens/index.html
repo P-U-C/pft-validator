@@ -891,7 +891,7 @@
           <div class="health-sub" id="airdropCumRecipients">-- recipients all-time</div>
         </div>
         <div class="health-card">
-          <div class="health-label">Today's Airdrops</div>
+          <div class="health-label" id="airdropTodayLabel">Today's Airdrops</div>
           <div class="health-value green" id="airdropTodayPft">--</div>
           <div class="health-sub" id="airdropTodayRecipients">-- recipients today</div>
         </div>
@@ -1720,8 +1720,20 @@
         var ad = stats.airdrops;
         document.getElementById('airdropCumPft').textContent = fmtNum(ad.cumulative_pft);
         document.getElementById('airdropCumRecipients').textContent = ad.cumulative_recipients + ' recipients all-time';
-        document.getElementById('airdropTodayPft').textContent = ad.today_pft > 0 ? fmtNum(ad.today_pft) : 'pending';
-        document.getElementById('airdropTodayRecipients').textContent = ad.today_recipients + ' recipients today';
+        // Show today's data if available, otherwise fall back to yesterday's completed drop
+        if (ad.today_pft > 0) {
+          document.getElementById('airdropTodayLabel').textContent = "Today's Airdrops";
+          document.getElementById('airdropTodayPft').textContent = fmtNum(ad.today_pft);
+          document.getElementById('airdropTodayRecipients').textContent = ad.today_recipients + ' recipients today';
+        } else if (ad.yesterday_pft > 0) {
+          document.getElementById('airdropTodayLabel').textContent = 'Last Drop';
+          document.getElementById('airdropTodayPft').textContent = fmtNum(ad.yesterday_pft);
+          document.getElementById('airdropTodayRecipients').textContent = ad.yesterday_recipients + ' recipients yesterday';
+        } else {
+          document.getElementById('airdropTodayLabel').textContent = "Today's Airdrops";
+          document.getElementById('airdropTodayPft').textContent = fmtNum(ad.today_pft);
+          document.getElementById('airdropTodayRecipients').textContent = ad.today_recipients + ' recipients today';
+        }
         document.getElementById('airdropCumDrops').textContent = fmtNum(ad.cumulative_drops);
       }
 
