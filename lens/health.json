@@ -4,9 +4,9 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-04-22T01:00:00Z",
-  "calculated_at": "2026-04-22T01:01:30Z",
-  "next_update_at": "2026-04-22T02:00:00Z",
+  "snapshot_id": "2026-04-22T02:00:00Z",
+  "calculated_at": "2026-04-22T02:01:27Z",
+  "next_update_at": "2026-04-22T03:00:00Z",
   "refresh_cadence": "hourly",
   "health_score": 0.4386,
   "health_score_formula": "sum(component.score * component.weight)",
@@ -158,24 +158,17 @@
     "clear": 1
   },
   "score_change": {
-    "vs_prior_snapshot": -0.1784,
-    "prior_health_score": 0.617,
-    "prior_calculated_at": "2026-04-22T00:01:27Z",
-    "largest_movers": [
-      {
-        "component": "memo_velocity",
-        "delta": -0.1784,
-        "raw_delta": -0.8918,
-        "reason": "latest_day_memos=13 vs prior avg=120.1"
-      }
-    ]
+    "vs_prior_snapshot": 0.0,
+    "prior_health_score": 0.4386,
+    "prior_calculated_at": "2026-04-22T01:01:30Z",
+    "largest_movers": []
   },
   "network_summary": {
     "total_accounts": 883,
     "contributors": 142,
     "bots": 733,
     "infrastructure": 8,
-    "total_transactions": 374330,
+    "total_transactions": 374332,
     "memo_transactions": 12119,
     "total_edges": 41345,
     "bidirectional_edges": 39482,
@@ -183,11 +176,11 @@
     "sybil_accounts": 743
   },
   "deltas": {
-    "health_score": -0.1784,
+    "health_score": 0.0,
     "accounts": 0,
-    "memo_transactions": 13,
+    "memo_transactions": 0,
     "edges": 0,
-    "since": "2026-04-22T00:01:27Z"
+    "since": "2026-04-22T01:01:30Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -196,5 +189,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:31c659c1de45ac618cef4c48bd6c2a5b948095b610d0953240d0e6afcf34c143"
+  "snapshot_hash": "sha256:d2ad4a508725519a32828815b7831d42fa223969c4ace34b84b8f85437477cd6"
 }
