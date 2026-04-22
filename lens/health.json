@@ -4,19 +4,19 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-04-22T05:00:00Z",
-  "calculated_at": "2026-04-22T05:01:30Z",
-  "next_update_at": "2026-04-22T06:00:00Z",
+  "snapshot_id": "2026-04-22T06:00:00Z",
+  "calculated_at": "2026-04-22T06:01:28Z",
+  "next_update_at": "2026-04-22T07:00:00Z",
   "refresh_cadence": "hourly",
-  "health_score": 0.4436,
+  "health_score": 0.394,
   "health_score_formula": "sum(component.score * component.weight)",
-  "health_grade": "C",
+  "health_grade": "D",
   "component_metrics": {
     "concentration": {
-      "score": 1.0,
+      "score": 0.7518,
       "weight": 0.2,
-      "contribution": 0.2,
-      "raw_hhi": 0.047033,
+      "contribution": 0.1504,
+      "raw_hhi": 0.161691,
       "formula": "max(0, min(1, (hhi_bad - HHI) / (hhi_bad - hhi_good)))",
       "description": "Herfindahl-Hirschman Index of memo activity distribution. Lower HHI = more distributed = healthier."
     },
@@ -103,9 +103,9 @@
       "severity": "none",
       "operator": ">",
       "threshold": 0.35,
-      "current_value": 0.047,
+      "current_value": 0.1617,
       "lookback": "current_snapshot",
-      "reason": "HHI=0.047 below threshold 0.35. Memo activity is reasonably distributed."
+      "reason": "HHI=0.1617 below threshold 0.35. Memo activity is reasonably distributed."
     },
     {
       "rule": "BOT_CLUSTER_GROWTH",
@@ -158,10 +158,17 @@
     "clear": 1
   },
   "score_change": {
-    "vs_prior_snapshot": 0.0,
+    "vs_prior_snapshot": -0.0496,
     "prior_health_score": 0.4436,
-    "prior_calculated_at": "2026-04-22T04:01:27Z",
-    "largest_movers": []
+    "prior_calculated_at": "2026-04-22T05:01:30Z",
+    "largest_movers": [
+      {
+        "component": "concentration",
+        "delta": -0.0496,
+        "raw_delta": -0.2482,
+        "reason": "HHI moved to 0.1617"
+      }
+    ]
   },
   "network_summary": {
     "total_accounts": 883,
@@ -176,11 +183,11 @@
     "sybil_accounts": 743
   },
   "deltas": {
-    "health_score": 0.0,
+    "health_score": -0.0496,
     "accounts": 0,
     "memo_transactions": 0,
     "edges": 0,
-    "since": "2026-04-22T04:01:27Z"
+    "since": "2026-04-22T05:01:30Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -189,5 +196,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:50ea9feb095c30e1b02e6070c887769d28ebf68cb2677f8e9fb90320bcc948cb"
+  "snapshot_hash": "sha256:8408bd4b71eb366c1a9844b91a6504f8a29e26dbea4327b9380f35ab262d36dc"
 }
