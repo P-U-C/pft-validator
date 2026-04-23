@@ -40,11 +40,12 @@ A deterministic visibility-state engine plus surface adapters with one protocol-
 
 3. **Should legacy artifacts with `grace_expired` status be periodically re-prompted, or is one notification sufficient?** Current assumption: one notification, then the artifact stays as `historical_reference` permanently.
 
-4. **Metadata leakage detection for `forbidden_derivative` class.** The contract defines the class but does not implement auto-detection of when a metadata combination creates derivative exposure. This requires a separate analysis pass.
+4. **Metadata leakage detection covers title-based patterns only.** `detectForbiddenDerivativeExposure()` checks title against known sensitive patterns (trading, portfolio, MNPI, etc.) and cohort size. It does not yet analyze cross-field combinations (e.g., filename + timestamp clustering). Full cross-field analysis would require a separate pass.
 
 ## Integration Points
 
-- **Submission form:** Call `mapToRenderState(envelope, "submitter")` to render the submitter's view of their own artifact after submission.
+- **Submission detail:** Call `renderSubmissionDetail(envelope, viewerRole, cohortSize)` for the full detail surface with action buttons, leakage guard, and envelope summary.
 - **Collaboration panel:** Call `renderSubmissionList(cohortArtifacts, "collaborator")` to render all cohort artifacts with correct visibility scoping.
 - **Reviewer queue:** Call `renderReviewerQueue(artifacts)` to get manual review flags and render states.
 - **Task generator:** Call `preflightCrossCheck(cohortArtifacts)` before generating any cross-check task. Block if `eligible === false`.
+- **Leakage guard:** `detectForbiddenDerivativeExposure(title, cohortSize)` is called automatically by `renderSubmissionDetail()` but can also be used standalone for pre-submission validation.

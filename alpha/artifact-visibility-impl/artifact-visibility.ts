@@ -272,14 +272,21 @@ function renderObfuscated(
   const isClearMeta = e.obfuscation_subtype === "clear_metadata";
   const isSealed = e.obfuscation_subtype === "sealed";
 
-  // Redacted URL is public for non-sealed subtypes
-  const showRedactedUrl = !isSealed;
+  // Redacted URL is available for non-sealed subtypes, but only if it actually exists
+  const hasRedactedUrl = !isSealed && !!e.artifact_redacted_url;
   const showTitle = isClearMeta || isReviewer;
+
+  // Collaborators see the redacted URL (if it exists); submitters/reviewers see the full URL
+  const collabShowUrl = hasRedactedUrl;
+  const showUrl = isSubmitter || isReviewer || collabShowUrl;
+  const urlToShow = isSubmitter || isReviewer
+    ? e.artifact_url
+    : (hasRedactedUrl ? e.artifact_redacted_url : null);
 
   return {
     badge,
-    show_url: isSubmitter || isReviewer,
-    url_to_show: isSubmitter || isReviewer ? e.artifact_url : (showRedactedUrl ? e.artifact_redacted_url : null),
+    show_url: showUrl,
+    url_to_show: urlToShow,
     show_title: showTitle,
     title_to_show: showTitle ? e.artifact_title : null,
     show_hash: true,
@@ -291,9 +298,11 @@ function renderObfuscated(
     eligibility_label: formatEligibility(e.collaboration_eligibility),
     status_message: isSealed
       ? "Sealed artifact — existence proved by hash only."
-      : `Obfuscated artifact (${e.obfuscation_subtype ?? "unknown"}) — redacted version available.`,
-    can_cross_check: e.collaboration_eligibility === "constrained" && !isSealed,
-    can_open: showRedactedUrl || isSubmitter || isReviewer,
+      : hasRedactedUrl
+        ? `Obfuscated artifact (${e.obfuscation_subtype ?? "unknown"}) — redacted version available.`
+        : `Obfuscated artifact (${e.obfuscation_subtype ?? "unknown"}) — redacted URL missing.`,
+    can_cross_check: e.collaboration_eligibility === "constrained" && hasRedactedUrl,
+    can_open: isSubmitter || isReviewer || hasRedactedUrl,
     url_status_indicator: urlStatus,
     legacy_badge: null,
     reviewer_access_note: isReviewer

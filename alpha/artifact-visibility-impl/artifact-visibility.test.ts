@@ -502,6 +502,10 @@ describe("Protocol invariants", () => {
     };
     const state = mapToRenderState(broken, "collaborator");
     expect(state.url_to_show).toBeNull();
+    expect(state.can_open).toBe(false);
+    expect(state.can_cross_check).toBe(false);
+    expect(state.show_url).toBe(false);
+    expect(state.status_message).toContain("redacted URL missing");
   });
 
   it("grace_expired legacy has no reviewer upgrade prompt", () => {
