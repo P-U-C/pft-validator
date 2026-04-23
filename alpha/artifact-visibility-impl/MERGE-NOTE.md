@@ -3,10 +3,22 @@
 **Task ID:** 5a3e0e52-3714-4e9f-928e-8eec74b40bab  
 **Spec:** [Protocol-Safe Artifact Discovery UX Specification v1.0](../artifact-discovery-spec/)
 
+## What This Is
+
+A deterministic visibility-state engine plus surface adapters with one protocol-safe preflight guard. Not a policy engine — it operationalizes the rewarded spec into merge-ready render logic.
+
 ## What This Contains
 
-- `artifact-visibility.ts` — Typed contract + mapper/reducer + render logic
-- `artifact-visibility.test.ts` — 20 test cases covering all states and roles
+- `artifact-visibility.ts` — Typed contract + mapper/reducer + 3 surface adapters (detail, list, queue) + metadata leakage guard + preflight
+- `artifact-visibility.test.ts` — 45+ test cases: happy path, protocol invariants, adversarial edge cases, metadata leakage, fixture matrix
+
+## Fixture Matrix — viewerRole × visibility_state × fields shown
+
+| Role         | public          | private         | obfuscated-clear | obfuscated-sealed | legacy          |
+|--------------|-----------------|-----------------|------------------|-------------------|-----------------|
+| submitter    | url,title,hash  | url,hash,date   | url,title,hash   | url,title,hash    | hash,date       |
+| collaborator | url,title,hash  | hash,date       | redacted,title   | hash only         | date only       |
+| reviewer     | url,title,proof | url,title,proof | url,title,proof  | url,title,proof   | title,proof,att |
 
 ## Thin-Contract Assumptions
 

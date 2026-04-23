@@ -12,6 +12,8 @@ import {
   preflightCrossCheck,
   renderSubmissionList,
   renderReviewerQueue,
+  renderSubmissionDetail,
+  detectForbiddenDerivativeExposure,
   type ArtifactEnvelope,
   type ViewerRole,
 } from "./artifact-visibility.js";
@@ -336,4 +338,225 @@ describe("renderReviewerQueue", () => {
     expect(queue[0].requires_manual_review).toBe(false);
     expect(queue[0].manual_review_reason).toBeNull();
   });
+
+  it("flags artifacts with unverified proof layers", () => {
+    const unverified: ArtifactEnvelope = {
+      ...PUBLIC_ARTIFACT,
+      proof: { existence: "verified", relevance: "unverified", completion: "verified" },
+    };
+    const queue = renderReviewerQueue([unverified]);
+    expect(queue[0].requires_manual_review).toBe(true);
+    expect(queue[0].manual_review_reason).toContain("proof layers unverified");
+  });
+});
+
+// ─── SUBMISSION DETAIL TESTS ──────────────────────────────────────
+
+describe("renderSubmissionDetail", () => {
+  it("renders public artifact detail with action buttons for submitter", () => {
+    const detail = renderSubmissionDetail(PUBLIC_ARTIFACT, "submitter");
+    expect(detail.render.badge).toBe("🌐 PUBLIC");
+    expect(detail.action_buttons).toContain("Edit Visibility");
+    expect(detail.verification_envelope_summary).toContain("Visibility: public");
+    expect(detail.verification_envelope_summary).toContain("Existence: verified");
+    expect(detail.metadata_leakage_warning).toBeNull();
+  });
+
+  it("renders collaborator detail with cross-check action", () => {
+    const detail = renderSubmissionDetail(PUBLIC_ARTIFACT, "collaborator");
+    expect(detail.action_buttons).toContain("Use for Cross-Check");
+    expect(detail.action_buttons).toContain("Open");
+  });
+
+  it("renders reviewer detail with full action set", () => {
+    const detail = renderSubmissionDetail(PUBLIC_ARTIFACT, "reviewer");
+    expect(detail.action_buttons).toContain("Verify");
+    expect(detail.action_buttons).toContain("Approve");
+    expect(detail.action_buttons).toContain("Reject");
+  });
+
+  it("offers 'Upgrade to Public' for private artifact submitter", () => {
+    const detail = renderSubmissionDetail(PRIVATE_ARTIFACT, "submitter");
+    expect(detail.action_buttons).toContain("Upgrade to Public");
+  });
+
+  it("shows legacy envelope summary with confidence tier", () => {
+    const detail = renderSubmissionDetail(LEGACY_ARTIFACT, "reviewer");
+    expect(detail.verification_envelope_summary).toContain("Legacy: pending_migration");
+  });
+});
+
+// ─── METADATA LEAKAGE GUARD TESTS ─────────────────────────────────
+
+describe("detectForbiddenDerivativeExposure", () => {
+  it("flags sensitive title in small cohort", () => {
+    const result = detectForbiddenDerivativeExposure("Trading Strategy QA — April 2026", 2);
+    expect(result.exposed).toBe(true);
+    expect(result.reason).toContain("risks re-identification");
+  });
+
+  it("warns but does not block in large cohort", () => {
+    const result = detectForbiddenDerivativeExposure("Portfolio Import QA Pass", 12);
+    expect(result.exposed).toBe(false);
+    expect(result.reason).toContain("potentially sensitive");
+  });
+
+  it("passes clean titles", () => {
+    const result = detectForbiddenDerivativeExposure("Test Profile Edit and Reload Flow", 5);
+    expect(result.exposed).toBe(false);
+    expect(result.reason).toBeNull();
+  });
+
+  it("handles null title", () => {
+    const result = detectForbiddenDerivativeExposure(null, 5);
+    expect(result.exposed).toBe(false);
+    expect(result.reason).toBeNull();
+  });
+
+  it("detects MNPI-related terms", () => {
+    const result = detectForbiddenDerivativeExposure("Merger Analysis — Confidential", 3);
+    expect(result.exposed).toBe(true);
+  });
+});
+
+describe("renderSubmissionDetail with leakage guard", () => {
+  it("downgrades title for collaborator in small cohort with sensitive title", () => {
+    const sensitive: ArtifactEnvelope = {
+      ...OBFUSCATED_CLEAR,
+      artifact_title: "Trading Portfolio QA — Internal",
+    };
+    const detail = renderSubmissionDetail(sensitive, "collaborator", 2);
+    expect(detail.render.title_to_show).toBeNull(); // title downgraded
+    expect(detail.metadata_leakage_warning).toContain("risks re-identification");
+  });
+
+  it("preserves title for submitter even with sensitive content", () => {
+    const sensitive: ArtifactEnvelope = {
+      ...OBFUSCATED_CLEAR,
+      artifact_title: "Trading Portfolio QA — Internal",
+    };
+    const detail = renderSubmissionDetail(sensitive, "submitter", 2);
+    // Submitter always sees their own title, no warning
+    expect(detail.metadata_leakage_warning).toBeNull();
+  });
+});
+
+// ─── PROTOCOL INVARIANT TESTS ─────────────────────────────────────
+//
+// These verify protocol-safety guarantees that must hold regardless
+// of input. Adversarial conditions tested.
+
+describe("Protocol invariants", () => {
+  it("collaborator NEVER sees direct URL for private artifact", () => {
+    const state = mapToRenderState(PRIVATE_ARTIFACT, "collaborator");
+    expect(state.show_url).toBe(false);
+    expect(state.url_to_show).toBeNull();
+  });
+
+  it("collaborator NEVER sees title for sealed artifact", () => {
+    const state = mapToRenderState(OBFUSCATED_SEALED, "collaborator");
+    expect(state.show_title).toBe(false);
+    expect(state.title_to_show).toBeNull();
+  });
+
+  it("reviewer_only eligibility NEVER produces can_cross_check = true", () => {
+    for (const artifact of [PRIVATE_ARTIFACT, OBFUSCATED_SEALED, LEGACY_ARTIFACT]) {
+      for (const role of ["submitter", "collaborator", "reviewer"] as ViewerRole[]) {
+        const state = mapToRenderState(artifact, role);
+        if (artifact.collaboration_eligibility === "reviewer_only" || artifact.collaboration_eligibility === "not_eligible") {
+          expect(state.can_cross_check).toBe(false);
+        }
+      }
+    }
+  });
+
+  it("dead URL NEVER produces can_open = true for collaborator", () => {
+    const state = mapToRenderState(DEAD_URL_ARTIFACT, "collaborator");
+    expect(state.can_open).toBe(false);
+  });
+
+  it("legacy artifact NEVER surfaces as open collaboration", () => {
+    for (const role of ["submitter", "collaborator", "reviewer"] as ViewerRole[]) {
+      const state = mapToRenderState(LEGACY_ARTIFACT, role);
+      expect(state.can_cross_check).toBe(false);
+      expect(state.can_open).toBe(false);
+    }
+  });
+
+  it("private artifact incorrectly marked open still cannot cross-check", () => {
+    // Adversarial: someone manually sets eligibility to open on a private artifact
+    const tampered: ArtifactEnvelope = {
+      ...PRIVATE_ARTIFACT,
+      collaboration_eligibility: "open", // should not matter — render logic enforces
+    };
+    const state = mapToRenderState(tampered, "collaborator");
+    // Even with open eligibility, private artifacts hide URL from collaborators
+    expect(state.show_url).toBe(false);
+    expect(state.can_cross_check).toBe(false);
+  });
+
+  it("obfuscated artifact with missing redacted URL shows empty state", () => {
+    const broken: ArtifactEnvelope = {
+      ...OBFUSCATED_CLEAR,
+      artifact_redacted_url: null,
+    };
+    const state = mapToRenderState(broken, "collaborator");
+    expect(state.url_to_show).toBeNull();
+  });
+
+  it("grace_expired legacy has no reviewer upgrade prompt", () => {
+    const expired: ArtifactEnvelope = {
+      ...LEGACY_ARTIFACT,
+      legacy_status: "grace_expired",
+      legacy_allowed_use: "historical_reference",
+    };
+    const state = mapToRenderState(expired, "reviewer");
+    expect(state.status_message).toContain("historical_reference");
+  });
+});
+
+// ─── FIXTURE MATRIX ───────────────────────────────────────────────
+//
+// viewerRole × visibility_state × key fields shown
+//
+// | Role         | public          | private         | obfuscated-clear | obfuscated-sealed | legacy          |
+// |--------------|-----------------|-----------------|------------------|-------------------|-----------------|
+// | submitter    | url,title,hash  | url,hash,date   | url,title,hash   | url,title,hash    | hash,date       |
+// | collaborator | url,title,hash  | hash,date       | redacted,title   | hash only         | date only       |
+// | reviewer     | url,title,proof | url,title,proof | url,title,proof  | url,title,proof   | title,proof,att |
+
+describe("Fixture matrix — field visibility by role × state", () => {
+  const matrix: Array<{
+    role: ViewerRole;
+    artifact: ArtifactEnvelope;
+    label: string;
+    expectUrl: boolean;
+    expectTitle: boolean;
+    expectHash: boolean;
+    expectProof: boolean;
+  }> = [
+    { role: "submitter",    artifact: PUBLIC_ARTIFACT,    label: "submitter×public",           expectUrl: true,  expectTitle: true,  expectHash: true,  expectProof: false },
+    { role: "collaborator", artifact: PUBLIC_ARTIFACT,    label: "collaborator×public",        expectUrl: true,  expectTitle: true,  expectHash: true,  expectProof: false },
+    { role: "reviewer",     artifact: PUBLIC_ARTIFACT,    label: "reviewer×public",            expectUrl: true,  expectTitle: true,  expectHash: true,  expectProof: true  },
+    { role: "submitter",    artifact: PRIVATE_ARTIFACT,   label: "submitter×private",          expectUrl: true,  expectTitle: false, expectHash: true,  expectProof: false },
+    { role: "collaborator", artifact: PRIVATE_ARTIFACT,   label: "collaborator×private",       expectUrl: false, expectTitle: false, expectHash: true,  expectProof: false },
+    { role: "reviewer",     artifact: PRIVATE_ARTIFACT,   label: "reviewer×private",           expectUrl: true,  expectTitle: true,  expectHash: true,  expectProof: true  },
+    { role: "submitter",    artifact: OBFUSCATED_CLEAR,   label: "submitter×obfuscated-clear", expectUrl: true,  expectTitle: true,  expectHash: true,  expectProof: false },
+    { role: "collaborator", artifact: OBFUSCATED_CLEAR,   label: "collab×obfuscated-clear",    expectUrl: true,  expectTitle: true,  expectHash: true,  expectProof: false },
+    { role: "reviewer",     artifact: OBFUSCATED_CLEAR,   label: "reviewer×obfuscated-clear",  expectUrl: true,  expectTitle: true,  expectHash: true,  expectProof: true  },
+    { role: "collaborator", artifact: OBFUSCATED_SEALED,  label: "collab×obfuscated-sealed",   expectUrl: false, expectTitle: false, expectHash: true,  expectProof: false },
+    { role: "reviewer",     artifact: OBFUSCATED_SEALED,  label: "reviewer×obfuscated-sealed", expectUrl: true,  expectTitle: true,  expectHash: true,  expectProof: true  },
+    { role: "collaborator", artifact: LEGACY_ARTIFACT,    label: "collaborator×legacy",        expectUrl: false, expectTitle: false, expectHash: true,  expectProof: false },
+    { role: "reviewer",     artifact: LEGACY_ARTIFACT,    label: "reviewer×legacy",            expectUrl: false, expectTitle: true,  expectHash: true,  expectProof: true  },
+  ];
+
+  for (const { role, artifact, label, expectUrl, expectTitle, expectHash, expectProof } of matrix) {
+    it(`${label}`, () => {
+      const state = mapToRenderState(artifact, role);
+      expect(state.show_url).toBe(expectUrl);
+      expect(state.show_title).toBe(expectTitle);
+      expect(state.show_hash).toBe(expectHash);
+      expect(state.show_proof_layers).toBe(expectProof);
+    });
+  }
 });

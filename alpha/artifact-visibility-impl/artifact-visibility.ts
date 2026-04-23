@@ -347,6 +347,136 @@ function renderLegacy(
   };
 }
 
+// ─── Metadata Leakage Guard ───────────────────────────────────────
+
+/** Keywords that risk re-identification when combined with date + cohort. */
+const SENSITIVE_TITLE_PATTERNS = [
+  /portfolio/i, /trading/i, /position/i, /alpha/i, /strategy/i,
+  /pnl/i, /p&l/i, /profit/i, /loss/i, /revenue/i, /salary/i,
+  /confidential/i, /internal/i, /private/i, /secret/i, /nda/i,
+  /mnpi/i, /insider/i, /merger/i, /acquisition/i,
+];
+
+/**
+ * Detects when title + date + cohort context risks derivative exposure.
+ * Returns true if the title should be downgraded to hidden even when
+ * the visibility state would normally allow it.
+ *
+ * Rationale: a private artifact can leak through metadata combinations.
+ * A title like "Trading Strategy QA — April 2026" combined with cohort
+ * membership and submission date reconstructs restricted evidence.
+ */
+export function detectForbiddenDerivativeExposure(
+  title: string | null,
+  cohortSize: number,
+): { exposed: boolean; reason: string | null } {
+  if (!title) return { exposed: false, reason: null };
+
+  // Small cohorts increase re-identification risk
+  const smallCohort = cohortSize <= 3;
+
+  for (const pattern of SENSITIVE_TITLE_PATTERNS) {
+    if (pattern.test(title)) {
+      if (smallCohort) {
+        return {
+          exposed: true,
+          reason: `Title contains "${pattern.source}" in a cohort of ${cohortSize}. Combination of title + date + small cohort risks re-identification.`,
+        };
+      }
+      // Larger cohort: warn but don't block
+      return {
+        exposed: false,
+        reason: `Title contains potentially sensitive term "${pattern.source}". Review before surfacing.`,
+      };
+    }
+  }
+
+  return { exposed: false, reason: null };
+}
+
+// ─── Submission Detail Renderer ───────────────────────────────────
+
+/** Full detail view for a single artifact — the submission detail surface. */
+export interface SubmissionDetailView {
+  render: ArtifactRenderState;
+  metadata_leakage_warning: string | null;
+  verification_envelope_summary: string;
+  action_buttons: string[];
+}
+
+/**
+ * Renders the submission detail surface for a single artifact.
+ * This is the dedicated adapter for the submission detail view,
+ * distinct from list cards and queue items.
+ */
+export function renderSubmissionDetail(
+  envelope: ArtifactEnvelope,
+  viewerRole: ViewerRole,
+  cohortSize: number = 12,
+): SubmissionDetailView {
+  // Check for metadata leakage before rendering
+  const leakage = detectForbiddenDerivativeExposure(envelope.artifact_title, cohortSize);
+
+  // If leakage detected and viewer is collaborator, downgrade title visibility
+  let effectiveEnvelope = envelope;
+  if (leakage.exposed && viewerRole === "collaborator") {
+    effectiveEnvelope = { ...envelope, artifact_title: null };
+  }
+
+  const render = mapToRenderState(effectiveEnvelope, viewerRole);
+
+  // If leakage was detected but not blocked (large cohort), attach warning
+  const warning = leakage.reason && viewerRole !== "submitter"
+    ? leakage.reason
+    : null;
+
+  // Build verification envelope summary
+  const proofSummary = [
+    `Existence: ${envelope.proof.existence}`,
+    `Relevance: ${envelope.proof.relevance}`,
+    `Completion: ${envelope.proof.completion}`,
+  ].join(" · ");
+
+  const envelopeSummary = [
+    `Visibility: ${envelope.visibility_state}`,
+    envelope.obfuscation_subtype ? `Subtype: ${envelope.obfuscation_subtype}` : null,
+    `Eligibility: ${envelope.collaboration_eligibility}`,
+    `Access: ${envelope.reviewer_access_mode}`,
+    `Proof: ${proofSummary}`,
+    envelope.legacy_status !== "n/a" ? `Legacy: ${envelope.legacy_status} (${envelope.legacy_confidence_tier ?? "?"})` : null,
+  ].filter(Boolean).join("\n");
+
+  // Determine available actions based on role and state
+  const actions: string[] = [];
+  if (viewerRole === "submitter") {
+    actions.push("Edit Visibility");
+    if (envelope.visibility_state !== "public") actions.push("Upgrade to Public");
+  }
+  if (viewerRole === "collaborator" && render.can_cross_check) {
+    actions.push("Use for Cross-Check");
+  }
+  if (viewerRole === "collaborator" && render.can_open) {
+    actions.push("Open");
+  }
+  if (viewerRole === "reviewer") {
+    actions.push("Verify", "Request Changes", "Approve", "Reject");
+  }
+
+  return {
+    render,
+    metadata_leakage_warning: warning,
+    verification_envelope_summary: envelopeSummary,
+    action_buttons: actions,
+  };
+}
+
+// ─── Protocol-Safe Preflight Guard ────────────────────────────────
+//
+// Prevents the UI from generating impossible collaborator workflows
+// under constrained or empty cohorts. This is not adjacent product
+// logic — it is the protocol-safe guard that ensures no review
+// surface ever renders an impossible cross-check action.
+
 // ─── Task Generator Preflight ─────────────────────────────────────
 
 export interface PreflightResult {
