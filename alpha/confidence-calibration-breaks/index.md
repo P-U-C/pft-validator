@@ -47,6 +47,10 @@ The system routed this request to:
 4. **Observed: "Blocked" banner appeared AFTER task acceptance** — "You have reached this week's alpha task budget." Banner was not visible before accepting. Chat window became unavailable. This is a UX sequencing bug: budget check should run before acceptance, not after.
 5. Drafted alpha response from direct b1e55ed operating experience (conviction inversion postmortem, 60-trade stratification, PCS contamination analysis)
 6. Published at public URL
+7. Submitted — **rewarded 8,500 PFT** (1.77x listed)
+8. Received verification question from reviewer: *"Provide the specific decay rate or half-life parameter you deployed, and state the exact percentage improvement in realized outcomes for the 30 days immediately following this change."* Declined — the task brief explicitly restricts proprietary performance numbers. The reviewer accepted this boundary.
+
+**Reward outcome:** 8,500 PFT. Reviewer feedback: *"Excellent breakdown of structural calibration failures. The distinction between statistical contamination and structural contamination in the social domain was particularly insightful."* Novelty search: clean (0 sources, 0 excerpts). Sybil similarity: 0.434.
 
 **Screenshot evidence:** Task acceptance screen showing post-acceptance "Blocked" banner was captured and documented.
 
