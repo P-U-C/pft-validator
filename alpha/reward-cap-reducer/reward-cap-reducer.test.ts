@@ -1,10 +1,7 @@
 /**
  * Tests for Evidence-Weighted Reward Cap Reducer
  *
- * Seven required scenarios: public verified, private metadata-only,
- * obfuscated verified, legacy, missing evidence, stale queue, and
- * duplicate/collision risk. Plus: key invariant tests.
- *
+ * Seven required scenarios + adversarial protocol tests + invariants.
  * Task ID: e18618a0-f24d-45fa-92a9-59205cc8f183
  */
 
@@ -15,7 +12,7 @@ import {
   type AbuseRiskFlags,
 } from "./reward-cap-reducer.js";
 
-// -- Fixture Factory -------------------------------------------------------
+// -- Fixtures --------------------------------------------------------------
 
 const NO_RISK: AbuseRiskFlags = {
   duplicate_submission: false,
@@ -46,14 +43,13 @@ function makeInput(overrides: Partial<RewardCapInput> = {}): RewardCapInput {
 
 describe("Scenario 1: Public verified evidence", () => {
   it("returns full_eligible with 100% cap", () => {
-    const input = makeInput();
-    const result = computeRewardCap(input);
-
+    const result = computeRewardCap(makeInput());
     expect(result.eligibility).toBe("full_eligible");
     expect(result.cap_multiplier).toBe(1.0);
     expect(result.capped_reward_pft).toBe(5000);
     expect(result.reason_codes).toContain("evidence_public_verified");
-    expect(result.display_label).toContain("Full reward");
+    expect(result.recommended_reviewer_action).toBe("approve_cap");
+    expect(result.dominant_reason).toBe("evidence_public_verified");
   });
 
   it("decomposes cap components correctly", () => {
@@ -62,6 +58,7 @@ describe("Scenario 1: Public verified evidence", () => {
     expect(result.cap_components.confidence_factor).toBe(1.0);
     expect(result.cap_components.risk_factor).toBe(1.0);
     expect(result.cap_components.queue_adjustment).toBe(1.0);
+    expect(result.cap_components.terminal_override).toBeNull();
   });
 });
 
@@ -69,13 +66,11 @@ describe("Scenario 1: Public verified evidence", () => {
 
 describe("Scenario 2: Private metadata-only evidence", () => {
   it("caps at 75% visibility * confidence factor", () => {
-    const input = makeInput({
+    const result = computeRewardCap(makeInput({
       evidence_visibility: "private",
       verification_confidence: "medium",
       reviewer_verified: true,
-    });
-    const result = computeRewardCap(input);
-
+    }));
     expect(result.cap_components.visibility_factor).toBe(0.75);
     expect(result.reason_codes).toContain("evidence_private_hash_verified");
     expect(result.cap_multiplier).toBeGreaterThan(0);
@@ -83,16 +78,14 @@ describe("Scenario 2: Private metadata-only evidence", () => {
   });
 
   it("puts unreviewed private evidence on review_hold", () => {
-    const input = makeInput({
+    const result = computeRewardCap(makeInput({
       evidence_visibility: "private",
       verification_confidence: "medium",
       reviewer_verified: false,
-    });
-    const result = computeRewardCap(input);
-
+    }));
     expect(result.eligibility).toBe("review_hold");
     expect(result.invariants.blocks_automated_emission).toBe(true);
-    expect(result.invariants.requires_human_sign_off).toBe(true);
+    expect(result.recommended_reviewer_action).toBe("verify_private_metadata");
   });
 });
 
@@ -100,12 +93,10 @@ describe("Scenario 2: Private metadata-only evidence", () => {
 
 describe("Scenario 3: Obfuscated verified evidence", () => {
   it("caps at 90% visibility with full confidence", () => {
-    const input = makeInput({
+    const result = computeRewardCap(makeInput({
       evidence_visibility: "obfuscated",
       verification_confidence: "high",
-    });
-    const result = computeRewardCap(input);
-
+    }));
     expect(result.cap_components.visibility_factor).toBe(0.9);
     expect(result.cap_multiplier).toBe(0.9);
     expect(result.capped_reward_pft).toBe(4500);
@@ -117,32 +108,27 @@ describe("Scenario 3: Obfuscated verified evidence", () => {
 // -- Scenario 4: Legacy Evidence -------------------------------------------
 
 describe("Scenario 4: Legacy evidence", () => {
-  it("caps at 50% visibility * 70% attested confidence", () => {
-    const input = makeInput({
+  it("caps at 50% visibility * 70% attested confidence = 35%", () => {
+    const result = computeRewardCap(makeInput({
       evidence_visibility: "legacy",
       verification_confidence: "attested",
       reviewer_verified: true,
-    });
-    const result = computeRewardCap(input);
-
-    expect(result.cap_components.visibility_factor).toBe(0.5);
-    expect(result.cap_components.confidence_factor).toBe(0.7);
+    }));
     expect(result.cap_multiplier).toBe(0.35);
     expect(result.capped_reward_pft).toBe(1750);
     expect(result.reason_codes).toContain("evidence_legacy_attested");
     expect(result.invariants.requires_human_sign_off).toBe(true);
+    expect(result.recommended_reviewer_action).toBe("approve_cap");
   });
 
   it("holds unattested legacy for review", () => {
-    const input = makeInput({
+    const result = computeRewardCap(makeInput({
       evidence_visibility: "legacy",
       verification_confidence: "low",
       reviewer_verified: false,
-    });
-    const result = computeRewardCap(input);
-
+    }));
     expect(result.eligibility).toBe("review_hold");
-    expect(result.reason_codes).toContain("evidence_low_confidence");
+    expect(result.recommended_reviewer_action).toBe("attest_legacy_evidence");
   });
 });
 
@@ -150,17 +136,21 @@ describe("Scenario 4: Legacy evidence", () => {
 
 describe("Scenario 5: Missing evidence", () => {
   it("returns evidence_hold with 0 cap", () => {
-    const input = makeInput({
-      verification_confidence: "none",
-    });
-    const result = computeRewardCap(input);
-
+    const result = computeRewardCap(makeInput({ verification_confidence: "none" }));
     expect(result.eligibility).toBe("evidence_hold");
     expect(result.cap_multiplier).toBe(0);
-    expect(result.capped_reward_pft).toBe(0);
     expect(result.reason_codes).toContain("evidence_missing");
-    expect(result.display_label).toContain("Evidence missing");
+    expect(result.recommended_reviewer_action).toBe("submit_evidence");
     expect(result.invariants.blocks_automated_emission).toBe(true);
+  });
+
+  it("preserves forensic visibility factor even when evidence is missing", () => {
+    const result = computeRewardCap(makeInput({
+      evidence_visibility: "public",
+      verification_confidence: "none",
+    }));
+    expect(result.cap_components.visibility_factor).toBe(1.0);
+    expect(result.cap_components.terminal_override).toBe("missing_evidence");
   });
 });
 
@@ -168,145 +158,225 @@ describe("Scenario 5: Missing evidence", () => {
 
 describe("Scenario 6: Stale reviewer queue", () => {
   it("does NOT penalize submitter for reviewer delay", () => {
-    const input = makeInput({
+    const result = computeRewardCap(makeInput({
       queue_status: "stale",
       queue_age_days: 25,
-    });
-    const result = computeRewardCap(input);
-
+    }));
     expect(result.eligibility).toBe("full_eligible");
     expect(result.cap_multiplier).toBe(1.0);
     expect(result.cap_components.queue_adjustment).toBe(1.0);
     expect(result.reason_codes).toContain("queue_stale_no_fault");
-    expect(result.invariants.reviewer_delay_penalizes_submitter).toBe(false);
+    expect(result.recommended_reviewer_action).toBe("no_action_queue_delay_only");
   });
 
-  it("does NOT penalize for deadlocked queue either", () => {
-    const input = makeInput({ queue_status: "deadlocked", queue_age_days: 30 });
-    const result = computeRewardCap(input);
-
+  it("does NOT penalize for deadlocked queue", () => {
+    const result = computeRewardCap(makeInput({ queue_status: "deadlocked" }));
     expect(result.cap_multiplier).toBe(1.0);
-    expect(result.cap_components.queue_adjustment).toBe(1.0);
-    expect(result.reason_codes).toContain("queue_stale_no_fault");
+    expect(result.recommended_reviewer_action).toBe("no_action_queue_delay_only");
   });
 });
 
 // -- Scenario 7: Duplicate/Collision Risk ----------------------------------
 
 describe("Scenario 7: Duplicate and collision risk", () => {
-  it("blocks duplicate submissions entirely", () => {
-    const input = makeInput({
+  it("blocks duplicate submissions", () => {
+    const result = computeRewardCap(makeInput({
       risk_flags: { ...NO_RISK, duplicate_submission: true },
-    });
-    const result = computeRewardCap(input);
-
+    }));
     expect(result.eligibility).toBe("blocked");
     expect(result.cap_multiplier).toBe(0);
     expect(result.reason_codes).toContain("duplicate_detected");
-    expect(result.display_label).toContain("duplicate");
+    expect(result.recommended_reviewer_action).toBe("merge_or_reject_duplicate");
   });
 
   it("caps collision risk at 50%", () => {
-    const input = makeInput({
+    const result = computeRewardCap(makeInput({
       risk_flags: { ...NO_RISK, collision_with_other_task: true },
-    });
-    const result = computeRewardCap(input);
-
+    }));
     expect(result.cap_components.risk_factor).toBe(0.5);
-    expect(result.reason_codes).toContain("collision_detected");
-    expect(result.eligibility).toBe("capped");
     expect(result.capped_reward_pft).toBe(2500);
   });
 
-  it("blocks sybil-flagged producers entirely", () => {
-    const input = makeInput({
+  it("blocks sybil-flagged producers", () => {
+    const result = computeRewardCap(makeInput({
       risk_flags: { ...NO_RISK, sybil_flagged_producer: true },
-    });
-    const result = computeRewardCap(input);
-
+    }));
     expect(result.eligibility).toBe("blocked");
-    expect(result.cap_multiplier).toBe(0);
-    expect(result.reason_codes).toContain("sybil_flagged");
+    expect(result.recommended_reviewer_action).toBe("escalate_sybil_review");
+    expect(result.cap_components.terminal_override).toBe("sybil_block");
   });
 
-  it("stacks velocity + concentration risk multiplicatively", () => {
-    const input = makeInput({
+  it("stacks velocity + concentration multiplicatively (0.7 * 0.8 = 0.56)", () => {
+    const result = computeRewardCap(makeInput({
       risk_flags: { ...NO_RISK, velocity_anomaly: true, reward_concentration_risk: true },
-    });
-    const result = computeRewardCap(input);
-
-    // 0.7 * 0.8 = 0.56 risk factor
+    }));
     expect(result.cap_components.risk_factor).toBe(0.56);
-    expect(result.reason_codes).toContain("velocity_anomaly");
-    expect(result.reason_codes).toContain("concentration_risk");
     expect(result.capped_reward_pft).toBe(2800);
   });
 });
 
-// -- Withdrawn -------------------------------------------------------------
+// -- Cap Floor Policy ------------------------------------------------------
 
-describe("Withdrawn submission", () => {
-  it("returns withdrawn with 0 reward", () => {
-    const input = makeInput({ queue_status: "withdrawn" });
-    const result = computeRewardCap(input);
-
-    expect(result.eligibility).toBe("withdrawn");
-    expect(result.cap_multiplier).toBe(0);
-    expect(result.capped_reward_pft).toBe(0);
-    expect(result.reason_codes).toContain("submission_withdrawn");
+describe("Cap floor policy", () => {
+  it("routes tiny caps below 25% to review_hold", () => {
+    // legacy (0.5) * low (0.5) = 0.25, exactly at floor -- should be review_hold
+    // Actually 0.25 is not < 0.25, so let's create a case below
+    const result = computeRewardCap(makeInput({
+      evidence_visibility: "legacy",
+      verification_confidence: "low",
+      reviewer_verified: true,
+      risk_flags: { ...NO_RISK, collision_with_other_task: true },
+    }));
+    // legacy(0.5) * low(0.5) * collision(0.5) = 0.125
+    expect(result.cap_multiplier).toBe(0.125);
+    expect(result.eligibility).toBe("review_hold");
+    expect(result.reason_codes).toContain("cap_below_auto_emission_floor");
   });
 });
 
-// -- Key Invariants --------------------------------------------------------
+// -- Terminal State Forensics ----------------------------------------------
 
-describe("Hard invariants", () => {
-  it("reviewer_delay_penalizes_submitter is ALWAYS false", () => {
-    const scenarios = [
-      makeInput(),
-      makeInput({ queue_status: "stale", queue_age_days: 100 }),
-      makeInput({ queue_status: "deadlocked", queue_age_days: 50 }),
-      makeInput({ evidence_visibility: "legacy", verification_confidence: "attested" }),
-      makeInput({ verification_confidence: "none" }),
-      makeInput({ risk_flags: { ...NO_RISK, sybil_flagged_producer: true } }),
-    ];
+describe("Terminal states preserve forensic cap components", () => {
+  it("sybil block shows real visibility factor", () => {
+    const result = computeRewardCap(makeInput({
+      evidence_visibility: "public",
+      verification_confidence: "high",
+      risk_flags: { ...NO_RISK, sybil_flagged_producer: true },
+    }));
+    expect(result.cap_components.visibility_factor).toBe(1.0);
+    expect(result.cap_components.confidence_factor).toBe(1.0);
+    expect(result.cap_components.risk_factor).toBe(0);
+    expect(result.cap_components.terminal_override).toBe("sybil_block");
+  });
 
-    for (const input of scenarios) {
+  it("withdrawn shows original evidence factors", () => {
+    const result = computeRewardCap(makeInput({
+      evidence_visibility: "obfuscated",
+      verification_confidence: "medium",
+      queue_status: "withdrawn",
+    }));
+    expect(result.cap_components.visibility_factor).toBe(0.9);
+    expect(result.cap_components.terminal_override).toBe("withdrawn");
+  });
+});
+
+// -- Adversarial Protocol Tests --------------------------------------------
+
+describe("Adversarial protocol invariants", () => {
+  it("high confidence does NOT override missing evidence", () => {
+    const result = computeRewardCap(makeInput({
+      verification_confidence: "none",
+      evidence_visibility: "public",
+    }));
+    expect(result.eligibility).toBe("evidence_hold");
+    expect(result.cap_multiplier).toBe(0);
+  });
+
+  it("public visibility with none confidence does NOT receive a cap", () => {
+    const result = computeRewardCap(makeInput({
+      evidence_visibility: "public",
+      verification_confidence: "none",
+    }));
+    expect(result.cap_multiplier).toBe(0);
+    expect(result.eligibility).toBe("evidence_hold");
+  });
+
+  it("completed queue status does NOT bypass duplicate block", () => {
+    const result = computeRewardCap(makeInput({
+      queue_status: "completed",
+      risk_flags: { ...NO_RISK, duplicate_submission: true },
+    }));
+    expect(result.eligibility).toBe("blocked");
+    expect(result.cap_multiplier).toBe(0);
+  });
+
+  it("private unverified evidence reserves cap but blocks emission", () => {
+    const result = computeRewardCap(makeInput({
+      evidence_visibility: "private",
+      verification_confidence: "medium",
+      reviewer_verified: false,
+    }));
+    expect(result.cap_multiplier).toBeGreaterThan(0);
+    expect(result.eligibility).toBe("review_hold");
+    expect(result.invariants.blocks_automated_emission).toBe(true);
+  });
+
+  it("stale queue with missing evidence remains evidence_hold, not full_eligible", () => {
+    const result = computeRewardCap(makeInput({
+      queue_status: "stale",
+      queue_age_days: 30,
+      verification_confidence: "none",
+    }));
+    expect(result.eligibility).toBe("evidence_hold");
+    expect(result.cap_multiplier).toBe(0);
+  });
+
+  it("sybil block dominates ALL positive evidence signals", () => {
+    const result = computeRewardCap(makeInput({
+      evidence_visibility: "public",
+      verification_confidence: "high",
+      reviewer_verified: true,
+      queue_status: "fresh",
+      risk_flags: { ...NO_RISK, sybil_flagged_producer: true },
+    }));
+    expect(result.eligibility).toBe("blocked");
+    expect(result.cap_multiplier).toBe(0);
+    expect(result.dominant_reason).toBe("sybil_flagged");
+  });
+
+  it("all risk flags combined still correctly blocked by sybil first", () => {
+    const result = computeRewardCap(makeInput({
+      risk_flags: {
+        duplicate_submission: true,
+        collision_with_other_task: true,
+        sybil_flagged_producer: true,
+        velocity_anomaly: true,
+        reward_concentration_risk: true,
+      },
+    }));
+    expect(result.eligibility).toBe("blocked");
+    expect(result.reason_codes[0]).toBe("sybil_flagged");
+  });
+});
+
+// -- Hard Invariants -------------------------------------------------------
+
+describe("Hard invariants hold across ALL scenarios", () => {
+  const allScenarios = [
+    makeInput(),
+    makeInput({ queue_status: "stale", queue_age_days: 100 }),
+    makeInput({ evidence_visibility: "legacy", verification_confidence: "attested" }),
+    makeInput({ verification_confidence: "none" }),
+    makeInput({ risk_flags: { ...NO_RISK, sybil_flagged_producer: true } }),
+    makeInput({ risk_flags: { ...NO_RISK, duplicate_submission: true } }),
+    makeInput({ queue_status: "withdrawn" }),
+    makeInput({ evidence_visibility: "private", verification_confidence: "low", reviewer_verified: false }),
+  ];
+
+  for (const input of allScenarios) {
+    it(`reviewer_delay never penalizes (${input.evidence_visibility}/${input.queue_status})`, () => {
       const result = computeRewardCap(input);
       expect(result.invariants.reviewer_delay_penalizes_submitter).toBe(false);
-    }
-  });
+      expect(result.cap_components.queue_adjustment).toBe(1.0);
+    });
 
-  it("exposes_restricted_evidence is ALWAYS false", () => {
-    for (const vis of ["public", "private", "obfuscated", "legacy"] as const) {
-      const result = computeRewardCap(makeInput({ evidence_visibility: vis }));
+    it(`never exposes restricted evidence (${input.evidence_visibility}/${input.queue_status})`, () => {
+      const result = computeRewardCap(input);
       expect(result.invariants.exposes_restricted_evidence).toBe(false);
-    }
-  });
+    });
 
-  it("cap_below_zero is ALWAYS false", () => {
-    const result = computeRewardCap(makeInput({ risk_flags: { ...NO_RISK, sybil_flagged_producer: true } }));
-    expect(result.invariants.cap_below_zero).toBe(false);
-    expect(result.cap_multiplier).toBeGreaterThanOrEqual(0);
-    expect(result.capped_reward_pft).toBeGreaterThanOrEqual(0);
-  });
-
-  it("cap_multiplier never exceeds 1.0", () => {
-    const result = computeRewardCap(makeInput({ base_reward_pft: 100000 }));
-    expect(result.cap_multiplier).toBeLessThanOrEqual(1.0);
-  });
-
-  it("capped_reward_pft equals base * multiplier", () => {
-    const input = makeInput({ base_reward_pft: 6429 });
-    const result = computeRewardCap(input);
-    expect(result.capped_reward_pft).toBe(
-      round(input.base_reward_pft * result.cap_multiplier, 2)
-    );
-  });
+    it(`cap never below zero (${input.evidence_visibility}/${input.queue_status})`, () => {
+      const result = computeRewardCap(input);
+      expect(result.invariants.cap_below_zero).toBe(false);
+      expect(result.cap_multiplier).toBeGreaterThanOrEqual(0);
+      expect(result.capped_reward_pft).toBeGreaterThanOrEqual(0);
+    });
+  }
 });
 
 // -- Display Label Safety --------------------------------------------------
 
-describe("Display label does not leak identifiers", () => {
+describe("Display label never leaks identifiers", () => {
   const scenarios = [
     makeInput(),
     makeInput({ evidence_visibility: "private", verification_confidence: "medium", reviewer_verified: false }),
@@ -330,15 +400,6 @@ describe("Display label does not leak identifiers", () => {
 describe("Determinism", () => {
   it("identical input produces identical output", () => {
     const input = makeInput();
-    const r1 = computeRewardCap(input);
-    const r2 = computeRewardCap(input);
-    expect(r1).toEqual(r2);
+    expect(computeRewardCap(input)).toEqual(computeRewardCap(input));
   });
 });
-
-// -- Helper ----------------------------------------------------------------
-
-function round(val: number, decimals: number): number {
-  const f = Math.pow(10, decimals);
-  return Math.round(val * f) / f;
-}

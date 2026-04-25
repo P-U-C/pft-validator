@@ -1,5 +1,5 @@
 /**
- * Evidence-Weighted Reward Cap Reducer
+ * Evidence-Weighted Reward Cap Reducer (self-contained artifact)
  *
  * Deterministic tokenomics reducer that converts evidence visibility,
  * verification confidence, queue status, and abuse-risk flags into
@@ -16,77 +16,60 @@
  * A stale queue item with verified evidence gets full eligibility.
  * Only evidence quality, visibility, and abuse risk affect the cap.
  *
+ * Fields that must remain metadata-only for privacy safety:
+ *   - producer_address: used for risk lookup, never surfaced in output
+ *   - evidence URLs: never loaded, never referenced in display_label
+ *   - reviewer identity: not an input to this reducer at all
+ *
  * Task ID: e18618a0-f24d-45fa-92a9-59205cc8f183
  */
 
 // -- Input Contract --------------------------------------------------------
 
-/** Evidence visibility state (from artifact-visibility.ts). */
 export type EvidenceVisibility = "public" | "private" | "obfuscated" | "legacy";
 
-/** How confident the system is in the evidence verification. */
 export type VerificationConfidence =
-  | "high"      // public URL verified + hash match + proof layers pass
-  | "medium"    // reviewer-verifiable (gated) + hash match
-  | "low"       // hash only, no URL or reviewer attestation pending
-  | "attested"  // legacy: reviewer manually attested, no machine verification
-  | "none";     // no evidence, no hash, no attestation
+  | "high"       // public URL verified + hash match + proof layers pass
+  | "medium"     // reviewer-verifiable (gated) + hash match
+  | "low"        // hash only, no URL or reviewer attestation pending
+  | "attested"   // legacy: reviewer manually attested, no machine verification
+  | "none";      // no evidence, no hash, no attestation
 
-/** Queue status from the triage reducer. */
 export type QueueStatus =
-  | "fresh"
-  | "aging"
-  | "stale"
-  | "deadlocked"
-  | "completed"
-  | "withdrawn";
+  | "fresh" | "aging" | "stale" | "deadlocked" | "completed" | "withdrawn";
 
-/** Abuse-risk flags -- each is independently assessable. */
 export interface AbuseRiskFlags {
-  duplicate_submission: boolean;      // same or near-identical content submitted before
-  collision_with_other_task: boolean;  // overlaps with another active task's scope
-  sybil_flagged_producer: boolean;    // producer address is in a sybil cluster
-  velocity_anomaly: boolean;          // abnormal submission speed (too many too fast)
-  reward_concentration_risk: boolean; // producer would exceed concentration threshold
+  duplicate_submission: boolean;
+  collision_with_other_task: boolean;
+  sybil_flagged_producer: boolean;
+  velocity_anomaly: boolean;
+  reward_concentration_risk: boolean;
 }
 
-/** Input to the reward cap reducer. */
 export interface RewardCapInput {
   task_id: string;
   submission_id: string;
-
-  // Base reward from task definition
   base_reward_pft: number;
-
-  // Evidence quality signals
   evidence_visibility: EvidenceVisibility;
   verification_confidence: VerificationConfidence;
-
-  // Queue state (from triage reducer)
   queue_status: QueueStatus;
   queue_age_days: number | null;
   reviewer_verified: boolean;
-
-  // Abuse risk
   risk_flags: AbuseRiskFlags;
-
-  // Metadata
   producer_address: string;
   task_category: string | null;
 }
 
 // -- Output Contract -------------------------------------------------------
 
-/** Reward eligibility state -- the core output. */
 export type RewardEligibility =
-  | "full_eligible"    // no restrictions, full base reward available
-  | "capped"           // eligible but multiplier < 1.0 due to evidence quality
-  | "review_hold"      // eligible pending human review completion
-  | "evidence_hold"    // blocked until evidence is upgraded or verified
-  | "blocked"          // ineligible due to abuse risk or policy violation
-  | "withdrawn";       // submission withdrawn, no reward
+  | "full_eligible"
+  | "capped"
+  | "review_hold"
+  | "evidence_hold"
+  | "blocked"
+  | "withdrawn";
 
-/** Reason codes for the eligibility decision -- auditable. */
 export type ReasonCode =
   | "evidence_public_verified"
   | "evidence_private_hash_verified"
@@ -102,85 +85,89 @@ export type ReasonCode =
   | "velocity_anomaly"
   | "concentration_risk"
   | "submission_withdrawn"
-  | "queue_stale_no_fault";
+  | "queue_stale_no_fault"
+  | "cap_below_auto_emission_floor";
 
-/** Cap multiplier components -- auditable breakdown. */
+export type ReviewerAction =
+  | "approve_cap"
+  | "request_public_or_redacted_evidence"
+  | "verify_private_metadata"
+  | "merge_or_reject_duplicate"
+  | "escalate_sybil_review"
+  | "attest_legacy_evidence"
+  | "no_action_queue_delay_only"
+  | "submit_evidence"
+  | "no_action";
+
 export interface CapComponents {
-  visibility_factor: number;    // 0.0-1.0 based on evidence visibility
-  confidence_factor: number;    // 0.0-1.0 based on verification confidence
-  risk_factor: number;          // 0.0-1.0 based on abuse risk (1.0 = no risk)
-  queue_adjustment: number;     // always 1.0 -- reviewer delay never penalizes
+  visibility_factor: number;
+  confidence_factor: number;
+  risk_factor: number;
+  queue_adjustment: number;     // always 1.0
+  terminal_override: string | null;
 }
 
-/** Safety invariants emitted with every result. */
 export interface RewardInvariants {
-  reviewer_delay_penalizes_submitter: false;  // hard invariant
-  exposes_restricted_evidence: false;         // hard invariant
-  cap_below_zero: false;                      // hard invariant
+  reviewer_delay_penalizes_submitter: false;
+  exposes_restricted_evidence: false;
+  cap_below_zero: false;
   requires_human_sign_off: boolean;
   blocks_automated_emission: boolean;
 }
 
-/** The full reward cap output. */
 export interface RewardCapResult {
   task_id: string;
   submission_id: string;
-
-  // Core decision
   eligibility: RewardEligibility;
-  cap_multiplier: number;           // 0.0-1.0, applied to base_reward_pft
-  capped_reward_pft: number;        // base_reward_pft * cap_multiplier
+  cap_multiplier: number;
+  capped_reward_pft: number;
   reason_codes: ReasonCode[];
-  display_label: string;            // short human-readable label for admin UI
-
-  // Decomposition
+  dominant_reason: ReasonCode;
+  recommended_reviewer_action: ReviewerAction;
+  display_label: string;
   cap_components: CapComponents;
-
-  // Safety
   invariants: RewardInvariants;
 }
 
+// -- Constants -------------------------------------------------------------
+
+/** Below this cap, auto-emission is not safe -- route to review_hold. */
+const MIN_AUTO_CAP_MULTIPLIER = 0.25;
+
 // -- Reducer ---------------------------------------------------------------
 
-/**
- * Pure deterministic reducer: RewardCapInput -> RewardCapResult
- *
- * Decision flow:
- * 1. Check terminal states (withdrawn)
- * 2. Check abuse risk flags (any flag -> blocked or capped)
- * 3. Compute evidence visibility factor
- * 4. Compute verification confidence factor
- * 5. Apply queue adjustment (always 1.0 -- delay never penalizes)
- * 6. Combine into final eligibility + cap
- */
 export function computeRewardCap(input: RewardCapInput): RewardCapResult {
   const reasons: ReasonCode[] = [];
+
+  // Compute raw factors for forensic components (even if terminal)
+  const rawVisFactor = visibilityFactor(input.evidence_visibility);
+  const rawConfFactor = confidenceFactor(input.verification_confidence, input.reviewer_verified);
 
   // Terminal: withdrawn
   if (input.queue_status === "withdrawn") {
     reasons.push("submission_withdrawn");
-    return buildResult(input, "withdrawn", 0, reasons, "Withdrawn -- no reward");
+    return buildTerminal(input, "withdrawn", 0, reasons, "submission_withdrawn", "Withdrawn -- no reward", "no_action", rawVisFactor, rawConfFactor, 1.0, "withdrawn");
   }
 
-  // Abuse risk assessment
+  // Abuse risk
   const riskResult = assessRisk(input.risk_flags, reasons);
   if (riskResult.blocked) {
-    return buildResult(input, "blocked", 0, reasons, riskResult.label);
+    const action: ReviewerAction = riskResult.blockType === "sybil" ? "escalate_sybil_review" : "merge_or_reject_duplicate";
+    return buildTerminal(input, "blocked", 0, reasons, reasons[reasons.length - 1], riskResult.label, action, rawVisFactor, rawConfFactor, 0, riskResult.blockType === "sybil" ? "sybil_block" : "duplicate_block");
   }
 
   // Evidence missing entirely
   if (input.verification_confidence === "none") {
     reasons.push("evidence_missing");
-    return buildResult(input, "evidence_hold", 0, reasons, "Evidence missing -- submit evidence to unlock");
+    return buildTerminal(input, "evidence_hold", 0, reasons, "evidence_missing", "Evidence missing -- submit evidence to unlock", "submit_evidence", rawVisFactor, 0, riskResult.factor, "missing_evidence");
   }
 
-  // Compute factors
+  // Compute factors with reason tracking
   const visFactor = computeVisibilityFactor(input.evidence_visibility, reasons);
   const confFactor = computeConfidenceFactor(input.verification_confidence, input.reviewer_verified, reasons);
   const riskFactor = riskResult.factor;
 
-  // Queue adjustment: always 1.0. Reviewer delay does not penalize.
-  // If queue is stale, we note it but do NOT reduce the cap.
+  // Queue adjustment: always 1.0
   const queueAdj = 1.0;
   if (input.queue_status === "stale" || input.queue_status === "deadlocked") {
     reasons.push("queue_stale_no_fault");
@@ -190,15 +177,26 @@ export function computeRewardCap(input: RewardCapInput): RewardCapResult {
   const rawMultiplier = visFactor * confFactor * riskFactor * queueAdj;
   const capMultiplier = clamp(rawMultiplier, 0, 1);
 
-  // Determine eligibility state
+  // Determine eligibility
   let eligibility: RewardEligibility;
   let label: string;
+  let reviewerAction: ReviewerAction;
 
   if (capMultiplier >= 1.0) {
     eligibility = "full_eligible";
     label = "Full reward eligible";
+    reviewerAction = input.queue_status === "stale" || input.queue_status === "deadlocked"
+      ? "no_action_queue_delay_only"
+      : "approve_cap";
+  } else if (capMultiplier > 0 && capMultiplier < MIN_AUTO_CAP_MULTIPLIER) {
+    // Below auto-emission floor -- route to human review
+    eligibility = "review_hold";
+    reasons.push("cap_below_auto_emission_floor");
+    label = `Review hold -- ${pct(capMultiplier)} cap below auto-emission floor`;
+    reviewerAction = input.evidence_visibility === "legacy"
+      ? "attest_legacy_evidence"
+      : "verify_private_metadata";
   } else if (capMultiplier > 0) {
-    // Check if we need human review
     const needsHuman = input.evidence_visibility === "legacy"
       || input.verification_confidence === "attested"
       || input.verification_confidence === "low"
@@ -206,15 +204,27 @@ export function computeRewardCap(input: RewardCapInput): RewardCapResult {
 
     if (needsHuman && !input.reviewer_verified) {
       eligibility = "review_hold";
-      label = `Review hold -- ${Math.round(capMultiplier * 100)}% cap pending verification`;
+      label = `Review hold -- ${pct(capMultiplier)} cap pending verification`;
+      reviewerAction = input.evidence_visibility === "private"
+        ? "verify_private_metadata"
+        : input.evidence_visibility === "legacy"
+          ? "attest_legacy_evidence"
+          : "request_public_or_redacted_evidence";
     } else {
       eligibility = "capped";
-      label = `Capped at ${Math.round(capMultiplier * 100)}% -- ${reasons.join(", ")}`;
+      label = `Capped at ${pct(capMultiplier)}`;
+      reviewerAction = "approve_cap";
     }
   } else {
     eligibility = "evidence_hold";
     label = "Evidence insufficient -- upgrade to unlock reward";
+    reviewerAction = "submit_evidence";
   }
+
+  // Dominant reason: last non-queue reason, or first reason
+  const dominantReason = reasons.filter(r => r !== "queue_stale_no_fault" && r !== "cap_below_auto_emission_floor").pop()
+    ?? reasons[0]
+    ?? "evidence_public_verified";
 
   return {
     task_id: input.task_id,
@@ -223,12 +233,15 @@ export function computeRewardCap(input: RewardCapInput): RewardCapResult {
     cap_multiplier: round(capMultiplier, 4),
     capped_reward_pft: round(input.base_reward_pft * capMultiplier, 2),
     reason_codes: reasons,
+    dominant_reason: dominantReason,
+    recommended_reviewer_action: reviewerAction,
     display_label: label,
     cap_components: {
       visibility_factor: round(visFactor, 4),
       confidence_factor: round(confFactor, 4),
       risk_factor: round(riskFactor, 4),
       queue_adjustment: queueAdj,
+      terminal_override: null,
     },
     invariants: {
       reviewer_delay_penalizes_submitter: false,
@@ -242,44 +255,41 @@ export function computeRewardCap(input: RewardCapInput): RewardCapResult {
 
 // -- Factor Computations ---------------------------------------------------
 
-function computeVisibilityFactor(
-  vis: EvidenceVisibility,
-  reasons: ReasonCode[],
-): number {
+function visibilityFactor(vis: EvidenceVisibility): number {
   switch (vis) {
-    case "public":
-      reasons.push("evidence_public_verified");
-      return 1.0;
-    case "obfuscated":
-      reasons.push("evidence_obfuscated_verified");
-      return 0.9;   // slight reduction: redacted version, reviewer-gated full
-    case "private":
-      reasons.push("evidence_private_hash_verified");
-      return 0.75;  // hash-verifiable but not publicly inspectable
-    case "legacy":
-      return 0.5;   // reason added by confidence factor (attested vs unattested)
+    case "public": return 1.0;
+    case "obfuscated": return 0.9;
+    case "private": return 0.75;
+    case "legacy": return 0.5;
   }
 }
 
-function computeConfidenceFactor(
-  conf: VerificationConfidence,
-  reviewerVerified: boolean,
-  reasons: ReasonCode[],
-): number {
+function confidenceFactor(conf: VerificationConfidence, reviewerVerified: boolean): number {
   switch (conf) {
-    case "high":
-      return 1.0;
-    case "medium":
-      return reviewerVerified ? 0.95 : 0.8;
-    case "low":
-      reasons.push("evidence_low_confidence");
-      return 0.5;
-    case "attested":
-      reasons.push("evidence_legacy_attested");
-      return 0.7;
-    case "none":
-      reasons.push("evidence_missing");
-      return 0;
+    case "high": return 1.0;
+    case "medium": return reviewerVerified ? 0.95 : 0.8;
+    case "low": return 0.5;
+    case "attested": return 0.7;
+    case "none": return 0;
+  }
+}
+
+function computeVisibilityFactor(vis: EvidenceVisibility, reasons: ReasonCode[]): number {
+  switch (vis) {
+    case "public": reasons.push("evidence_public_verified"); return 1.0;
+    case "obfuscated": reasons.push("evidence_obfuscated_verified"); return 0.9;
+    case "private": reasons.push("evidence_private_hash_verified"); return 0.75;
+    case "legacy": return 0.5;
+  }
+}
+
+function computeConfidenceFactor(conf: VerificationConfidence, reviewerVerified: boolean, reasons: ReasonCode[]): number {
+  switch (conf) {
+    case "high": return 1.0;
+    case "medium": return reviewerVerified ? 0.95 : 0.8;
+    case "low": reasons.push("evidence_low_confidence"); return 0.5;
+    case "attested": reasons.push("evidence_legacy_attested"); return 0.7;
+    case "none": reasons.push("evidence_missing"); return 0;
   }
 }
 
@@ -287,39 +297,25 @@ interface RiskAssessment {
   blocked: boolean;
   factor: number;
   label: string;
+  blockType: "sybil" | "duplicate" | null;
 }
 
-function assessRisk(
-  flags: AbuseRiskFlags,
-  reasons: ReasonCode[],
-): RiskAssessment {
-  // Hard blocks: sybil or duplicate
+function assessRisk(flags: AbuseRiskFlags, reasons: ReasonCode[]): RiskAssessment {
   if (flags.sybil_flagged_producer) {
     reasons.push("sybil_flagged");
-    return { blocked: true, factor: 0, label: "Blocked -- sybil-flagged producer" };
+    return { blocked: true, factor: 0, label: "Blocked -- sybil-flagged producer", blockType: "sybil" };
   }
   if (flags.duplicate_submission) {
     reasons.push("duplicate_detected");
-    return { blocked: true, factor: 0, label: "Blocked -- duplicate submission detected" };
+    return { blocked: true, factor: 0, label: "Blocked -- duplicate submission detected", blockType: "duplicate" };
   }
 
-  // Soft caps: collision, velocity, concentration
   let factor = 1.0;
+  if (flags.collision_with_other_task) { reasons.push("collision_detected"); factor *= 0.5; }
+  if (flags.velocity_anomaly) { reasons.push("velocity_anomaly"); factor *= 0.7; }
+  if (flags.reward_concentration_risk) { reasons.push("concentration_risk"); factor *= 0.8; }
 
-  if (flags.collision_with_other_task) {
-    reasons.push("collision_detected");
-    factor *= 0.5;
-  }
-  if (flags.velocity_anomaly) {
-    reasons.push("velocity_anomaly");
-    factor *= 0.7;
-  }
-  if (flags.reward_concentration_risk) {
-    reasons.push("concentration_risk");
-    factor *= 0.8;
-  }
-
-  return { blocked: false, factor, label: "" };
+  return { blocked: false, factor, label: "", blockType: null };
 }
 
 // -- Helpers ---------------------------------------------------------------
@@ -333,12 +329,22 @@ function round(val: number, decimals: number): number {
   return Math.round(val * f) / f;
 }
 
-function buildResult(
+function pct(val: number): string {
+  return `${Math.round(val * 100)}%`;
+}
+
+function buildTerminal(
   input: RewardCapInput,
   eligibility: RewardEligibility,
   capMultiplier: number,
   reasons: ReasonCode[],
+  dominantReason: ReasonCode,
   label: string,
+  reviewerAction: ReviewerAction,
+  rawVisFactor: number,
+  rawConfFactor: number,
+  rawRiskFactor: number,
+  terminalOverride: string,
 ): RewardCapResult {
   return {
     task_id: input.task_id,
@@ -347,12 +353,15 @@ function buildResult(
     cap_multiplier: capMultiplier,
     capped_reward_pft: round(input.base_reward_pft * capMultiplier, 2),
     reason_codes: reasons,
+    dominant_reason: dominantReason,
+    recommended_reviewer_action: reviewerAction,
     display_label: label,
     cap_components: {
-      visibility_factor: 0,
-      confidence_factor: 0,
-      risk_factor: 0,
+      visibility_factor: round(rawVisFactor, 4),
+      confidence_factor: round(rawConfFactor, 4),
+      risk_factor: round(rawRiskFactor, 4),
       queue_adjustment: 1.0,
+      terminal_override: terminalOverride,
     },
     invariants: {
       reviewer_delay_penalizes_submitter: false,
