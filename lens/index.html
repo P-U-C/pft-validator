@@ -909,6 +909,14 @@
     </div>
   </section>
 
+  <section class="reveal" style="padding:2.5rem 0;border-bottom:1px solid var(--border-subtle);">
+    <div class="container">
+      <div class="section-label">Hustlers — Fastest Growing New Accounts</div>
+      <div class="section-narrative">Contributors discovered in the last 30 days with the highest memo velocity.</div>
+      <div id="hustlersTable" style="margin-top:1rem;"></div>
+    </div>
+  </section>
+
   <section class="reveal" style="padding:2.5rem 0;border-bottom:1px solid var(--border-subtle);text-align:center;">
     <div class="container">
       <div class="section-label">SUBS — Service Marketplace</div>
@@ -1735,6 +1743,27 @@
           document.getElementById('airdropTodayRecipients').textContent = ad.today_recipients + ' recipients today';
         }
         document.getElementById('airdropCumDrops').textContent = fmtNum(ad.cumulative_drops);
+      }
+
+      // Hustlers table
+      if (stats.hustlers && stats.hustlers.length > 0) {
+        var ht = '<table style="width:100%;border-collapse:collapse;font-size:0.55rem;text-align:left;">';
+        ht += '<tr style="border-bottom:1px solid var(--border-subtle);"><th style="padding:0.4rem;color:var(--text-dim);">Address</th><th style="padding:0.4rem;color:var(--text-dim);text-align:right;">Memos</th><th style="padding:0.4rem;color:var(--text-dim);text-align:right;">Age</th><th style="padding:0.4rem;color:var(--text-dim);text-align:right;">Memos/Day</th></tr>';
+        for (var hi = 0; hi < stats.hustlers.length; hi++) {
+          var h = stats.hustlers[hi];
+          var addr = h.address.substring(0, 8) + '...' + h.address.slice(-4);
+          var rateColor = h.memos_per_day >= 20 ? '#10b981' : (h.memos_per_day >= 10 ? '#60a5fa' : 'var(--text-secondary)');
+          ht += '<tr style="border-bottom:1px solid var(--border-subtle);">';
+          ht += '<td style="padding:0.4rem;font-family:monospace;font-size:0.5rem;">' + addr + '</td>';
+          ht += '<td style="padding:0.4rem;text-align:right;">' + h.memos + '</td>';
+          ht += '<td style="padding:0.4rem;text-align:right;">' + h.age_days + 'd</td>';
+          ht += '<td style="padding:0.4rem;text-align:right;color:' + rateColor + ';font-weight:600;">' + h.memos_per_day + '/d</td>';
+          ht += '</tr>';
+        }
+        ht += '</table>';
+        document.getElementById('hustlersTable').innerHTML = ht;
+      } else {
+        document.getElementById('hustlersTable').innerHTML = '<div style="font-size:0.5rem;color:var(--text-dim);">No fast-growing new accounts detected.</div>';
       }
 
       if (stats.generated_at) {
