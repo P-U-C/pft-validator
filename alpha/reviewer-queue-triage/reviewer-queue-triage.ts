@@ -6,34 +6,43 @@
  *
  * Integration point: plugs into Task Node reviewer queue rendering
  * downstream of the artifact visibility mapper (artifact-visibility.ts).
- * This reducer consumes queue items and produces triage labels —
+ * This reducer consumes queue items and produces triage labels --
  * it does NOT overlap with issuance-collision logic, reward holdback,
  * or emissions concentration analysis. Those are separate pipeline
  * stages that consume triage output as one input signal.
  *
+ * Visibility/action invariant:
+ *   public + live URL          -> review_now, reviewer_verifiable + publicly_openable
+ *   private + hash             -> reviewer_verifiable, NOT publicly_openable
+ *   obfuscated + hash          -> reviewer_verifiable, redacted display only
+ *   legacy                     -> attest_legacy, never open by default
+ *   dead URL                   -> contact_producer, never retry-loop forever
+ *   missing hash + restricted  -> awaiting_verification
+ *   missing timestamp          -> timestamp_missing, repair metadata
+ *
  * Task ID: c56bfbe6-ae71-4d02-a3be-eaf4db4cf424
  */
 
-// ─── Input Contract ───────────────────────────────────────────────
+// -- Input Contract --------------------------------------------------------
 
 /** Evidence visibility state (from artifact-visibility spec). */
 export type EvidenceVisibility = "public" | "private" | "obfuscated" | "legacy";
 
 /** Authorization state of the task or submission. */
 export type AuthorizationState =
-  | "authorized"       // normal flow, no holds
-  | "pending_review"   // awaiting authorization decision
-  | "held"             // explicitly held by policy or manual action
-  | "expired";         // authorization window lapsed
+  | "authorized"
+  | "pending_review"
+  | "held"
+  | "expired";
 
 /** Current task/submission status. */
 export type SubmissionStatus =
-  | "submitted"        // producer submitted, awaiting review
-  | "in_review"        // reviewer has started but not completed
-  | "changes_requested" // reviewer sent back for revision
-  | "approved"         // review complete, approved
-  | "rejected"         // review complete, rejected
-  | "withdrawn";       // producer withdrew submission
+  | "submitted"
+  | "in_review"
+  | "changes_requested"
+  | "approved"
+  | "rejected"
+  | "withdrawn";
 
 /** A single item in the reviewer queue. */
 export interface QueueItem {
@@ -53,7 +62,7 @@ export interface QueueItem {
 
   // Reviewer assignment
   assigned_reviewer: string | null;
-  reviewer_count: number;  // how many reviewers have touched this
+  reviewer_count: number;
 
   // Evidence metadata (safe to surface)
   has_content_hash: boolean;
@@ -65,57 +74,64 @@ export interface QueueItem {
   task_category: string | null;
 }
 
-// ─── Output Contract ──────────────────────────────────────────────
+// -- Output Contract -------------------------------------------------------
 
-/** Age-based triage classification. */
-export type AgeClass =
-  | "fresh"     // 0-3 days since submission
-  | "normal"    // 4-7 days
-  | "aging"     // 8-14 days — needs attention
-  | "stale"     // 15+ days — urgent
-  | "unknown";  // missing timestamp
+export type AgeClass = "fresh" | "normal" | "aging" | "stale" | "unknown";
 
-/** Overall urgency level for reviewer prioritization. */
-export type UrgencyLevel =
-  | "critical"  // requires immediate action
-  | "high"      // should be handled today
-  | "medium"    // handle within 2-3 days
-  | "low"       // can wait
-  | "info";     // no action needed (approved/rejected/withdrawn)
+export type UrgencyLevel = "critical" | "high" | "medium" | "low" | "info";
 
-/** Triage label combining age, evidence, and authorization signals. */
 export type TriageLabel =
-  | "fresh_active"           // new submission, ready for review
-  | "aging_unreviewed"       // getting old, nobody has touched it
-  | "aging_in_progress"      // reviewer started but hasn't finished
-  | "stale_unreviewed"       // 15+ days, no reviewer action — critical
-  | "stale_in_progress"      // reviewer started long ago, stalled
-  | "awaiting_verification"  // evidence needs verification before review proceeds
-  | "authorization_hold"     // blocked by authorization state
-  | "legacy_evidence"        // evidence predates sharing norms, special handling
-  | "changes_pending"        // sent back to producer, waiting for revision
-  | "dead_evidence"          // URL died, needs re-submission or attestation
-  | "completed"              // approved or rejected, no action needed
-  | "withdrawn";             // producer withdrew
+  | "fresh_active"
+  | "aging_unreviewed"
+  | "aging_in_progress"
+  | "stale_unreviewed"
+  | "stale_in_progress"
+  | "reviewer_deadlock"
+  | "awaiting_verification"
+  | "authorization_hold"
+  | "legacy_evidence"
+  | "changes_pending"
+  | "dead_evidence"
+  | "timestamp_missing"
+  | "completed"
+  | "withdrawn";
 
-/** Recommended next action for the reviewer. */
 export type RecommendedAction =
-  | "review_now"             // open and review
-  | "verify_evidence"        // check URL/hash before reviewing content
-  | "request_evidence_upgrade" // ask producer to provide public URL or hash
-  | "escalate"               // flag for senior reviewer or policy team
-  | "wait_for_producer"      // producer has the ball (changes requested)
-  | "wait_for_authorization" // blocked on authorization decision
-  | "close"                  // no further action (completed/withdrawn)
-  | "attest_legacy"          // reviewer must manually attest legacy evidence
-  | "contact_producer";      // evidence is broken, reach out
+  | "review_now"
+  | "verify_evidence"
+  | "request_evidence_upgrade"
+  | "escalate"
+  | "reassign_or_escalate"
+  | "wait_for_producer"
+  | "wait_for_authorization"
+  | "close"
+  | "attest_legacy"
+  | "contact_producer"
+  | "repair_metadata";
+
+/** Priority decomposition for auditability. */
+export interface PriorityComponents {
+  age_score: number;
+  evidence_score: number;
+  authorization_score: number;
+  assignment_score: number;
+  terminal_penalty: number;
+}
+
+/** Safety invariants emitted with every result. */
+export interface TriageInvariants {
+  exposes_restricted_url: false;
+  exposes_producer_private_data: false;
+  requires_human_attestation: boolean;
+  blocks_reward_emission: boolean;
+  safe_for_collaborator_view: boolean;
+}
 
 /** The full triage output for a single queue item. */
 export interface TriageResult {
   task_id: string;
   submission_id: string;
 
-  // Triage classification
   triage_label: TriageLabel;
   age_class: AgeClass;
   urgency: UrgencyLevel;
@@ -125,27 +141,24 @@ export interface TriageResult {
   age_days: number | null;
   days_since_last_action: number | null;
   has_reviewer: boolean;
-  evidence_accessible: boolean;
+  reviewer_verifiable: boolean;
+  publicly_openable: boolean;
 
-  // Reviewer-facing status line
+  // Reviewer-facing status line (contains NO identifiers)
   status_line: string;
 
-  // Sort priority (lower = more urgent, for queue ordering)
+  // Sort priority (lower = more urgent)
   sort_priority: number;
+  priority_components: PriorityComponents;
+
+  // Protocol safety
+  triage_invariants: TriageInvariants;
 }
 
-// ─── Reducer ──────────────────────────────────────────────────────
+// -- Reducer ---------------------------------------------------------------
 
-/**
- * Pure reducer: QueueItem → TriageResult
- *
- * Deterministic — same input always produces same output.
- * Uses `as_of` parameter instead of runtime clock for testability.
- *
- * Does not expose restricted evidence details. The status_line
- * contains only safe metadata: age, evidence accessibility state,
- * authorization state, and recommended action.
- */
+const STALE_REVIEWER_DAYS = 10;
+
 export function triageQueueItem(
   item: QueueItem,
   as_of: Date,
@@ -153,78 +166,86 @@ export function triageQueueItem(
   const ageDays = computeAgeDays(item.submitted_at, as_of);
   const daysSinceAction = computeAgeDays(item.last_reviewer_action_at, as_of);
   const ageClass = classifyAge(ageDays);
-  const evidenceAccessible = computeEvidenceAccessible(item);
+  const verifiable = computeReviewerVerifiable(item);
+  const openable = computePubliclyOpenable(item);
 
-  // Terminal states — no action needed
+  // Terminal states
   if (item.status === "approved" || item.status === "rejected") {
-    return buildResult(item, "completed", ageClass, "info", "close", ageDays, daysSinceAction, evidenceAccessible, 999);
+    return buildResult(item, "completed", ageClass, "info", "close", ageDays, daysSinceAction, verifiable, openable, { age_score: 0, evidence_score: 0, authorization_score: 0, assignment_score: 0, terminal_penalty: 999 });
   }
   if (item.status === "withdrawn") {
-    return buildResult(item, "withdrawn", ageClass, "info", "close", ageDays, daysSinceAction, evidenceAccessible, 998);
+    return buildResult(item, "withdrawn", ageClass, "info", "close", ageDays, daysSinceAction, verifiable, openable, { age_score: 0, evidence_score: 0, authorization_score: 0, assignment_score: 0, terminal_penalty: 998 });
   }
 
-  // Changes requested — ball is with the producer
+  // Missing timestamp -- broken queue state, not a happy path
+  if (ageDays === null && (item.status === "submitted" || item.status === "in_review")) {
+    return buildResult(item, "timestamp_missing", ageClass, "high", "repair_metadata", null, daysSinceAction, verifiable, openable, { age_score: 55, evidence_score: 0, authorization_score: 0, assignment_score: 0, terminal_penalty: 0 });
+  }
+
+  // Changes requested
   if (item.status === "changes_requested") {
-    const urgency = ageClass === "stale" ? "high" : "low";
-    const priority = ageClass === "stale" ? 50 : 200;
-    return buildResult(item, "changes_pending", ageClass, urgency, "wait_for_producer", ageDays, daysSinceAction, evidenceAccessible, priority);
+    const ageScore = ageClass === "stale" ? 50 : 200;
+    const urgency: UrgencyLevel = ageClass === "stale" ? "high" : "low";
+    return buildResult(item, "changes_pending", ageClass, urgency, "wait_for_producer", ageDays, daysSinceAction, verifiable, openable, { age_score: ageScore, evidence_score: 0, authorization_score: 0, assignment_score: 0, terminal_penalty: 0 });
   }
 
-  // Authorization hold — blocked upstream
+  // Authorization hold
   if (item.authorization_state === "held" || item.authorization_state === "pending_review") {
-    const urgency = item.authorization_state === "held" ? "medium" : "high";
-    const priority = item.authorization_state === "held" ? 150 : 80;
-    return buildResult(item, "authorization_hold", ageClass, urgency, "wait_for_authorization", ageDays, daysSinceAction, evidenceAccessible, priority);
+    const urgency: UrgencyLevel = item.authorization_state === "held" ? "medium" : "high";
+    const authScore = item.authorization_state === "held" ? 150 : 80;
+    return buildResult(item, "authorization_hold", ageClass, urgency, "wait_for_authorization", ageDays, daysSinceAction, verifiable, openable, { age_score: 0, evidence_score: 0, authorization_score: authScore, assignment_score: 0, terminal_penalty: 0 });
   }
-
   if (item.authorization_state === "expired") {
-    return buildResult(item, "authorization_hold", ageClass, "high", "escalate", ageDays, daysSinceAction, evidenceAccessible, 30);
+    return buildResult(item, "authorization_hold", ageClass, "high", "escalate", ageDays, daysSinceAction, verifiable, openable, { age_score: 0, evidence_score: 0, authorization_score: 30, assignment_score: 0, terminal_penalty: 0 });
   }
 
-  // Dead evidence — URL is broken
+  // Dead evidence
   if (item.has_url && item.url_status === "dead") {
-    return buildResult(item, "dead_evidence", ageClass, "high", "contact_producer", ageDays, daysSinceAction, evidenceAccessible, 40);
+    return buildResult(item, "dead_evidence", ageClass, "high", "contact_producer", ageDays, daysSinceAction, verifiable, openable, { age_score: 0, evidence_score: 40, authorization_score: 0, assignment_score: 0, terminal_penalty: 0 });
   }
 
-  // Legacy evidence — special handling
+  // Legacy evidence
   if (item.evidence_visibility === "legacy") {
-    const urgency = ageClass === "stale" ? "high" : "medium";
-    const priority = ageClass === "stale" ? 35 : 100;
-    return buildResult(item, "legacy_evidence", ageClass, urgency, "attest_legacy", ageDays, daysSinceAction, evidenceAccessible, priority);
+    const ageScore = ageClass === "stale" ? 35 : 100;
+    const urgency: UrgencyLevel = ageClass === "stale" ? "high" : "medium";
+    return buildResult(item, "legacy_evidence", ageClass, urgency, "attest_legacy", ageDays, daysSinceAction, verifiable, openable, { age_score: ageScore, evidence_score: 0, authorization_score: 0, assignment_score: 0, terminal_penalty: 0 });
   }
 
-  // Awaiting verification — private/obfuscated without hash, or URL unknown
-  if (!evidenceAccessible) {
-    const urgency = ageClass === "stale" ? "critical" : "high";
-    const priority = ageClass === "stale" ? 15 : 60;
-    return buildResult(item, "awaiting_verification", ageClass, urgency, "verify_evidence", ageDays, daysSinceAction, evidenceAccessible, priority);
+  // Awaiting verification
+  if (!verifiable) {
+    const ageScore = ageClass === "stale" ? 15 : 60;
+    const urgency: UrgencyLevel = ageClass === "stale" ? "critical" : "high";
+    return buildResult(item, "awaiting_verification", ageClass, urgency, "verify_evidence", ageDays, daysSinceAction, verifiable, openable, { age_score: ageScore, evidence_score: 0, authorization_score: 0, assignment_score: 0, terminal_penalty: 0 });
   }
 
-  // Evidence is accessible — classify by age and review status
+  // Evidence is verifiable -- classify by age and review status
   const isInReview = item.status === "in_review";
+
+  // Reviewer deadlock: in_review + reviewer action is stale (10+ days ago)
+  if (isInReview && daysSinceAction !== null && daysSinceAction >= STALE_REVIEWER_DAYS) {
+    return buildResult(item, "reviewer_deadlock", ageClass, "critical", "reassign_or_escalate", ageDays, daysSinceAction, verifiable, openable, { age_score: 5, evidence_score: 0, authorization_score: 0, assignment_score: 3, terminal_penalty: 0 });
+  }
 
   if (ageClass === "stale") {
     const label: TriageLabel = isInReview ? "stale_in_progress" : "stale_unreviewed";
     const action: RecommendedAction = isInReview ? "escalate" : "review_now";
-    return buildResult(item, label, ageClass, "critical", action, ageDays, daysSinceAction, evidenceAccessible, isInReview ? 10 : 5);
+    const assignScore = isInReview ? 10 : 5;
+    return buildResult(item, label, ageClass, "critical", action, ageDays, daysSinceAction, verifiable, openable, { age_score: assignScore, evidence_score: 0, authorization_score: 0, assignment_score: 0, terminal_penalty: 0 });
   }
 
   if (ageClass === "aging") {
     const label: TriageLabel = isInReview ? "aging_in_progress" : "aging_unreviewed";
-    const action: RecommendedAction = isInReview ? "review_now" : "review_now";
-    return buildResult(item, label, ageClass, "high", action, ageDays, daysSinceAction, evidenceAccessible, isInReview ? 45 : 25);
+    const assignScore = isInReview ? 45 : 25;
+    return buildResult(item, label, ageClass, "high", "review_now", ageDays, daysSinceAction, verifiable, openable, { age_score: assignScore, evidence_score: 0, authorization_score: 0, assignment_score: 0, terminal_penalty: 0 });
   }
 
   // Fresh or normal
-  return buildResult(item, "fresh_active", ageClass, isInReview ? "medium" : "medium", "review_now", ageDays, daysSinceAction, evidenceAccessible, isInReview ? 120 : 100);
+  const baseScore = isInReview ? 120 : 100;
+  return buildResult(item, "fresh_active", ageClass, "medium", "review_now", ageDays, daysSinceAction, verifiable, openable, { age_score: baseScore, evidence_score: 0, authorization_score: 0, assignment_score: 0, terminal_penalty: 0 });
 }
 
-// ─── Batch Reducer ────────────────────────────────────────────────
+// -- Batch Reducer ---------------------------------------------------------
 
-/**
- * Triage an entire reviewer queue. Returns items sorted by
- * urgency (sort_priority ascending = most urgent first).
- */
 export function triageQueue(
   items: QueueItem[],
   as_of: Date,
@@ -234,7 +255,7 @@ export function triageQueue(
     .sort((a, b) => a.sort_priority - b.sort_priority);
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────
+// -- Helpers ---------------------------------------------------------------
 
 function computeAgeDays(timestamp: string | null, as_of: Date): number | null {
   if (!timestamp) return null;
@@ -251,17 +272,26 @@ function classifyAge(days: number | null): AgeClass {
   return "stale";
 }
 
-function computeEvidenceAccessible(item: QueueItem): boolean {
-  // Public with live URL = accessible
-  if (item.evidence_visibility === "public" && item.url_status === "live") return true;
-  // Public with unknown URL status = assume accessible
+function computeReviewerVerifiable(item: QueueItem): boolean {
   if (item.evidence_visibility === "public" && item.url_status !== "dead") return true;
-  // Private/obfuscated with content hash = verifiable (reviewer can access via gate)
   if ((item.evidence_visibility === "private" || item.evidence_visibility === "obfuscated") && item.has_content_hash) return true;
-  // Legacy = not accessible without attestation
   if (item.evidence_visibility === "legacy") return false;
-  // No hash, no URL = not accessible
   return item.has_content_hash;
+}
+
+function computePubliclyOpenable(item: QueueItem): boolean {
+  if (item.evidence_visibility === "public" && item.has_url && item.url_status === "live") return true;
+  return false;
+}
+
+function computeInvariants(item: QueueItem, label: TriageLabel, verifiable: boolean): TriageInvariants {
+  return {
+    exposes_restricted_url: false,
+    exposes_producer_private_data: false,
+    requires_human_attestation: label === "legacy_evidence" || label === "reviewer_deadlock",
+    blocks_reward_emission: label === "authorization_hold" || label === "awaiting_verification" || label === "dead_evidence" || label === "timestamp_missing",
+    safe_for_collaborator_view: item.evidence_visibility === "public" && verifiable,
+  };
 }
 
 function buildResult(
@@ -272,9 +302,16 @@ function buildResult(
   recommended_action: RecommendedAction,
   age_days: number | null,
   days_since_last_action: number | null,
-  evidence_accessible: boolean,
-  sort_priority: number,
+  reviewer_verifiable: boolean,
+  publicly_openable: boolean,
+  priority_components: PriorityComponents,
 ): TriageResult {
+  const sort_priority = priority_components.age_score
+    + priority_components.evidence_score
+    + priority_components.authorization_score
+    + priority_components.assignment_score
+    + priority_components.terminal_penalty;
+
   return {
     task_id: item.task_id,
     submission_id: item.submission_id,
@@ -285,21 +322,25 @@ function buildResult(
     age_days,
     days_since_last_action,
     has_reviewer: !!item.assigned_reviewer,
-    evidence_accessible,
-    status_line: formatStatusLine(triage_label, age_days, evidence_accessible, item),
+    reviewer_verifiable,
+    publicly_openable,
+    status_line: formatStatusLine(triage_label, age_days, reviewer_verifiable, publicly_openable, item),
     sort_priority,
+    priority_components,
+    triage_invariants: computeInvariants(item, triage_label, reviewer_verifiable),
   };
 }
 
 function formatStatusLine(
   label: TriageLabel,
   age_days: number | null,
-  evidence_accessible: boolean,
+  reviewer_verifiable: boolean,
+  publicly_openable: boolean,
   item: QueueItem,
 ): string {
   const age = age_days !== null ? `${age_days}d old` : "age unknown";
-  const evidence = evidence_accessible ? "evidence accessible" : "evidence restricted";
-  const reviewer = item.assigned_reviewer ? `reviewer: ${item.assigned_reviewer.substring(0, 8)}...` : "unassigned";
+  const evidence = publicly_openable ? "evidence public" : (reviewer_verifiable ? "evidence gated" : "evidence restricted");
+  const reviewer = item.assigned_reviewer ? "reviewer assigned" : "unassigned";
 
   switch (label) {
     case "fresh_active":
@@ -309,9 +350,11 @@ function formatStatusLine(
     case "aging_in_progress":
       return `Aging (${age}), review started but incomplete. ${evidence}. Follow up.`;
     case "stale_unreviewed":
-      return `STALE (${age}), never reviewed. ${evidence}. Critical — review immediately or escalate.`;
+      return `STALE (${age}), never reviewed. ${evidence}. Critical -- review immediately or escalate.`;
     case "stale_in_progress":
       return `STALE (${age}), review stalled. ${evidence}. Escalate to senior reviewer.`;
+    case "reviewer_deadlock":
+      return `DEADLOCK (${age}), reviewer inactive ${item.last_reviewer_action_at ? "since action" : ""}. ${evidence}. Reassign or escalate.`;
     case "awaiting_verification":
       return `Evidence not yet verified (${age}). ${evidence}. Verify URL/hash before proceeding.`;
     case "authorization_hold":
@@ -322,6 +365,8 @@ function formatStatusLine(
       return `Changes requested (${age}). Waiting for producer revision.`;
     case "dead_evidence":
       return `Evidence URL is dead (${age}). Contact producer for updated link or re-submission.`;
+    case "timestamp_missing":
+      return `Missing submission timestamp. Cannot determine age. Repair metadata before triage.`;
     case "completed":
       return `${item.status === "approved" ? "Approved" : "Rejected"} (${age}). No action needed.`;
     case "withdrawn":
