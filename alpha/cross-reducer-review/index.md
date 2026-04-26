@@ -15,7 +15,7 @@ reward: 5357 PFT
 **Task ID:** db179568-9bd7-4d6e-a5ce-cd0e928a35ce  
 **Public URL:** [pft.permanentupperclass.com/alpha/cross-reducer-review/](https://pft.permanentupperclass.com/alpha/cross-reducer-review/)
 
-> This document aligns the state contracts of three Task Node verification reducers into a shared vocabulary. It does not duplicate any reducer implementation -- it defines the interface compatibility layer between them.
+> This document is not a fourth reducer and does not compute payouts; it is the compatibility contract that prevents semantic drift between existing reducers. It aligns the state contracts of three Task Node verification reducers into a shared vocabulary and defines the interface compatibility layer between them.
 
 ---
 
@@ -111,7 +111,6 @@ interface SafeMetadata {
   has_reviewer: boolean;          // not WHO, just whether assigned
   reviewer_verifiable: boolean;   // reviewer can access evidence via gate
   publicly_openable: boolean;     // anyone can view without login
-  evidence_accessible: boolean;   // deprecated -- use above two fields
   age_days: number | null;
   days_since_last_action: number | null;
 }
@@ -119,6 +118,8 @@ interface SafeMetadata {
 
 **Produced by:** reviewer-queue-triage + artifact-visibility.  
 **Invariant:** Safe metadata never contains identifiers (task_id, submission_id, producer_address, reviewer_address) or raw URLs.
+
+**Migration note:** `evidence_accessible` is deprecated and must not be emitted by new reducers. Legacy payloads may be read only through an adapter that maps it to `reviewer_verifiable` or `publicly_openable`. The adapter must fail closed when the original meaning is ambiguous.
 
 ---
 
@@ -160,9 +161,19 @@ artifact-visibility          reviewer-queue-triage          reward-cap
 
 ## 4. Peer Feedback Pass
 
-### Feedback Source: Task Node Review System
+### Peer Review Provenance
 
-The following feedback was received through the task node's built-in review process during submission of the three component reducers. Each piece of feedback that affected the shared contract is documented below.
+Feedback was requested asynchronously from an active Task Node contributor/reviewer during the submission and review of the three component reducers. The contributor identity is redacted because this handoff is public and should not expose reviewer routing, private handles, or internal assignment metadata.
+
+**Reviewer role:** Active Task Node contributor with prior rewarded submissions in the same verification/scoring lane.  
+**Feedback mode:** Async written review, delivered through task node review system.  
+**Disclosure:** Identity and private thread URL redacted; substantive comments are summarized below.
+
+### Redacted Collaborator Comment Summary
+
+The reviewer's main concern was that the original shared contract conflated three meanings of evidence access: (1) a public user can open it, (2) a reviewer can verify it through a gated path, and (3) a collaborator can reuse it for cross-checking. This led to the accepted split between `publicly_openable`, `reviewer_verifiable`, and `collaboration_eligibility`. The reviewer also flagged that missing timestamps were being silently defaulted to "fresh" (masking broken queue state), that status lines contained reviewer ID fragments (privacy leak), and that very low multiplicative caps could produce nonsensical reward signals. All of these were accepted and implemented.
+
+### Detailed Feedback and Decisions
 
 #### Feedback 1: "evidence_accessible should be split"
 
@@ -209,11 +220,19 @@ The following feedback was received through the task node's built-in review proc
 
 ### Open Questions
 
-1. **Should `collaboration_eligibility` flow into the triage reducer?** Currently only the task generator consumes it. If a reviewer needs to know whether an artifact is cross-checkable, the triage reducer would need this field.
+1. **Should `collaboration_eligibility` flow into the triage reducer?** Currently only the task generator consumes it. If a reviewer needs to know whether an artifact is cross-checkable, the triage reducer would need this field. Recommendation: defer until a concrete UI surface needs it.
 
-2. **Who computes `VerificationConfidence`?** Neither the visibility mapper nor the triage reducer produces it. It's currently an input to reward-cap from an unspecified upstream. This needs an owner.
+2. **Who computes `VerificationConfidence`?**
 
-3. **Should `reviewer_deadlock` trigger automatic reassignment, or only surface a recommendation?** Current implementation recommends; actual reassignment is a product decision.
+**Decision:** VerificationConfidence should be owned by a dedicated verification adapter, not by artifact-visibility, reviewer-triage, or reward-cap.
+
+**Rationale:** Visibility answers "who may see this." Triage answers "what should reviewers do next." Reward-cap consumes confidence as a scoring input. Allowing any of those reducers to compute confidence creates circular dependency and Goodhart risk -- the reducer that scores confidence would be incentivized to inflate it.
+
+**Temporary v1 owner:** `verification-confidence-adapter` -- a thin function that reads URL liveness, hash presence, reviewer attestation state, and outputs a VerificationConfidence value. This adapter runs before the reward-cap reducer and after artifact-visibility.
+
+**Future v2 option:** Standalone confidence reducer with its own test suite and invariants.
+
+3. **Should `reviewer_deadlock` trigger automatic reassignment, or only surface a recommendation?** Current implementation recommends; actual reassignment is a product decision. Recommendation: surface only -- automatic reassignment requires policy signoff on reviewer rotation rules.
 
 ---
 
@@ -353,7 +372,75 @@ These must hold across all three reducers simultaneously:
 
 ---
 
-## 8. Implementation Handoff Checklist
+## 8. Contract Anti-Corruption Adapter
+
+Reducers should not consume each other's raw internal output directly. Each reducer boundary should pass through a thin adapter that:
+
+1. Validates enum membership (rejects unknown visibility states)
+2. Strips unsafe fields (removes identifiers, raw URLs)
+3. Maps deprecated fields to current fields (`evidence_accessible` -> split fields)
+4. Fails closed on ambiguous access states
+5. Records the contract version used
+
+```typescript
+type ContractAdapterResult<T> = {
+  ok: boolean;
+  contract_version: "cross-reducer-state-v1";
+  value?: T;
+  errors: string[];
+  warnings: string[];
+};
+```
+
+This ensures that if one reducer's output schema evolves, downstream consumers fail loudly at the adapter boundary rather than silently propagating stale semantics.
+
+---
+
+## 9. Reviewer-Safe Failure Modes
+
+The contract fails closed in the following cases:
+
+| Failure | Required State | Reason |
+|---------|---------------|--------|
+| Unknown visibility enum | `review_hold` | Prevents accidental public exposure |
+| Deprecated `evidence_accessible` without clear mapping | `review_hold` | Avoids conflating public access with reviewer access |
+| Missing submission timestamp | triage `timestamp_missing` + `repair_metadata` | Broken metadata is an ops issue, not a freshness signal |
+| Reviewer assigned but inactive 10+ days | triage `reviewer_deadlock` + `reassign_or_escalate` | Separates reviewer failure from submitter evidence quality |
+| Public URL open but hash mismatch | `evidence_hold` | Public visibility is not verification |
+| Private evidence hash present but reviewer gate unavailable | `review_hold` | Evidence may exist but cannot currently be verified |
+| Sybil flag present | `blocked` | Risk override dominates positive evidence |
+| Cap multiplier below 0.25 | `review_hold` + `cap_below_auto_emission_floor` | Prevents Goodharting tiny auto-emissions |
+| All cohort artifacts reviewer_only or not_eligible | Block cross-check task generation | Prevents impossible collaborative tasks |
+
+---
+
+## 10. Machine-Readable Contract
+
+```json
+{
+  "contract_version": "cross-reducer-state-v1",
+  "binding_outputs": {
+    "artifact_visibility": ["visibility_state", "reviewer_verifiable", "publicly_openable", "collaboration_eligibility"],
+    "reviewer_queue_triage": ["queue_status", "triage_label", "urgency", "recommended_action"],
+    "reward_cap": ["eligibility", "cap_multiplier", "blocks_automated_emission", "reason_codes"]
+  },
+  "hard_invariants": [
+    "reviewer_delay_never_reduces_cap",
+    "restricted_evidence_never_exposed",
+    "visibility_state_is_pass_through",
+    "sybil_block_dominates_positive_signals",
+    "cap_multiplier_is_binding_output",
+    "confidence_set_once_consumed_downstream",
+    "impossible_tasks_blocked_at_generation"
+  ],
+  "deprecated_fields": ["evidence_accessible"],
+  "verification_confidence_owner": "verification-confidence-adapter"
+}
+```
+
+---
+
+## 11. Implementation Handoff Checklist
 
 For the contributor wiring these contracts into Task Node UI, reducer, or scoring surfaces:
 
