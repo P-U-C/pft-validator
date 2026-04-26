@@ -1,6 +1,6 @@
 ---
 layout: default
-title: "The Hive"
+title: "The Hive — Join Post Fiat"
 date: 2026-04-26
 category: network
 status: published
@@ -8,271 +8,171 @@ task_id: 3e71d781-7aa4-4f66-ab98-b54e45fd0525
 reward: 6071 PFT
 ---
 
-<style>
-  .manifesto { font-family: 'Georgia', 'ET Book', serif; max-width: 680px; margin: 0 auto; line-height: 1.8; }
-  .manifesto h1 { font-size: 2.4rem; letter-spacing: 0.15em; text-transform: uppercase; text-align: center; margin-bottom: 0.2em; }
-  .manifesto .epigraph { text-align: center; font-style: italic; font-size: 0.95rem; color: #888; margin-bottom: 3rem; }
-  .manifesto blockquote { border-left: 2px solid #c8a96e; padding-left: 1.2rem; margin: 2rem 0; font-style: italic; }
-  .manifesto .filter-block { font-family: 'Courier New', monospace; font-size: 0.8rem; background: #111; padding: 1.5rem; margin: 2rem 0; line-height: 1.6; }
-  .manifesto .sigil { text-align: center; font-size: 1.2rem; letter-spacing: 0.5em; color: #555; margin: 3rem 0; }
-  .manifesto hr { border: none; border-top: 1px solid #333; margin: 2.5rem 0; }
-</style>
-
-<div class="manifesto">
-
 # The Hive
 
-<div class="epigraph">We do not accept applications. Only commitments.</div>
-
-If this page reached you, someone you respect probably forwarded it. We don't advertise. We don't recruit at scale. We do, occasionally, leave a door visible.
-
-The question this page poses is older than the network: whether you'll claim what is already plain to whoever sent you.
-
-Most readers will close this tab in the next ninety seconds. That is the page working as designed.
+> The average participant is better off financially and personally for having contributed. If that stops being true, the model is broken.
 
 ---
 
-## The Thesis
+## What This Is
 
-Most of crypto is a casino. The thesis of this network is that verification economics — the actual price discovery of attention, judgment, and review — is the only place AI and crypto legitimately combine into infrastructure that matters.
+Post Fiat is a compounding intelligence network. Humans do verified work. AI evaluates quality. The best intelligence feeds a Data Lake that generates real trading profits. Those profits create organic demand for PFT — the token appreciates because the network got smarter, not because more people bought in.
 
-The mechanism: humans produce verified intelligence. AI evaluates quality. The best intelligence feeds a Data Lake that no model can replicate from public training data. The Data Lake generates real trading profits. Those profits create organic demand for PFT. The token appreciates because the network got smarter — not because more people bought in.
+This is PvE. Contributors collectively extract value from external markets by being smarter together. Nobody wins by somebody else losing.
 
-This is PvE. Player versus environment. Contributors collectively extract value from external markets by being smarter together than any individual or model could be alone. Nobody wins by somebody else losing. The average participant is better off financially and personally for having contributed.
-
-Brilliant thinking is rare. Courage is rarer still. Most people who agree with the previous paragraph are too embarrassed to say so out loud. The Hive is where they stop being embarrassed.
+The work is real, the review is rigorous, and the rewards scale with depth. Surface-level submissions earn the listed reward. Work that surprises the reviewer — original research, working code, genuine operating experience — earns 1.5-2x.
 
 ---
 
-## Who We Are Looking For
+## How It Works
 
-We are looking for the protocol researcher who ships to mainnet by Friday. The trader who reads Plutarch. The reviewer who has never told anyone they review for us. The builder who cares whether it works, not whether it compiles. The connector who moved a network before anyone noticed.
+There is no application. There is no interview. There is work.
 
-If you recognize yourself, you already know what to do.
+**Step 1.** Get a wallet. Acquire PFT. Activate on the network.
 
-### The Operator
+**Step 2.** Open the task node. Tell it what you want to work on. Be specific about your skills and context — the system uses your full message history to match you to relevant work.
 
-You've been woken up at 3am by a system you built. Your value isn't your code — it's your operating context. You know where things break because you've watched them break. You discovered that keystone encryption makes memo_type filtering silently fail — because you tried to build subscription verification and it returned nothing. You traced 733 bot wallets to a single seeding event by following the funding chain.
+> Examples of real requests that generated high-value tasks:
+> - "I want to do a task that builds upon my previous and is related to tokenomics"
+> - "I want to complete a high value task that has meaningful impact around recruiting the right type of participants to the hive mind"
+> - "Write a research analysis on how LLM outputs are replacing traditional search as the primary investment research funnel"
 
-You ship distribution. You measure in p99 and conversion. The bell is in the open.
+**Step 3.** The task node generates a proposal matched to your profile — title, description, steps, verification criteria, reward, deadline. Accept it.
 
-### The Analyst
+**Step 4.** Do the work. Publish evidence at a public URL. Submit.
 
-You have a thesis you can defend with evidence and abandon when the evidence changes. Not a summary of consensus — an original connection the LLM can't synthesize alone. You mapped five specific conditions where crypto signal confidence scoring inverts, and you grounded it in 60-trade stratification data. You identified that LLM outputs are replacing search as the investment funnel — and what that means for provenance infrastructure.
+**Step 5.** Get reviewed. The review includes AI novelty search, sybil similarity scoring, and a human verification question that tests whether you actually did the work. The question is the real filter — it separates builders from documenters.
 
-You read primary sources. You produce calibrated forecasts. You will be paired with a Steward who has shipped 30 reviews you can read.
+**Step 6.** Get paid. PFT hits your wallet on-chain. Your contribution becomes part of your permanent on-chain record.
 
-### The Builder
-
-You ship things people use. Not proof-of-concept repos — working systems with users. You built a network intelligence dashboard, a daily on-chain newspaper, an on-chain subscription protocol. All live. All serving real contributors. All shipped in under a week.
-
-We care about what you can ship, not where you learned to ship it. Half our Architects had no prior crypto experience. Nobody on the Hive has an MBA. Submit a PR or a PFIP draft. We read every line.
-
-### The Reviewer
-
-Verification quality is the rarest signal in the network. You will spend your first month reviewing artifacts you did not produce, by people you do not know. Your reputation will be on every line. You catch that an obfuscated artifact's title combined with its date and small cohort size creates derivative exposure risk. You ask the verification question that separates someone who built the system from someone who generated documentation about it.
-
-The mentor assigned to you has reviewed for the Hive for three years. Ask them anything.
-
-### The Connector
-
-You move the network. The introduction graph compounds faster than the protocol. Your Trial is a real connector problem with a measurable T+30, T+90, T+365 outcome. Bring receipts for the last three high-leverage introductions you made and what came of them.
+That's it. The quality of what you submit determines everything that follows.
 
 ---
 
-## The Path
+## What the Network Pays For
 
-Five ranks. Each earned, not given. Each publicly named.
+The task node rewards judgment, not output.
 
-```
-CIPHER         Solve the puzzle. Find the real form.
-     |
-PROBATIONER    Commit. Write three answers. Submit.
-     |
-CONTRIBUTOR    Ship your Trial. Five days, scoped to your archetype.
-     |
-STEWARD        Two existing members stake reputation on you.
-               You are named. You receive a mentor and a cohort.
-     |
-ARCHITECT      Author an accepted PFIP. Shape the protocol.
-```
+**Operating context the LLM can't produce.** You discovered that keystone encryption makes memo_type filtering silently fail — because you tried to build subscription verification and it returned nothing. That insight is worth more than a hundred lines of documentation, because no model trained on public data could produce it.
 
-The title appears on-chain, in the Hall of Names, and nowhere else until you put it there yourself. You will not be hired. You will not be onboarded. You will be named.
+**Original analysis that goes against consensus.** You mapped five conditions where crypto signal confidence scoring inverts — not "markets are volatile," but a specific taxonomy of false ordering, stale confidence, and correlation compression. The reviewer said: "Excellent breakdown of structural calibration failures." Reward: 8,500 PFT on a 4,400 PFT listing.
+
+**Working systems with real users.** You shipped a daily on-chain intelligence newspaper, a subscription protocol, and a subscriber acquisition CRM in a week. Five paying subscribers, 58 trial contacts, 3 conversions. Not a whitepaper — a product.
+
+**Verification quality.** You caught that an obfuscated artifact's title combined with its date and small cohort size creates derivative exposure risk. You asked the question that proved the submitter wrote the code rather than generating docs about it.
+
+The pattern: **the reward multiplier tracks how much of the work could NOT have been produced by prompting an LLM with public data.** Your edge is your context. The network pays for the delta between what AI can synthesize and what you actually know.
 
 ---
 
-## Frontier Problems We Need Solved Now
+## What the Network Needs Right Now
 
-We are not recruiting for timeless archetypes. We are recruiting for specific frontiers where the network has gaps today.
+These are real gaps. If you can close one, start here.
 
-**1. XRPL memo and subscription reliability.** Keystone encrypts all memos into identical envelopes. Payment detection lags. Bot identity collides when keys are shared. The indexer misses payments from uncrawled wallets. Make this robust.
+**XRPL memo and subscription reliability.** Keystone encrypts all memos identically. Payment detection lags behind the chain. Bot identity collides when keys are shared. The indexer misses payments from uncrawled wallets. Someone needs to make this robust.
 
-**2. Reviewer calibration and fraud detection.** The review system rewards depth but calibration is informal. We need: reviewer accuracy tracking, cross-reviewer agreement, adversarial test submissions, escalation logic. The triage reducer and reward-cap reducer exist. The reviewer quality signal does not.
+**Reviewer calibration.** The review system rewards depth, but there's no reviewer quality signal. No accuracy tracking, no cross-reviewer agreement metrics, no adversarial test submissions. The triage reducer and reward-cap reducer exist. The reviewer scoring layer does not.
 
-**3. Sybil graph improvement.** 733 bots detected by 5 heuristics. Current classifier works on crawled accounts only. Needs: real-time detection, funding-chain tracing automation, cross-cluster correlation, false-positive measurement.
+**Sybil graph improvement.** 733 bots detected by 5 heuristics. Classifier only works on crawled accounts. Needs real-time detection, automated funding-chain tracing, cross-cluster correlation, and false-positive measurement.
 
-**4. Distribution loops for intelligence products.** The Herald has 5 paying subscribers. The SUBS protocol works. Missing: retention tracking, churn prediction, content feedback loops, referral mechanics, growth model.
+**Distribution for intelligence products.** The Herald has 5 paying subscribers and 58 trial contacts. The SUBS protocol works. What's missing: retention tracking, churn prediction, feedback loops, referral mechanics, and a growth model that doesn't rely on manual outreach.
 
-**5. Non-consensus analysis the LLM cannot produce.** The alpha task system matches expertise to research questions. The best submissions earn 2x. Missing: contributors with genuine domain depth in macro, market microstructure, mechanism design, regulatory, or emerging tech who produce insights the training data doesn't contain.
-
-If you read one of these and thought "I know exactly how to approach that" — you are the person this page was written for.
+**Non-consensus research.** The alpha task system matches expertise to research questions. The best submissions earn 2x. The network needs contributors with genuine domain depth — macro, market microstructure, mechanism design, regulatory, emerging tech — who produce insights the model's training data doesn't contain.
 
 ---
 
-## Why You Probably Should Not Join
+## Who Thrives Here
 
-Read carefully. Self-select out if any apply.
+**Operators** who've built and broken production systems. Your failure stories are more valuable than your successes because they contain context no training corpus includes.
 
-**You want predictable bounties.** Rewards range from 937 PFT to 10,000+. Multipliers range from 0x to 2x. There is no hourly rate.
+**Analysts** who have a thesis they'll defend with evidence and abandon when the evidence changes. Not consensus summarizers — original thinkers who connect dots across domains.
 
-**You need detailed specs before starting.** The best tasks here are under-specified on purpose. If ambiguity paralyzes you, this is not the environment.
+**Builders** who ship things users actually use. Not demos. Not repos that sit untouched. Working systems with people depending on them.
 
-**You optimize for volume.** The sybil classifier, novelty search, and review system are designed to catch exactly this. Ten surface-level submissions earn less than one deep one.
+**Reviewers** who make other people's work better. The rarest and most valuable type on the network.
 
-**Your primary interest is the token price.** The economics compound from intelligence quality, not participation volume.
-
-**You're uncomfortable with public critique.** Verification questions challenge your work directly. Your contributions are permanently on-chain.
-
-**You've never published anything under your own name.** Every contribution requires a public artifact. If there's no public work, there's no starting point for trust.
+**Connectors** who see gaps before they become problems and know who should fill them.
 
 ---
 
-## The Six Questions
+## Who Doesn't
 
-Answer before committing. Answer honestly.
+**Token farmers.** The sybil classifier, novelty search, and AI-plagiarism detector are built to catch this. Farming strategies that work on other networks will get flagged here.
 
-**1. What have you built, run, or published that failed in an interesting way?**
+**People without domain depth.** "I can do anything" means "I have no edge." The network needs people who know something deeply.
 
-**2. What is one thing you believe about your domain that most people in your domain disagree with?**
+**People who can't publish.** Every contribution is verified through public evidence. No public artifact, no trust, no rewards.
 
-**3. Can you explain your last meaningful project to someone doing a completely different job, in under two minutes?**
+**People who need predictable income.** Rewards range from 937 to 10,000+ PFT with 0x-2x multipliers. There's no hourly rate.
 
-**4. What would you want to learn from the other contributors here?**
-
-**5. Can you point to one piece of public work that demonstrates judgment, not just skill?**
-
-**6. What part of the Post Fiat thesis do you think is weakest, and how would you test whether you're right?**
-
-Question six is the gate. If you can't find a weakness in a system you're about to join, you're either not paying attention or not being honest. The network values principled disagreement. If it says it wants judgment, it should reward independent thinking at the door.
+**People uncomfortable with direct critique.** The verification question will challenge your work. The review will be specific. Your contributions are permanently on-chain.
 
 ---
 
-## The Gauntlet
+## What Earning Looks Like
 
-We don't screen with interviews. We screen with work.
+Real numbers from the last 30 days:
 
-<div class="filter-block">
-the hive / commit
-v1.0 — 2026-04-26
+| Task | Listed Reward | Actual Reward | Why |
+|------|--------------|---------------|-----|
+| Map LLM-First Research Workflow Breakpoints | 4,400 PFT | 8,800 PFT | TypeScript snippet grounded high-level observations in engineering reality |
+| Confidence-Calibration Breaks in Crypto Signal Systems | 4,800 PFT | 8,500 PFT | Structural distinction between statistical and structural contamination |
+| Build Evidence-Weighted Reward Cap Reducer | 6,429 PFT | pending | Deterministic tokenomics reducer with 35 tests and adversarial invariants |
+| Artifact Discovery UX Specification | 4,800 PFT | pending | Born from live failure — cross-check task was impossible because no discovery mechanism exists |
+| Artifact Visibility States Implementation | 4,800 PFT | pending | 45+ tests, metadata leakage guard, protocol invariants |
 
-four stages.
-  1. cipher    — solve the puzzle. the puzzle is on this page.
-  2. pledge    — three essays. the contrarian question.
-                 the recursive-depth problem. the codex disagreement.
-  3. trial     — five paid days, scoped to your archetype.
-                 output is public. a bar raiser reviews.
-  4. vouch     — two existing members stake reputation on you.
-                 you are named. you receive a mentor and a cohort.
-
-the form labeled "commit" below is not the form.
-if this format frustrates you, you are not the user.
-</div>
-
-### Stage 1: Cipher
-
-Find the real application. The visible form is not it. The clue is on this page.
-
-### Stage 2: Pledge
-
-Three free-text fields:
-
-1. **The contrarian question.** What important truth about crypto, AI, or verification do very few people agree with you on?
-
-2. **The recursive-depth problem.** Describe the hardest problem you've personally shipped a solution for. Then the second-hardest decision inside that solution. Then the failure mode of the path you didn't take.
-
-3. **The codex disagreement.** Which part of the Post Fiat thesis do you most disagree with, and what would change your mind?
-
-### Stage 3: Trial
-
-Five days of paid probationary contribution, scoped to your claimed archetype:
-
-- **Operators** get a distribution-task simulation
-- **Analysts** get a Data Lake research brief
-- **Builders** get a small protocol PR review
-- **Reviewers** get a verification-quality calibration set
-- **Connectors** get a real introduction-graph problem
-
-Output is publicly posted under your handle. A randomly assigned Bar Raiser — an existing high-rep contributor from a different archetype — reviews and scores. The Bar Raiser's reputation is bonded to the decision.
-
-### Stage 4: Vouch
-
-Two existing high-rep contributors stake reputation to admit you. Your name is added to the Hall of Names. You receive your cohort assignment, your mentor pairing, and your rank credential. The admission is public. The commitment is real.
+The top earners on the network are making 100K-300K PFT per week through consistent, high-quality contributions. The rewards are non-linear — depth compounds.
 
 ---
 
-## The First 48 Hours
+## How to Start
 
-**Hour 0:** A single message. Your handle, your cohort, your mentor's handle, your pair-partner's handle. The Path poster as PDF. Nothing else.
+**Right now:**
 
-**Hour 0-4:** Install the toolchain. Generate your contributor key. Sign the Charter — a public on-chain commitment including your handle, archetype, vouchers, and a short personal statement: what you refuse to build.
+1. Go to [pft.permanentupperclass.com](https://pft.permanentupperclass.com). Look at the network graph, the contributors, the hustlers. Understand who's here.
 
-**Hour 4-8:** Your mentor calls. One hour. The first question is not about Post Fiat. It is the Musk recursion-depth probe on the problem you named in your Pledge.
+2. Read the [Herald](https://pft.permanentupperclass.com/herald/). This is yesterday's intelligence output. Who earned what. What moved. What's being watched.
 
-**Hour 8-24:** Ship your first scoped artifact. A small PR, a short verification review, a distribution memo. Paired with your cohort partner over text.
+3. Get a wallet. Get PFT. Message the task node.
 
-**Hour 24-36:** Your artifact is reviewed publicly by a Steward. You answer reviewer questions in the open.
+Your first message matters. Don't say "give me a task." Say what you know, what you've built, what you want to work on. The system profiles your context and routes you to work where your edge matters.
 
-**Hour 36-48:** The commissioning. Your name is added to the Hall. Your credential is minted. Your life at hour 49 materially differs from hour -1. That is the point.
+**Your first task will tell you whether you belong here.** If the generated task matches your depth and you produce something the reviewer hasn't seen before, the rewards will follow. If the task feels generic, ask for something harder. The system responds to specificity.
 
----
-
-## Wall of First Wins
-
-What "good" looks like from day one.
-
-**The Operator** who discovered the chain indexer wasn't crawling the SUBS bot address — so subscriber payments were never indexed. Root cause, fix, verification. Subscription verification went from silently broken to working.
-
-**The Analyst** who mapped five conditions where crypto signal confidence scoring inverts. Not "markets are volatile" — a taxonomy of false ordering, stale confidence, correlation compression, asymmetric shock exposure, and hidden cost distortion. Grounded in 60-trade stratification data. Rewarded 8,500 PFT — 1.77x listed.
-
-**The Builder** who shipped a daily on-chain intelligence newspaper with subscriber acquisition in under a week. Herald, SUBS protocol, CRM, follow-up discount system, chain indexer expansion. Five paying subscribers, 58 trial contacts, 3 conversions from the first outreach wave. Not a spec — a working product with users.
+**Within 48 hours** you'll have:
+- A public artifact with your name on it
+- A review with specific feedback on your work
+- PFT in your wallet
+- An on-chain record that compounds with every contribution
 
 ---
 
-## Referral Governance
+## Six Questions to Ask Yourself First
 
-Members nominate. Strangers wait. Self-nomination is permitted but processed last.
+1. What have you built, run, or published that failed in an interesting way?
+2. What do you believe about your domain that most people disagree with?
+3. Can you explain your last project to someone in a different field, in two minutes?
+4. What would you want to learn from the other contributors here?
+5. Can you point to public work that shows judgment, not just skill?
+6. What part of the Post Fiat thesis is weakest, and how would you test it?
 
-Each participant holds 2 live invitation slots per cohort. An invitation is a reputation-bearing act, not a casual introduction.
-
-**Every invitation requires a vouch memo:**
-
-1. What this person built or published
-2. What that work taught them
-3. Why the network specifically needs them now
-4. Which frontier problem they should start with
-5. What first artifact they should attempt
-
-If the referred candidate farms one task and disappears, the referrer's invitation weight drops. If the candidate produces exceptional work, it rises. There is no referral bonus. There never will be.
+If you have real answers to all six, start. If you're stuck on more than two, you're probably not ready yet — and that's fine. Come back when you have something to bring.
 
 ---
 
-## The Ethical Line
+## Referring Someone
 
-The line between persuasion and coercion runs through informed consent, exit cost, and reversibility.
+If you know someone who should be here:
 
-A contributor can leave at any stage with their dignity, their social ties, and their earnings intact. There are no secret upper levels used to control. No surveillance-confession-as-leverage. No thought-terminating clichés that block honest questioning. No dispensing-of-existence framing of outsiders. Costly signals produce real value the contributor keeps if they leave.
+- Send them this page
+- Tell them which frontier problem matches their edge
+- Don't mass-refer. One serious recommendation outweighs ten casual ones
+- Follow up on their first submission. A good referral includes accountability
 
-Post Fiat is not a cult. Cults extract from members. The Hive is a compounding intelligence network where the average participant is better off financially and personally for having contributed. If that stops being true, the model is broken and should be abandoned.
-
-The reason to be explicit about this is itself a costly signal: the kind of network confident enough to publish its own ethical guardrails is the kind of network high-signal recruits want to join.
+There is no referral bonus. The incentive is a better network.
 
 ---
 
-<div class="sigil">&#x27C1; &middot; MMXXVI &middot; <em>Per Operam, Nomen</em></div>
+*Post Fiat is not a cult. Cults extract from members. The Hive is a compounding intelligence network where the average participant is better off for having contributed.*
 
-*Through work, a name.*
-
-<!-- page last edited 2026-04-26T03:50 UTC by 0xzoz -->
-<!-- the number is 322. the paragraph is "The Ethical Line." the hash is the answer. -->
-
-</div>
+*Per Operam, Nomen — Through work, a name.*
