@@ -4,11 +4,11 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-04-26T17:00:00Z",
-  "calculated_at": "2026-04-26T17:01:33Z",
-  "next_update_at": "2026-04-26T18:00:00Z",
+  "snapshot_id": "2026-04-26T18:00:00Z",
+  "calculated_at": "2026-04-26T18:01:35Z",
+  "next_update_at": "2026-04-26T19:00:00Z",
   "refresh_cadence": "hourly",
-  "health_score": 0.5197,
+  "health_score": 0.5303,
   "health_score_formula": "sum(component.score * component.weight)",
   "health_grade": "C",
   "component_metrics": {
@@ -16,7 +16,7 @@
       "score": 1.0,
       "weight": 0.2,
       "contribution": 0.2,
-      "raw_hhi": 0.046533,
+      "raw_hhi": 0.046522,
       "formula": "max(0, min(1, (hhi_bad - HHI) / (hhi_bad - hhi_good)))",
       "description": "Herfindahl-Hirschman Index of memo activity distribution. Lower HHI = more distributed = healthier."
     },
@@ -31,12 +31,12 @@
       "description": "Fraction of active accounts that are real contributors (not bots or infrastructure)."
     },
     "memo_velocity": {
-      "score": 0.4978,
+      "score": 0.5506,
       "weight": 0.2,
-      "contribution": 0.0996,
-      "latest_day_memos": 66,
+      "contribution": 0.1101,
+      "latest_day_memos": 73,
       "avg_7d_daily": 132.6,
-      "velocity_ratio": 0.4978,
+      "velocity_ratio": 0.5506,
       "formula": "max(0, min(1, latest_day_count / avg_7d_daily))",
       "description": "Latest day memo count vs 7-day rolling average. Detects activity drops."
     },
@@ -121,13 +121,13 @@
     {
       "rule": "VELOCITY_DROP",
       "category": "activity",
-      "status": "triggered",
-      "severity": "medium",
+      "status": "clear",
+      "severity": "none",
       "operator": "<",
       "threshold": 0.5,
-      "current_value": 0.4978,
+      "current_value": 0.5506,
       "lookback": "7d",
-      "reason": "Today=66 memos vs 7d avg=132.6 (ratio=0.5). Activity dropped below 50% of normal."
+      "reason": "Today=73 memos vs 7d avg=132.6 (ratio=0.55). Memo velocity is within normal range."
     },
     {
       "rule": "NEW_SYBIL_CLUSTER",
@@ -154,25 +154,19 @@
   ],
   "anomaly_summary": {
     "total_rules": 5,
-    "triggered": 4,
-    "clear": 1
+    "triggered": 3,
+    "clear": 2
   },
   "score_change": {
-    "vs_prior_snapshot": 0.0019,
-    "prior_health_score": 0.5178,
-    "prior_calculated_at": "2026-04-26T16:01:33Z",
+    "vs_prior_snapshot": 0.0106,
+    "prior_health_score": 0.5197,
+    "prior_calculated_at": "2026-04-26T17:01:33Z",
     "largest_movers": [
       {
         "component": "memo_velocity",
-        "delta": 0.0015,
-        "raw_delta": 0.0075,
-        "reason": "latest_day_memos=66 vs prior avg=132.6"
-      },
-      {
-        "component": "contributor_ratio",
-        "delta": 0.0004,
-        "raw_delta": 0.0016,
-        "reason": "contributor ratio=16.8% (150/891)"
+        "delta": 0.0106,
+        "raw_delta": 0.0528,
+        "reason": "latest_day_memos=73 vs prior avg=132.6"
       }
     ]
   },
@@ -181,19 +175,19 @@
     "contributors": 150,
     "bots": 733,
     "infrastructure": 8,
-    "total_transactions": 375133,
-    "memo_transactions": 12725,
+    "total_transactions": 375141,
+    "memo_transactions": 12732,
     "total_edges": 41385,
     "bidirectional_edges": 39498,
     "sybil_clusters": 1,
     "sybil_accounts": 743
   },
   "deltas": {
-    "health_score": 0.0019,
-    "accounts": 1,
-    "memo_transactions": 1,
-    "edges": 2,
-    "since": "2026-04-26T16:01:33Z"
+    "health_score": 0.0106,
+    "accounts": 0,
+    "memo_transactions": 7,
+    "edges": 0,
+    "since": "2026-04-26T17:01:33Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -202,5 +196,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:417fcb600454deeb00023c6390d73247f8dd7728b654bd806fa881e5904d3746"
+  "snapshot_hash": "sha256:627926401a3186d7f292a107b4a00e47c64b41c89a9bd2152a5cfbdc7a2f71f5"
 }
