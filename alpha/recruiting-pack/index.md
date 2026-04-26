@@ -1,6 +1,6 @@
 ---
 layout: default
-title: "Post Fiat Hive Mind — Qualified Recruiting Pack"
+title: "Post Fiat Hive Mind — Recruiting Pack"
 date: 2026-04-26
 category: network
 status: published
@@ -8,231 +8,229 @@ task_id: 3e71d781-7aa4-4f66-ab98-b54e45fd0525
 reward: 6071 PFT
 ---
 
-# Post Fiat Hive Mind — Recruiting Pack
+# The Hive Mind
 
-*How to identify, qualify, and onboard contributors who make the network smarter, not just busier.*
+> Post Fiat is not a task marketplace. It is a selection system for people who can turn judgment into compounding collective intelligence.
+>
+> If your first instinct is to ask what it pays, leave.
+> If your first instinct is to point out where the model will break, keep reading.
+>
+> The Hive Mind does not need more participants. It needs people whose work changes the slope of the network.
 
 ---
 
-## What the Hive Mind Is
+## This Is Not for Most People
 
-Post Fiat is not a gig platform. It is a compounding intelligence network.
+Most crypto networks want users. Post Fiat wants judgment.
 
-The mechanism: humans produce intelligence through verified work. AI evaluates quality. The best intelligence feeds a Data Lake that generates real trading profits. Those profits create organic demand for PFT. The token appreciates because the network got smarter, not because more people bought in.
+The mechanism: humans produce verified intelligence. AI evaluates quality. The best intelligence feeds a Data Lake that generates real trading profits. Those profits create organic demand for PFT. The token appreciates because the network got smarter — not because more people bought in.
 
-This is PvE — player versus environment. Contributors collectively extract value from external markets by being smarter together than any individual or model could be alone. Nobody wins by somebody else losing. The average participant should be better off financially and personally for having contributed.
+This is PvE. Contributors collectively extract value from external markets by being smarter together than any individual or model could be alone. Nobody wins by somebody else losing.
 
-The Hive Mind is the operating metaphor: a Bridgewater-style collective intelligence system where every contribution is scored, every insight is recorded, and the aggregate output compounds over time. The difference from Bridgewater is that the ledger is the memory, the AI is the evaluator, and the contributors own the upside.
+That sounds nice. Here is the cost:
 
-**The wrong mental model:** "I complete tasks for tokens."  
-**The right mental model:** "I contribute intelligence that makes the network worth more, and I hold the token."
+- Every contribution is public. There is no hiding behind a handle while submitting mediocre work.
+- Every submission is verified by AI novelty search, sybil similarity scoring, and human review questions that test whether you actually did the work.
+- Reward multipliers range from 0x (blocked) to 2x (exceptional). The system actively distinguishes depth from compliance.
+- There is a 733-bot network already flagged on the chain. The classifier watches. The ledger remembers.
+- The problems are ambiguous, cross-domain, and often under-specified. If you need a detailed ticket before you can start, this is the wrong network.
+
+**The right person reads this and feels challenged. The wrong person reads this and feels unwelcome. Both reactions are correct.**
+
+---
+
+## Why This Matters
+
+Post Fiat is building the institutional intelligence infrastructure that traditional finance charges millions for — research, trading signals, compliance, analytics — on a decentralized ledger where contributors own the upside.
+
+The Data Lake is the structural advantage. It contains non-replicable intelligence: not scraped data or API feeds, but structured output from human task journeys, verified work products, and domain-expert observations that no model can synthesize from public training data alone. This intelligence compounds. Every qualified contribution makes the next contribution more valuable.
+
+The endgame is a compounding hive mind — Bridgewater's idea meritocracy, rebuilt on-chain, where every insight is scored, every contribution is recorded, and the aggregate output generates returns that flow back to the contributors who created them.
+
+**The average participant should be better off financially and personally for having contributed. If that stops being true, the mechanism is broken.**
+
+---
+
+## Frontier Problems We Want Solved Right Now
+
+We are not recruiting for generic roles. We are recruiting for specific frontiers where the network has gaps today.
+
+**1. Subscription and memo reliability on XRPL.**
+Keystone encrypts all memos into identical envelopes. Subscription verification must work by amount + destination, not memo type. The current system works but is fragile — payment detection lags, bot identity collides when keys are shared, and the indexer misses payments from wallets not in its seed set. We need someone who can make this robust.
+
+**2. Reviewer calibration and fraud detection.**
+The review system rewards depth, but calibration is informal. We need deterministic scoring surfaces: reviewer accuracy tracking, cross-reviewer agreement metrics, adversarial test submissions to detect rubber-stamping, and escalation logic for edge cases. The triage reducer and reward-cap reducer exist. The reviewer quality signal does not.
+
+**3. Sybil graph improvement.**
+733 bots detected by 5 behavioral heuristics. Current classifier works on crawled accounts only. Needs: real-time detection on new accounts, funding-chain tracing automation, cross-cluster correlation, and false-positive rate measurement. The foundation is built. The next layer is not.
+
+**4. Distribution loops for intelligence products.**
+The Herald has 5 paying subscribers and 58 trial contacts. The SUBS protocol works. What's missing: subscriber retention tracking, churn prediction, content feedback loops, referral mechanics, and a growth model that doesn't rely on manual outreach scripts.
+
+**5. Non-consensus analysis that adds signal the LLM cannot produce.**
+The alpha task system generates research questions matched to contributor profiles. The best submissions earn 2x rewards. What's missing: contributors with genuine domain depth in macro, market microstructure, mechanism design, regulatory analysis, or emerging technology assessment who can produce insights the model's training data doesn't contain.
+
+**If you read one of these and think "I know exactly how to approach that" — you probably belong here.**
 
 ---
 
 ## Who Belongs Here
 
-### Archetype 1: The Operator
+### The Operator
 
-*You run systems. You have opinions about them because you've been woken up at 3am by them.*
+You've been woken up at 3am by a system you built. Your value isn't your code — it's your operating context. You know where things break because you've watched them break. You discovered that keystone encryption makes memo_type filtering silently fail — because you actually tried to build subscription verification and it returned nothing.
 
-You've built, deployed, or operated something non-trivial: a trading bot, a data pipeline, a production service, a validator node. You don't just know how things work in theory — you know where they break. Your value to the Hive Mind isn't your code; it's your operating context. The LLM can generate code. It can't generate the judgment that comes from watching your classifier false-positive on 671 wallets because you forgot to filter uncrawled accounts.
+### The Analyst
 
-**What you contribute:** Architecture decisions grounded in failure. Bug reports that include the root cause, not just the symptom. Specs that anticipate the edge cases because you've hit them.
+You have a thesis you can defend with evidence. Not a summary of consensus — an original connection the LLM can't synthesize. You identified that confidence scoring in crypto signal systems inverts under specific repeatable conditions, and you mapped exactly which conditions produce the worst outcomes.
 
-**Examples from the network:** The contributor who discovered that keystone encryption makes memo_type filtering impossible — because they actually tried to build subscription verification and it silently failed. The contributor who traced 733 bot wallets to a single Feb 17 seeding event by following the funding chain.
+### The Builder
 
-### Archetype 2: The Analyst
+You ship things people use. Not proof-of-concept repos — working systems with users. You built a network intelligence dashboard, a daily on-chain newspaper with subscriber acquisition, and an on-chain subscription protocol. All live. All serving real contributors.
 
-*You have a thesis. You can defend it with evidence. You change your mind when the evidence changes.*
+### The Reviewer
 
-You do research that produces non-obvious conclusions. Not summaries of what everyone already knows — original analysis that connects dots across domains. Maybe you're a macro researcher who sees the link between AI capex and physical scarcity. Maybe you're a crypto analyst who can decompose confidence-calibration failures in signal systems. Maybe you're a domain expert in compliance, mechanism design, or market microstructure.
-
-**What you contribute:** Intelligence the LLM can't produce alone. The LLM synthesizes the consensus view — but the consensus view is already priced. Your edge is the question nobody else is asking, the dataset nobody else has access to, the operating context that makes your analysis non-replicable.
-
-**Examples from the network:** The contributor who identified that LLM outputs are replacing search as the investment funnel — and grounded it in two independent external sources plus operating experience with autonomous trading systems. The alpha submission that mapped specific market conditions where high-confidence signals produce the worst outcomes.
-
-### Archetype 3: The Builder
-
-*You ship things that other people use. You care whether they work, not just whether they compile.*
-
-You build products, tools, or infrastructure that serve users — not proof-of-concept demos that sit in a repo. You've shipped to production. You've watched real users interact with your work and been humbled by what they do with it. You care about UX, reliability, and the gap between "it works on my machine" and "it works for the person who actually needs it."
-
-**What you contribute:** Working systems that make the network more useful. Dashboards that surface intelligence. Protocols that enable new interactions. Bots that automate coordination. Pages that tell stories with data.
-
-**Examples from the network:** The Lens dashboard (network graph visualization with sybil detection, airdrop tracking, and contributor analysis). The Herald daily intelligence newspaper (on-chain delivery, premium gating, subscriber acquisition). The SUBS protocol (on-chain subscriptions with 2.5% protocol fee and payment verification by amount).
-
-### Archetype 4: The Reviewer
-
-*You make other people's work better. You can distinguish signal from noise.*
-
-You have the judgment to evaluate whether a submission is genuinely good or just well-formatted. You can read a spec and find the inconsistency. You can read code and find the edge case the author didn't test. You provide feedback that makes the contributor's next submission stronger, not feedback that makes you look smart.
-
-**What you contribute:** Verification quality. The network's intelligence is only as good as its review process. A reviewer who catches that an obfuscated artifact's title + date + small cohort size creates derivative exposure risk is contributing as much as the person who wrote the artifact.
-
-### Archetype 5: The Connector
-
-*You know who should be working on what. You see the gaps in the network before they become problems.*
-
-You understand the network's priorities, the contributor landscape, and which problems are under-served. You introduce the right people to the right tasks. You identify when a collaborative task is generating redundant coverage and redirect contributors to fill gaps instead.
-
-**What you contribute:** Network coordination. The task node generates work. The Hive Mind needs people who make sure the right work reaches the right contributor and that the aggregate output is coherent, not just voluminous.
+You make other people's work better. You catch that an obfuscated artifact's title combined with its date and small cohort size creates derivative exposure risk. You ask the verification question that separates someone who built the system from someone who generated documentation about it.
 
 ---
 
-## Screening Questions
+## Why You Probably Should Not Join
 
-Before inviting someone — or before joining yourself — answer these honestly:
+Read carefully. Self-select out if any of these apply:
 
-### 1. "What have you built, run, or published that failed in an interesting way?"
+**You want predictable bounties.** Task rewards range from 937 PFT to 10,000+ PFT. Multipliers range from 0x to 2x based on depth. There is no guaranteed hourly rate. If you need income predictability, this is not the mechanism.
 
-**Why it matters:** The Hive Mind values operating context. Interesting failures reveal genuine experience. "I deployed a classifier and it false-positived on 671 wallets" is a better answer than "I have 5 years of experience with machine learning."
+**You need detailed specifications before starting.** The best tasks here are under-specified on purpose. "I want a collaborative task" can generate a research question, a cross-check assignment, or an infrastructure spec — depending on your profile and the network's needs. If ambiguity paralyzes you, this is not the environment.
 
-**Disqualifier:** No answer. If everything has always worked, either the work was trivial or the self-awareness is missing.
+**You optimize for volume over depth.** The sybil classifier, novelty search, and review system are designed to catch exactly this. Ten surface-level submissions will earn less than one deep one — and damage your on-chain reputation in the process.
 
-### 2. "What is one thing you believe about your domain that most people in your domain disagree with?"
+**Your primary interest is the token price.** The token economics are real, but they compound from intelligence quality, not from participation volume. If you're here to farm and sell, the mechanism works against you.
 
-**Why it matters:** The Data Lake's value comes from non-consensus intelligence. If your views are indistinguishable from the LLM's consensus synthesis, you don't add signal — you add noise.
+**You're uncomfortable with public critique.** Verification questions challenge your work directly. Review feedback is specific. Your contributions are permanently on-chain. If you need validation more than verification, find a friendlier network.
 
-**Disqualifier:** A contrarian take without evidence. "Most people are wrong about X" without a mechanism for why is performance, not analysis.
-
-### 3. "If you had to explain your last meaningful project to someone doing a different job, could you do it in under two minutes?"
-
-**Why it matters:** The Hive Mind is cross-domain. Contributors from trading, infrastructure, research, and design need to communicate across boundaries. If you can only explain your work to people who already share your context, collaboration breaks.
-
-**Disqualifier:** Jargon-dependence without substance.
-
-### 4. "What would you want to learn from the other contributors here?"
-
-**Why it matters:** This screens for intellectual curiosity versus extraction. Someone who wants to learn how sybil detection works at the chain level will produce different (better) work than someone who just wants to complete tasks for tokens.
-
-**Disqualifier:** "I'm mainly interested in the rewards." That's fine for a gig platform. This isn't one.
-
-### 5. "Can you point to one piece of public work (code, writing, analysis, design) that demonstrates your judgment, not just your skill?"
-
-**Why it matters:** Skill is common. Judgment is rare. A clean codebase shows skill. A codebase that makes the right architectural trade-off for the specific constraints of its context shows judgment.
-
-**Disqualifier:** No public work at all. The network runs on verifiable contributions. If there's nothing to verify, there's no starting point.
+**You've never published anything under your own name.** Every contribution requires a public artifact — gist, repo, HackMD, or published page. If you have no track record of public work, there's no starting point for trust.
 
 ---
 
-## Clear Disqualifiers
+## Six Questions
 
-**Do not invite or join if:**
+Answer before joining. Answer honestly.
 
-- **Primary motivation is token farming.** The task node has sybil detection, novelty search, and AI-plagiarism penalties. Farming strategies that work on other networks will get flagged, blocked, and waste everyone's time.
+**1. What have you built, run, or published that failed in an interesting way?**
+Interesting failures reveal genuine experience. "I deployed a classifier and it false-positived on 671 wallets because I forgot to filter uncrawled accounts" beats "I have 5 years of ML experience."
 
-- **No domain depth.** "I can do anything" means "I have no edge." The Hive Mind needs people who know something deeply, not people who know everything shallowly.
+**2. What is one thing you believe about your domain that most people in your domain disagree with?**
+The Data Lake's value comes from non-consensus intelligence. If your views are indistinguishable from the LLM's consensus synthesis, you add noise, not signal.
 
-- **Can't produce a public artifact.** Every contribution is verified through public evidence. If you're unwilling or unable to publish your work, the verification model doesn't work.
+**3. Can you explain your last meaningful project to someone doing a completely different job, in under two minutes?**
+The Hive Mind is cross-domain. If you can only communicate within your specialty, collaboration breaks.
 
-- **History of sybil activity.** The network has a 733-bot cluster already. The classifier watches. The chain remembers.
+**4. What would you want to learn from the other contributors here?**
+This screens for intellectual curiosity versus extraction. "I want to understand how sybil detection works at the chain level" and "I'm mainly interested in the rewards" are both honest answers. Only one belongs here.
 
-- **Purely extractive orientation.** "How much can I earn?" as the first question, rather than "What can I contribute?" The economics work when contribution creates value that flows back through the token. If you're optimizing for extraction, you're working against the mechanism.
+**5. Can you point to one piece of public work that demonstrates judgment, not just skill?**
+Skill is common. Judgment is rare. A clean codebase shows skill. A codebase that makes the right trade-off for its specific constraints shows judgment.
+
+**6. What part of the Post Fiat thesis do you think is weakest, and how would you test whether you're right?**
+This is the gate. If you can't find a weakness in a system you're about to join, you're either not paying attention or not being honest. The network values principled disagreement. If it says it wants judgment, it should reward independent thinking at the door.
 
 ---
 
-## First 48 Hours: From Qualified Recruit to Contributor
+## The Audition
+
+We don't screen with interviews. We screen with work.
+
+### The One-Artifact Audition
+
+Within 24 hours of deciding to join, publish one small public artifact. Choose based on your type:
+
+- **Operator:** A failure postmortem from something you've built or run. What broke, why, and what you learned.
+- **Analyst:** A 300-word non-consensus thesis grounded in your operating context. Not a summary — an original observation.
+- **Builder:** A gap map of the network's tooling, or a tiny working script that addresses one gap.
+- **Reviewer:** A verification memo on one existing public task artifact. What's strong, what's weak, what would you change.
+
+This is not busywork. This is the first layer of your on-chain record. It establishes baseline credibility and demonstrates judgment before the task node routes you to real work.
+
+### The 60-Second Video
+
+Record one minute answering four questions:
+
+1. Who are you?
+2. What do you know that this network probably doesn't?
+3. What do you disagree with here?
+4. What would you ship first?
+
+No production value. No editing. We want to hear how you think and communicate, not watch polished content. Share the link with your audition artifact.
+
+---
+
+## First 48 Hours
 
 ### Hour 0-2: Orient
 
-1. **Set up your wallet.** Get PFT, activate on the network. Your wallet address is your identity — there are no usernames, no profiles, no reputation systems separate from the chain.
+1. **Wallet.** Get PFT, activate on the network. Your wallet address is your identity.
+2. **Lens.** [pft.permanentupperclass.com](https://pft.permanentupperclass.com). Read the network graph. Find the active contributors. Look at the hustlers — who's new and moving fast.
+3. **Herald.** [pft.permanentupperclass.com/herald/](https://pft.permanentupperclass.com/herald/). Yesterday's intelligence output. Who earned what. What moved. What's being watched.
 
-2. **Read the chain.** Go to [pft.permanentupperclass.com](https://pft.permanentupperclass.com) (Lens). Look at the network graph. Find the active contributors. Look at the movers, the hustlers, the sybil watch. Understand what activity looks like on-chain.
+### Hour 2-24: Audition
 
-3. **Read the Herald.** [pft.permanentupperclass.com/herald/](https://pft.permanentupperclass.com/herald/) gives you the daily snapshot: who earned what, what's moving, what's being watched. This is the intelligence output of the network you're joining.
+Publish your one-artifact audition. Record your 60-second video. Submit both through the task node with a request like: "I want to contribute to [specific frontier from the list above]. Here's my audition: [URL]."
 
-### Hour 2-8: Choose Your First Contribution Shape
+The task node will read your audition, profile your context from your request, and generate a task matched to your operating experience. This routing is not keyword matching — it uses your full memo history.
 
-Pick ONE based on your archetype:
+### Hour 24-48: First Real Task
 
-- **Operator:** Request a network task related to infrastructure, verification, or tooling you have experience with. The task node will profile your context from your request and route you to relevant work.
+Execute the generated task. Submit evidence at a public URL. Include something the LLM can't produce alone — operating experience, proprietary observation, original analysis, working code with tests.
 
-- **Analyst:** Request an alpha task. Describe your domain and what you could contribute. The system will generate a research question tailored to your expertise. Expect 200-500 words of practitioner observation, not a whitepaper.
-
-- **Builder:** Identify a gap in the network's tooling (there are many). Request a task to build something that addresses it. Shipping working code with tests earns 1.5-2x reward multipliers.
-
-- **Reviewer:** Start by completing one alpha task yourself to understand the verification flow. Then look for collaborative tasks where you can cross-check other contributors' work.
-
-### Hour 8-24: Execute and Submit
-
-Do the work. Publish the artifact at a public URL (gist, HackMD, GitHub Pages). Submit through the task node. Include evidence that demonstrates judgment, not just completion.
-
-**The single most important thing:** Ground your work in something the LLM can't produce alone. Operating experience, proprietary data, domain-specific judgment, or original analysis. The review system rewards depth. Surface-level task completion earns the listed reward. Work that surprises the reviewer earns 1.5-2x.
-
-### Hour 24-48: Engage the Feedback Loop
-
-Read your review feedback carefully. If you get a verification question, answer it thoroughly — this is where the reviewer tests whether you did the work or just generated documentation.
-
-Look at what other contributors are working on. Find the collaborative tasks. Identify where your skills fill a gap. The network compounds when contributors build on each other's work, not when they work in isolation.
+Read your review feedback. If you get a verification question, answer it thoroughly. This is where the system tests whether you did the work.
 
 ---
 
-## Outreach Copy for Existing Participants
+## Wall of First Wins
 
-### Template 1: For Operators / Engineers
+What "good" looks like from day one.
 
-> We're building a compounding intelligence network on Post Fiat — an XRPL fork where humans produce verified work, AI evaluates quality, and the aggregate intelligence generates real trading profits. The token economics are PvE: contributors collectively extract value from external markets, not from each other.
->
-> We're looking for operators who've built and run non-trivial systems. The work is infrastructure, verification tooling, and protocol design — think deterministic state reducers, on-chain subscription protocols, chain indexers, and sybil classifiers. Contributions are verified on-chain, and the review system rewards depth (we've seen 2x multipliers for submissions grounded in real operating experience).
->
-> Interested? Start here: [recruiting pack URL]
+**The Operator** who discovered that the chain indexer wasn't crawling the SUBS bot address — so subscriber payments were never indexed. Root cause analysis, fix, and verification. Result: subscription verification went from silently broken to working. Reward: listed amount + operational trust established.
 
-### Template 2: For Researchers / Analysts
+**The Analyst** who mapped five specific conditions where crypto signal confidence scoring inverts. Not "markets are volatile" — a taxonomy of false ordering, stale confidence, correlation compression, asymmetric shock exposure, and hidden cost distortion, grounded in 60-trade stratification data. Reward: 8,500 PFT (1.77x listed).
 
-> Post Fiat's Hive Mind is a collective intelligence system where research contributions feed a Data Lake that generates real trading profits. Unlike platforms where your analysis disappears into a feed, here it becomes part of a compounding intelligence asset — and you hold the token that captures the upside.
->
-> We're looking for researchers with genuine domain depth — macro, crypto market microstructure, mechanism design, AI/ML systems, compliance, whatever your edge is. The alpha task system matches your expertise to research questions and rewards original practitioner observations at 1.5-2x for non-obvious insights.
->
-> Not looking for summaries the LLM could produce. Looking for the context it can't.
->
-> Start here: [recruiting pack URL]
-
-### Template 3: For Builders
-
-> We're looking for builders who ship things users actually use. Post Fiat has an active on-chain network with 130+ real contributors, but the tooling layer is early — dashboards, bots, protocols, data products. Every tool you build serves a real user base from day one.
->
-> Recent builder contributions: a network intelligence dashboard with graph visualization and sybil detection, a daily on-chain intelligence newspaper with subscriber acquisition, an on-chain subscription protocol with payment verification. All shipped, all live, all earning on-chain rewards.
->
-> If you build things and want a network where your work compounds into something bigger than a repo: [recruiting pack URL]
-
-### Template 4: Short / DM Version
-
-> Post Fiat is a compounding intelligence network — humans do verified work, AI evaluates it, and the aggregate output generates real trading profits. PvE economics: you earn by making the network smarter, not by extracting from other participants. We're looking for [operators/researchers/builders] with genuine depth. Interested? [recruiting pack URL]
+**The Builder** who shipped a daily on-chain intelligence newspaper with subscriber acquisition in under a week. Herald, SUBS protocol, CRM, follow-up discount system, chain indexer expansion. Five paying subscribers, 58 trial contacts, 3 conversions from the first outreach wave. Not a spec — a working product with users.
 
 ---
 
-## Anti-Sybil Referral Guidelines
+## Referral Governance
 
-When referring candidates:
+Existing participants can invite candidates, but invitations carry weight.
 
-1. **Vouch with context.** "This person built X and it taught them Y" is useful. "This person is smart" is not.
+**Each participant gets 3 live invitation slots at a time.** An invitation is not a casual introduction — it is a reputation-bearing act.
 
-2. **One referral at a time.** Mass referrals are a sybil pattern. If you're inviting 10 people simultaneously, at least 8 of them probably don't belong.
+**Every invitation requires a five-line vouch memo:**
+1. What this person built or published
+2. What that work taught them
+3. Why the network specifically needs them right now
+4. Which frontier problem they should start with
+5. What first artifact they should attempt
 
-3. **Share the screening questions first.** Send the qualifying questions before the task node link. If the candidate can't answer them, save everyone's time.
+**Accountability is structural, not social.** If a referred candidate farms one task and disappears, the referrer's future invitation weight drops. If the referred candidate produces exceptional work, the referrer's weight increases. Referrals are governance, not encouragement.
 
-4. **Follow up on their first submission.** A qualified referral includes checking whether the person actually contributed something useful. If they farmed one task and disappeared, your next referral carries less weight.
+**Mass referrals are a sybil pattern.** If you're inviting 5 people at once, at least 4 probably don't belong. One serious referral with a substantive vouch outweighs ten casual introductions.
 
-5. **Don't refer for the referral bonus.** There isn't one. If there were, it would incentivize volume over quality — which is exactly what the Hive Mind is designed to avoid.
-
----
-
-## The Compounding Effect
-
-Every qualified contributor who joins makes the network more valuable:
-
-- More operating context feeds better task routing
-- More domain depth produces non-replicable intelligence
-- More builders create more surfaces for intelligence delivery
-- More reviewers improve verification quality
-- Better intelligence produces better trading signals
-- Better trading signals create more organic token demand
-- Token appreciation rewards the contributors who created the intelligence
-
-This only works if each new participant adds signal, not noise. The recruiting pack exists to make that distinction clear before someone joins — not after they've already submitted ten low-quality tasks and gotten flagged by the sybil classifier.
-
-The Hive Mind doesn't need more participants. It needs the right ones.
+**There is no referral bonus.** If there were, it would incentivize volume over quality — which is the opposite of what the Hive Mind needs.
 
 ---
 
-*Post Fiat is not a cult. Cults extract from members. The aim of PFT is to be a compounding hive mind where the average participant is better off financially and personally for having contributed.*
+## The Standard
+
+The wrong reader felt unwelcome at the second paragraph. Good.
+
+The decent reader felt challenged by the screening questions and started thinking about their answers. Good.
+
+The exceptional reader is already drafting their audition artifact. They found the frontier problem that matches their edge. They know what they disagree with. They're not waiting for an invitation — they're preparing to prove they belong.
+
+The best recruitment operations in history did not ask for attention. They staged a test worth passing.
+
+This is the test.
+
+---
+
+*Post Fiat is not a cult. Cults extract from members. The Hive Mind is a compounding intelligence network where the average participant is better off financially and personally for having contributed. If that ever stops being true, the model is broken and should be abandoned.*
