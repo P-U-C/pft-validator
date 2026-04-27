@@ -395,6 +395,10 @@
     <span id="dateField">Loading...</span>
     <span class="price">Powered by Lens &bull; Delivered by SUBS</span>
   </div>
+  <div style="text-align:center;margin:8px 0;">
+    <button id="prevEditionBtn" onclick="loadPreviousEdition()" style="background:none;border:1px solid var(--accent,#c8a96e);color:var(--accent,#c8a96e);padding:4px 14px;font-family:inherit;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;opacity:0.7;">Yesterday's Edition</button>
+    <button id="todayEditionBtn" onclick="loadTodayEdition()" style="background:none;border:1px solid var(--accent,#c8a96e);color:var(--accent,#c8a96e);padding:4px 14px;font-family:inherit;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;opacity:0.7;display:none;">Today's Edition</button>
+  </div>
 
   <div class="ticker-strip">
     <div class="ticker-item"><span>Health:</span> <span class="ticker-value" id="tickHealth">--</span></div>
@@ -545,6 +549,87 @@
 </div>
 
 <script>
+var currentEditionDate = null;
+
+window.loadPreviousEdition = function() {
+  var d = currentEditionDate ? new Date(currentEditionDate + 'T12:00:00Z') : new Date();
+  d.setDate(d.getDate() - 1);
+  var dateStr = d.toISOString().substring(0, 10);
+  fetch('/herald/' + dateStr + '.json')
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(data) {
+      if (data) {
+        currentEditionDate = data.date;
+        renderEdition(data);
+        document.getElementById('todayEditionBtn').style.display = 'inline';
+      }
+    });
+};
+
+window.loadTodayEdition = function() {
+  fetch('/lens/herald.json')
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(data) {
+      if (data) {
+        currentEditionDate = data.date;
+        renderEdition(data);
+        document.getElementById('todayEditionBtn').style.display = 'none';
+      }
+    });
+};
+
+function renderEdition(d) {
+  var s = d.sections;
+
+  document.getElementById('editionLabel').textContent = 'Edition #' + d.edition;
+  document.getElementById('volField').textContent = 'Vol. I \u2014 No. ' + d.edition;
+  var dateObj = new Date(d.date + 'T12:00:00Z');
+  var opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  document.getElementById('dateField').textContent = dateObj.toLocaleDateString('en-US', opts);
+
+  document.getElementById('tickHealth').textContent = (s.pulse.health_score || '--') + ' (' + (s.pulse.health_grade || '?') + ')';
+  document.getElementById('tickWallets').textContent = s.pulse.total_wallets;
+  document.getElementById('tickMemos').textContent = s.pulse.memos_today;
+  document.getElementById('tickVelocity').textContent = s.pulse.velocity_direction;
+
+  var velEmoji = s.pulse.velocity_direction === 'rising' ? '\u2197\uFE0F' : (s.pulse.velocity_direction === 'dropping' ? '\u2198\uFE0F' : '\u27A1\uFE0F');
+  document.getElementById('headlineMain').textContent = s.pulse.health_grade + ' \u2014 ' + s.pulse.contributors + ' contributors online';
+  document.getElementById('headlineSub').textContent = s.pulse.memos_today + ' dispatches today ' + velEmoji + ' ' + s.pulse.velocity_direction + ' \u2014 ' + s.pulse.total_wallets + ' wallets on the ledger, ' + s.pulse.bots + ' identified as automata';
+
+  if (s.flow && s.flow.top_earner_address) {
+    document.getElementById('flowTopEarner').textContent = s.flow.top_earner_address.substring(0,12) + '... received ' + s.flow.top_earner_pft.toLocaleString() + ' PFT in the period \u2014 the day\'s most prolific earner.';
+    document.getElementById('flowBody').textContent = s.flow.narrative;
+  }
+
+  if (s.airdrops) {
+    var aLines = (s.airdrops.leaderboard_7d || []).map(function(r, i) {
+      return '\u2022 ' + (i+1) + '. ' + r.address.substring(0,12) + '... \u2014 ' + r.total_pft.toLocaleString() + ' PFT (' + r.active_days + 'd, ' + r.drops + ' drops)';
+    });
+    document.getElementById('airdropLeaderboard').textContent = aLines.join('\n') || 'No leaderboard data.';
+    document.getElementById('airdropBody').textContent = s.airdrops.narrative || '';
+  }
+
+  if (s.movers) {
+    var activeList = (s.movers.most_active_7d || []).map(function(m) {
+      return m.address.substring(0,12) + '... (' + m.memos + ' dispatches)';
+    }).join(', ');
+    document.getElementById('moversBody').textContent = 'The most industrious wallets this week: ' + (activeList || 'No activity data.');
+    var quietList = (s.movers.gone_quiet || []).map(function(m) {
+      return m.address.substring(0,12) + '... (silent since ' + (m.last_active || '?').substring(0,10) + ')';
+    }).join(', ');
+    var newCount = (s.movers.new_wallets_7d || []).length;
+    document.getElementById('moversNew').textContent = newCount + ' new wallet' + (newCount !== 1 ? 's' : '') + ' appeared this week.' + (quietList ? ' Meanwhile, ' + (s.movers.gone_quiet || []).length + ' contributor(s) have gone quiet: ' + quietList + '.' : '');
+  }
+
+  if (s.watch) {
+    document.getElementById('watchBody').textContent = s.watch.narrative || '';
+  }
+
+  if (s.deep_cut) {
+    document.getElementById('deepCutBody').textContent = s.deep_cut.narrative || '';
+  }
+}
+
 (function() {
   var data = null;
 
@@ -553,6 +638,7 @@
     .then(function(d) {
       if (!d) return;
       data = d;
+      currentEditionDate = d.date;
       var s = d.sections;
 
       // Edition info

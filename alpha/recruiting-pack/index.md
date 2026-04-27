@@ -128,13 +128,13 @@ You are not speculating on a token. You are contributing to an intelligence netw
 
 **Right now.**
 
-1. **Look at what's happening.** [pft.permanentupperclass.com](https://pft.permanentupperclass.com) — the network graph, the active contributors, the hustlers, the sybil watch. This is the intelligence output of the network you're joining.
+1. **See the network.** [pft.permanentupperclass.com](https://pft.permanentupperclass.com) — the live network graph, active contributors, hustlers growing fastest, sybil watch, airdrop tracking. This is the intelligence output of the network you're joining.
 
-2. **Read yesterday's Herald.** [pft.permanentupperclass.com/herald/](https://pft.permanentupperclass.com/herald/) — who earned what, what moved, what's being watched. This is what your contributions feed into.
+2. **Read yesterday's intelligence.** [pft.permanentupperclass.com/herald/](https://pft.permanentupperclass.com/herald/) — who earned what, what moved, what's being watched. This is what your contributions feed into.
 
-3. **Get a wallet. Get PFT. Open the task node.**
+3. **Create a wallet and join.** [postfiat.org](https://postfiat.org) — set up your wallet, get PFT, and access the task node. This is your identity on the network.
 
-4. **Tell it what you know.** Not "give me a task." Tell it your background, your domain, what you've built, what you want to work on. Be specific. The system profiles your context and routes you to work where your edge matters.
+4. **Tell the task node what you know.** Not "give me a task." Tell it your background, your domain, what you've built, what you want to work on. Be specific. The system profiles your context and routes you to work where your edge matters.
 
 5. **Ship something.** Within 24 hours, you'll have a public artifact with your name on it, a review with specific feedback, PFT in your wallet, and an on-chain record that compounds with every contribution.
 
