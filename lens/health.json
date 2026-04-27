@@ -4,19 +4,19 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-04-27T05:00:00Z",
-  "calculated_at": "2026-04-27T05:01:37Z",
-  "next_update_at": "2026-04-27T06:00:00Z",
+  "snapshot_id": "2026-04-27T06:00:00Z",
+  "calculated_at": "2026-04-27T06:01:36Z",
+  "next_update_at": "2026-04-27T07:00:00Z",
   "refresh_cadence": "hourly",
-  "health_score": 0.4841,
+  "health_score": 0.4344,
   "health_score_formula": "sum(component.score * component.weight)",
   "health_grade": "C",
   "component_metrics": {
     "concentration": {
-      "score": 1.0,
+      "score": 0.7513,
       "weight": 0.2,
-      "contribution": 0.2,
-      "raw_hhi": 0.046405,
+      "contribution": 0.1503,
+      "raw_hhi": 0.161926,
       "formula": "max(0, min(1, (hhi_bad - HHI) / (hhi_bad - hhi_good)))",
       "description": "Herfindahl-Hirschman Index of memo activity distribution. Lower HHI = more distributed = healthier."
     },
@@ -103,9 +103,9 @@
       "severity": "none",
       "operator": ">",
       "threshold": 0.35,
-      "current_value": 0.0464,
+      "current_value": 0.1619,
       "lookback": "current_snapshot",
-      "reason": "HHI=0.0464 below threshold 0.35. Memo activity is reasonably distributed."
+      "reason": "HHI=0.1619 below threshold 0.35. Memo activity is reasonably distributed."
     },
     {
       "rule": "BOT_CLUSTER_GROWTH",
@@ -158,15 +158,15 @@
     "clear": 1
   },
   "score_change": {
-    "vs_prior_snapshot": 0.0087,
-    "prior_health_score": 0.4754,
-    "prior_calculated_at": "2026-04-27T04:01:34Z",
+    "vs_prior_snapshot": -0.0497,
+    "prior_health_score": 0.4841,
+    "prior_calculated_at": "2026-04-27T05:01:37Z",
     "largest_movers": [
       {
-        "component": "memo_velocity",
-        "delta": 0.0087,
-        "raw_delta": 0.0434,
-        "reason": "latest_day_memos=44 vs prior avg=138.4"
+        "component": "concentration",
+        "delta": -0.0497,
+        "raw_delta": -0.2487,
+        "reason": "HHI moved to 0.1619"
       }
     ]
   },
@@ -183,11 +183,11 @@
     "sybil_accounts": 743
   },
   "deltas": {
-    "health_score": 0.0087,
+    "health_score": -0.0497,
     "accounts": 0,
-    "memo_transactions": 6,
+    "memo_transactions": 0,
     "edges": 0,
-    "since": "2026-04-27T04:01:34Z"
+    "since": "2026-04-27T05:01:37Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -196,5 +196,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:a23423f4b40de13abb99ecf5a9511a1b06a234f984caf02526e924f5b2d5a4bf"
+  "snapshot_hash": "sha256:cd601be3e115def2c25be3c3e8f09b1187cbe678ea8356e83c5c69b63a7fb955"
 }
