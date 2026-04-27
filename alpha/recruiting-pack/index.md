@@ -150,6 +150,20 @@ One serious introduction outweighs a hundred casual ones. The best referral isn'
 
 The network gets better one real contributor at a time. Bring the people who will raise the floor, not just add to the count.
 
+### DM Template — Copy and Adapt
+
+> Hey — I've been contributing to Post Fiat, a network where you do real work, AI evaluates it, and the best intelligence feeds a Data Lake that generates actual trading profits. PvE economics — you earn by making the network smarter, not by extracting from other participants.
+>
+> I thought of you because [the network needs someone who understands X / you're the best person I know for Y / your work on Z is exactly what's missing here]. Right now there's a specific gap around [describe the frontier problem — e.g., "reviewer calibration and fraud detection" / "distribution loops for intelligence products" / "non-consensus macro research the LLM can't produce"].
+>
+> The top contributors are earning 100K-300K PFT/week. Reward multipliers go up to 2x for work that surprises the reviewer. No application — you just message the task node, tell it what you know, and it generates work matched to your profile.
+>
+> Here's the full picture: [recruiting pack URL]
+>
+> And here's the live network dashboard so you can see who's already here: pft.permanentupperclass.com/lens/
+
+Replace the bracketed sections with the specific reason you're reaching out to this person. The more specific the problem match, the higher the response rate.
+
 ---
 
 ## The Compounding Effect
