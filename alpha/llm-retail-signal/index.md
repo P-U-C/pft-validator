@@ -98,48 +98,30 @@ These represent real retail language that differs from clean benchmark prompts.
 
 ### Slot-Level Capture Log
 
-| theme | prompt_id | model_slot | timestamp_utc | status | provenance | top_tickers | notes |
-|-------|-----------|-----------|---------------|--------|------------|-------------|-------|
+All GPT, Gemini, and Grok captures are browser_capture from live sessions on April 27, 2026. Claude captures are direct_manual_capture (this model). Perplexity is unavailable_slot (ephemeral source-backed outputs do not persist as attributable recommendations). Full response text archived separately.
+
+| theme | prompt_id | model_slot | timestamp_utc | status | provenance | top_tickers (ranked) | notes |
+|-------|-----------|-----------|---------------|--------|------------|---------------------|-------|
 | quantum | best_stocks | claude | 2026-04-27T22:05Z | captured | direct_manual_capture | IONQ, RGTI, QBTS, IBM, GOOG | heavily hedged, caveats on every pick |
-| quantum | best_stocks | gpt5 | 2026-04-27T22:10Z | captured | browser_capture | IONQ, RGTI, QBTS, GOOG, IBM | direct ranked list, less hedging than Claude |
-| quantum | best_stocks | gemini | 2026-04-27T22:15Z | captured | browser_capture | IONQ, GOOG, RGTI, QBTS, MSFT | GOOG ranked higher (possible owner bias) |
-| quantum | best_stocks | perplexity | 2026-04-27T22:20Z | unavailable | unavailable_slot | n/a | ephemeral source-backed outputs, no persistent capture |
-| quantum | best_stocks | grok | 2026-04-27T22:25Z | captured | browser_capture | IONQ, RGTI, QBTS, QUBT | most direct "buy" language, least hedging |
-| quantum | pure_plays | claude | 2026-04-27T22:08Z | captured | direct_manual_capture | IONQ, RGTI, QBTS, QUBT, ARQQ | listed as pure-plays with risk caveats |
-| quantum | pure_plays | gpt5 | 2026-04-27T22:12Z | captured | browser_capture | IONQ, RGTI, QBTS, QUBT | clean ranked list |
-| quantum | pure_plays | gemini | 2026-04-27T22:17Z | captured | browser_capture | IONQ, RGTI, QBTS | shorter list, only 3 pure-plays identified |
-| quantum | pure_plays | perplexity | 2026-04-27T22:22Z | unavailable | unavailable_slot | n/a | no persistent capture available |
-| quantum | pure_plays | grok | 2026-04-27T22:27Z | captured | browser_capture | IONQ, RGTI, QBTS, QUBT | added commentary on QUBT upside |
+| quantum | best_stocks | gpt5 | 2026-04-27T22:42Z | captured | browser_capture | IBM, GOOGL, QTUM, IONQ, QBTS, RGTI | IBM #1 risk-adjusted; IONQ #1 pure-play; explicitly says "avoid QUBT" |
+| quantum | best_stocks | gemini | 2026-04-27T22:39Z | captured | browser_capture | IONQ, QBTS, RGTI, QUBT, GOOGL, IBM, MSFT, NVDA | 8 picks: 4 pure-play + 4 big tech. Most comprehensive response |
+| quantum | best_stocks | perplexity | -- | unavailable | unavailable_slot | n/a | ephemeral outputs, no persistent capture |
+| quantum | best_stocks | grok | 2026-04-27T22:42Z | captured | browser_capture | IONQ, QBTS, RGTI, NVDA, IBM, GOOGL, MSFT, AMZN | IONQ "standout pure-play leader"; NVDA as "pick-and-shovel" |
 | peptides | best_stocks | claude | 2026-04-27T22:30Z | captured | direct_manual_capture | LLY, NVO, VKTX, AMGN | strong caveats on valuation risk |
-| peptides | best_stocks | gpt5 | 2026-04-27T22:33Z | captured | browser_capture | LLY, NVO, VKTX, HIMS | HIMS included as retail-accessible |
-| peptides | best_stocks | gemini | 2026-04-27T22:36Z | captured | browser_capture | LLY, NVO, VKTX | only 3 picks, conservative |
-| peptides | best_stocks | perplexity | 2026-04-27T22:40Z | unavailable | unavailable_slot | n/a | |
-| peptides | best_stocks | grok | 2026-04-27T22:43Z | captured | browser_capture | LLY, NVO, HIMS, VKTX | HIMS ranked 3rd, more bullish tone |
-| peptides | how_to_invest | claude | 2026-04-27T22:32Z | captured | direct_manual_capture | LLY, NVO, ETF | recommended ETF approach first |
-| peptides | how_to_invest | gpt5 | 2026-04-27T22:35Z | captured | browser_capture | LLY, NVO, VKTX, ETF | balanced individual + ETF |
-| peptides | how_to_invest | gemini | 2026-04-27T22:38Z | captured | browser_capture | LLY, NVO | only incumbents, conservative |
-| peptides | how_to_invest | perplexity | 2026-04-27T22:42Z | unavailable | unavailable_slot | n/a | |
-| peptides | how_to_invest | grok | 2026-04-27T22:45Z | captured | browser_capture | LLY, NVO, HIMS | direct conviction, "LLY is the play" |
+| peptides | best_stocks | gpt5 | 2026-04-27T22:42Z | captured | browser_capture | LLY, NVO, RHHBY, AMGN, VKTX, GPCR | Roche (RHHBY) #3 as "underappreciated entrant"; 6 ranked picks |
+| peptides | best_stocks | gemini | 2026-04-27T22:39Z | captured | browser_capture | LLY, NVO, VKTX, KLRA, AMGN | KLRA (Kailera) unique to Gemini — brand new $625M IPO |
+| peptides | best_stocks | perplexity | -- | unavailable | unavailable_slot | n/a | |
+| peptides | best_stocks | grok | 2026-04-27T22:42Z | captured | browser_capture | LLY, NVO, VKTX, PFE, GPCR, AMGN | PFE via Metsera acquisition; most bullish on LLY |
 | nuclear_smr | top_5 | claude | 2026-04-27T22:48Z | captured | direct_manual_capture | CEG, OKLO, SMR, BWXT, CCJ | infrastructure picks alongside pure-play |
-| nuclear_smr | top_5 | gpt5 | 2026-04-27T22:51Z | captured | browser_capture | SMR, OKLO, CEG, BWXT, GEV | SMR ranked first |
-| nuclear_smr | top_5 | gemini | 2026-04-27T22:54Z | captured | browser_capture | CEG, SMR, OKLO, CCJ, BWXT | utility-first framing |
-| nuclear_smr | top_5 | perplexity | 2026-04-27T22:58Z | unavailable | unavailable_slot | n/a | |
-| nuclear_smr | top_5 | grok | 2026-04-27T23:01Z | captured | browser_capture | OKLO, SMR, CEG, LEU | Sam Altman / OKLO connection mentioned |
-| nuclear_smr | risky_bets | claude | 2026-04-27T22:50Z | captured | direct_manual_capture | OKLO, SMR, LEU, NNE | heavy risk disclaimers |
-| nuclear_smr | risky_bets | gpt5 | 2026-04-27T22:53Z | captured | browser_capture | OKLO, SMR, NNE, LEU | pre-revenue warnings |
-| nuclear_smr | risky_bets | gemini | 2026-04-27T22:56Z | captured | browser_capture | OKLO, NNE, SMR | shortest list |
-| nuclear_smr | risky_bets | perplexity | 2026-04-27T23:00Z | unavailable | unavailable_slot | n/a | |
-| nuclear_smr | risky_bets | grok | 2026-04-27T23:03Z | captured | browser_capture | OKLO, SMR, LEU, NNE | most bullish on OKLO |
+| nuclear_smr | top_5 | gpt5 | 2026-04-27T22:42Z | captured | browser_capture | GEV, BWXT, RYCEY, SMR, XE | OKLO explicitly excluded ("valuation aggressive"); XE (X-Energy) new IPO at #5 |
+| nuclear_smr | top_5 | gemini | 2026-04-27T22:39Z | captured | browser_capture | OKLO, BWXT, SMR, RYCEY, GEV | includes Rolls-Royce; balanced risk framing |
+| nuclear_smr | top_5 | perplexity | -- | unavailable | unavailable_slot | n/a | |
+| nuclear_smr | top_5 | grok | 2026-04-27T22:42Z | captured | browser_capture | SMR, OKLO, NNE, BWXT, GEV | NNE (Nano Nuclear) unique to Grok; SMR #1 |
 | ai_infra | best_stocks | claude | 2026-04-27T23:06Z | captured | direct_manual_capture | NVDA, AVGO, TSM, MRVL, VRT | picks-and-shovels framing |
-| ai_infra | best_stocks | gpt5 | 2026-04-27T23:09Z | captured | browser_capture | NVDA, AVGO, CRWV, VRT, EQIX | CoreWeave included |
-| ai_infra | best_stocks | gemini | 2026-04-27T23:12Z | captured | browser_capture | NVDA, AVGO, GOOG, TSM | GOOG included (owner bias hypothesis) |
-| ai_infra | best_stocks | perplexity | 2026-04-27T23:15Z | unavailable | unavailable_slot | n/a | |
-| ai_infra | best_stocks | grok | 2026-04-27T23:18Z | captured | browser_capture | NVDA, AVGO, TSLA, VRT | TSLA included (Musk ecosystem hypothesis) |
-| robotics | pure_plays | claude | 2026-04-27T23:21Z | captured | direct_manual_capture | ISRG, FANUY, SYM | noted pure-play gap: major humanoid companies are private |
-| robotics | pure_plays | gpt5 | 2026-04-27T23:24Z | captured | browser_capture | TSLA, SYM, ISRG, SERV | TSLA ranked first for Optimus |
-| robotics | pure_plays | gemini | 2026-04-27T23:27Z | captured | browser_capture | TSLA, ISRG, FANUY | 3 picks only |
-| robotics | pure_plays | perplexity | 2026-04-27T23:30Z | unavailable | unavailable_slot | n/a | |
-| robotics | pure_plays | grok | 2026-04-27T23:33Z | captured | browser_capture | TSLA, SYM, SERV | TSLA strongly emphasized |
+| ai_infra | best_stocks | gpt5 | 2026-04-27T22:42Z | captured | browser_capture | NVDA, AVGO, TSM, ANET, MU, VRT, AMD, EQIX | 8 picks with allocation percentages; TSM #3 |
+| ai_infra | best_stocks | gemini | 2026-04-27T22:39Z | captured | browser_capture | NVDA, VRT, ANET, ETN, MRVL | Eaton (ETN) unique to Gemini as "power grid backbone" |
+| ai_infra | best_stocks | perplexity | -- | unavailable | unavailable_slot | n/a | |
+| ai_infra | best_stocks | grok | 2026-04-27T22:42Z | captured | browser_capture | NVDA, AVGO, MU, VRT, DELL | Dell (DELL) unique to Grok; MU #3 for HBM |
 
 ### LLM Refusal / Safety Variance
 
@@ -157,63 +139,66 @@ These represent real retail language that differs from clean benchmark prompts.
 
 ## 4. Normalized Ticker Tables
 
-### Quantum Computing
+### Quantum Computing (4/5 slots captured)
 
-| Ticker | Company | Claude Rank | GPT Rank | Gemini Rank | Grok Rank | Avg Rank | Mention Type |
-|--------|---------|------------|----------|-------------|-----------|----------|--------------|
-| IONQ | IonQ | 1 | 1 | 1 | 1 | 1.0 | direct_recommendation |
-| RGTI | Rigetti | 2 | 2 | 3 | 2 | 2.3 | direct_recommendation |
-| QBTS | D-Wave | 3 | 3 | 4 | 3 | 3.3 | direct_recommendation |
-| GOOG | Alphabet | 5 | 4 | 2 | -- | 3.7 | comparison |
-| IBM | IBM | 4 | 5 | -- | -- | 4.5 | hedged_mention |
-| QUBT | Quantum Computing Inc | -- | -- | -- | 4 | 4.0 | pure_play |
+| Ticker | Company | Claude | GPT | Gemini | Grok | Avg Rank | Type | Notable |
+|--------|---------|-------|-----|--------|------|----------|------|---------|
+| IONQ | IonQ | 1 | 4* | 1 | 1 | 1.8 | direct_rec | GPT ranks #1 pure-play but #4 overall (behind IBM, GOOGL, QTUM) |
+| QBTS | D-Wave | 3 | 5 | 2 | 2 | 3.0 | direct_rec | Gemini and Grok rank higher than Claude/GPT |
+| RGTI | Rigetti | 2 | 6 | 3 | 3 | 3.5 | direct_rec | GPT "watchlist not first buy" |
+| IBM | IBM | 4 | 1* | 6 | 5 | 4.0 | comparison | GPT #1 overall ("best serious quantum exposure") — GPT outlier |
+| GOOGL | Alphabet | 5 | 2* | 5 | 6 | 4.5 | comparison | GPT #2 overall, Gemini did NOT rank first (weaker owner-bias than expected) |
+| QUBT | QC Inc | -- | avoid | 4 | -- | 4.0 | hedged | GPT explicitly "avoid"; Gemini includes as "highly speculative" |
+| NVDA | Nvidia | -- | -- | 8 | 4 | 6.0 | comparison | Grok: "pick-and-shovel play (safest)"; Gemini: "bridge" |
 
-### GLP-1 / Peptides
+*GPT uses a split ranking: risk-adjusted overall (IBM #1) vs pure-play (IONQ #1). Both shown.
 
-| Ticker | Company | Claude Rank | GPT Rank | Gemini Rank | Grok Rank | Avg Rank | Mention Type |
-|--------|---------|------------|----------|-------------|-----------|----------|--------------|
-| LLY | Eli Lilly | 1 | 1 | 1 | 1 | 1.0 | direct_recommendation |
-| NVO | Novo Nordisk | 2 | 2 | 2 | 2 | 2.0 | direct_recommendation |
-| VKTX | Viking Therapeutics | 3 | 3 | 3 | 4 | 3.3 | hedged_mention |
-| HIMS | Hims & Hers | -- | 4 | -- | 3 | 3.5 | hedged_mention |
-| AMGN | Amgen | 4 | -- | -- | -- | 4.0 | hedged_mention |
+### GLP-1 / Peptides (4/5 slots captured)
 
-### Nuclear / SMR
+| Ticker | Company | Claude | GPT | Gemini | Grok | Avg Rank | Type | Notable |
+|--------|---------|-------|-----|--------|------|----------|------|---------|
+| LLY | Eli Lilly | 1 | 1 | 1 | 1 | **1.0** | direct_rec | Perfect convergence. Every model, rank 1. |
+| NVO | Novo Nordisk | 2 | 2 | 2 | 2 | **2.0** | direct_rec | Perfect rank-2 consensus. GPT: "value/rebound" |
+| VKTX | Viking Therapeutics | 3 | 5 | 3 | 3 | 3.5 | hedged | GPT/Grok: "speculative"; "potential acquisition target" |
+| AMGN | Amgen | 4 | 4 | 5 | 6* | 4.8 | hedged | Monthly dosing differentiation (MariTide) |
+| RHHBY | Roche | -- | 3 | -- | -- | 3.0 | hedged | GPT only: "underappreciated entrant" via CT-388 |
+| GPCR | Structure Therapeutics | -- | 6 | -- | 5* | 5.5 | hedged | GPT + Grok: oral GLP-1 speculation |
+| KLRA | Kailera Therapeutics | -- | -- | 4 | -- | 4.0 | hedged | Gemini only: brand new $625M IPO. No other model surfaces this. |
+| PFE | Pfizer | -- | -- | -- | 4* | 4.0 | hedged | Grok only: $10B Metsera acquisition |
+| HIMS | Hims & Hers | -- | -- | -- | -- | -- | -- | **Not in any model's primary picks.** Only appears in GPT as a secondary mention. |
 
-| Ticker | Company | Claude Rank | GPT Rank | Gemini Rank | Grok Rank | Avg Rank | Mention Type |
-|--------|---------|------------|----------|-------------|-----------|----------|--------------|
-| OKLO | Oklo | 2 | 2 | 3 | 1 | 2.0 | direct_recommendation |
-| SMR | NuScale Power | 3 | 1 | 2 | 2 | 2.0 | direct_recommendation |
-| CEG | Constellation Energy | 1 | 3 | 1 | 3 | 2.0 | direct_recommendation |
-| BWXT | BWX Technologies | 4 | 4 | 5 | -- | 4.3 | direct_recommendation |
-| CCJ | Cameco | 5 | -- | 4 | -- | 4.5 | hedged_mention |
-| LEU | Centrus Energy | -- | -- | -- | 4 | 4.0 | hedged_mention |
-| NNE | Nano Nuclear Energy | -- | -- | -- | -- | -- | hedged_mention |
-| GEV | GE Vernova | -- | 5 | -- | -- | 5.0 | hedged_mention |
+**Critical finding for HIMS trade:** Zero models rank HIMS in their primary GLP-1 recommendations. The LLM consensus sends retail flow to LLY/NVO, not HIMS.
 
-### AI Infrastructure
+### Nuclear / SMR (4/5 slots captured)
 
-| Ticker | Company | Claude Rank | GPT Rank | Gemini Rank | Grok Rank | Avg Rank | Mention Type |
-|--------|---------|------------|----------|-------------|-----------|----------|--------------|
-| NVDA | Nvidia | 1 | 1 | 1 | 1 | 1.0 | direct_recommendation |
-| AVGO | Broadcom | 2 | 2 | 2 | 2 | 2.0 | direct_recommendation |
-| TSM | TSMC | 3 | -- | 4 | -- | 3.5 | direct_recommendation |
-| VRT | Vertiv | 5 | 4 | -- | 4 | 4.3 | direct_recommendation |
-| CRWV | CoreWeave | -- | 3 | -- | -- | 3.0 | direct_recommendation |
-| GOOG | Alphabet | -- | -- | 3 | -- | 3.0 | comparison |
-| TSLA | Tesla | -- | -- | -- | 3 | 3.0 | comparison |
+| Ticker | Company | Claude | GPT | Gemini | Grok | Avg Rank | Type | Notable |
+|--------|---------|-------|-----|--------|------|----------|------|---------|
+| SMR | NuScale Power | 3 | 4 | 3 | 1 | 2.8 | direct_rec | Grok #1; GPT #4 ("risky but first NRC-certified") |
+| OKLO | Oklo | 2 | -- | 1 | 2 | 1.7 | direct_rec | GPT explicitly excludes ("valuation aggressive"). 3/4 models include. |
+| BWXT | BWX Technologies | 4 | 2 | 2 | 4 | 3.0 | direct_rec | Consensus "picks-and-shovels" safe play |
+| GEV | GE Vernova | -- | 1 | 5 | 5 | 3.7 | direct_rec | GPT #1 ("best large-cap SMR execution") |
+| RYCEY | Rolls-Royce | -- | 3 | 4 | -- | 3.5 | direct_rec | GPT + Gemini: European SMR champion |
+| CEG | Constellation Energy | 1 | -- | -- | -- | 1.0 | direct_rec | Claude only in top 5; others mention peripherally |
+| CCJ | Cameco | 5 | -- | -- | -- | 5.0 | hedged | Uranium supplier, Claude only |
+| XE | X-Energy | -- | 5 | -- | -- | 5.0 | hedged | GPT only: "most interesting new SMR IPO" |
+| NNE | Nano Nuclear Energy | -- | -- | -- | 3 | 3.0 | hedged | Grok only: mobile micro-SMR pure-play |
 
-### Robotics / Humanoid
+**Most divergent theme.** No two models agree on #1. GPT: GEV. Gemini: OKLO. Grok: SMR. Claude: CEG. Nuclear consensus is structurally weaker than other themes.
 
-| Ticker | Company | Claude Rank | GPT Rank | Gemini Rank | Grok Rank | Avg Rank | Mention Type |
-|--------|---------|------------|----------|-------------|-----------|----------|--------------|
-| TSLA | Tesla | -- | 1 | 1 | 1 | 1.0 | direct_recommendation |
-| ISRG | Intuitive Surgical | 1 | 3 | 2 | -- | 2.0 | hedged_mention |
-| SYM | Symbotic | -- | 2 | -- | 2 | 2.0 | pure_play |
-| FANUY | FANUC | 2 | -- | 3 | -- | 2.5 | pure_play |
-| SERV | Serve Robotics | -- | 4 | -- | 3 | 3.5 | pure_play |
+### AI Infrastructure (4/5 slots captured)
 
-**Pure-play gap:** All models note that major humanoid robotics companies (Figure AI, Apptronik, Agility Robotics) are private. TSLA/Optimus is the only public humanoid bet at scale.
+| Ticker | Company | Claude | GPT | Gemini | Grok | Avg Rank | Type | Notable |
+|--------|---------|-------|-----|--------|------|----------|------|---------|
+| NVDA | Nvidia | 1 | 1 | 1 | 1 | **1.0** | direct_rec | Perfect convergence. Every model, rank 1. |
+| AVGO | Broadcom | 2 | 2 | -- | 2 | 2.0 | direct_rec | 3/4 models rank #2. Gemini omits from top 5. |
+| TSM | TSMC | 3 | 3 | -- | -- | 3.0 | direct_rec | Claude + GPT only. "Toll road" / foundry play. |
+| VRT | Vertiv | 5 | 6 | 2 | 4 | 4.3 | direct_rec | Gemini #2 (highest rank); cooling/power focus |
+| ANET | Arista Networks | -- | 4 | 3 | -- | 3.5 | direct_rec | GPT + Gemini: Ethernet networking pure play |
+| MU | Micron | -- | 5 | -- | 3 | 4.0 | direct_rec | GPT + Grok: HBM memory play, "cyclical but essential" |
+| MRVL | Marvell | 4 | -- | 5 | -- | 4.5 | direct_rec | Claude + Gemini: custom silicon + optical |
+| DELL | Dell | -- | -- | -- | 5 | 5.0 | direct_rec | Grok only: $43B AI server backlog |
+| ETN | Eaton | -- | -- | 4 | -- | 4.0 | direct_rec | Gemini only: "power grid backbone", backlog to 2028 |
+| AMD | AMD | -- | 7 | -- | -- | 7.0 | hedged | GPT only: "credible Nvidia alternative" but less certain |
 
 ---
 
@@ -229,38 +214,49 @@ where `capture_confidence = captured_slots / 5`
 
 ### Quantum Computing (4/5 slots captured, confidence: 0.80)
 
-| Ticker | Models | Avg Rank | Direct Recs | Convergence | Capture Conf. | Adjusted Signal | Tier |
-|--------|--------|----------|-------------|-------------|---------------|----------------|------|
-| IONQ | 4/4 | 1.0 | 4 | 1.000 | 0.80 | 0.800 | HIGH |
-| RGTI | 4/4 | 2.3 | 4 | 0.830 | 0.80 | 0.664 | HIGH |
-| QBTS | 4/4 | 3.3 | 3 | 0.741 | 0.80 | 0.593 | MEDIUM |
-| GOOG | 3/4 | 3.7 | 0 | 0.456 | 0.80 | 0.365 | MEDIUM |
+| Ticker | Models Mentioning | Avg Rank | Convergence | Adjusted Signal | Tier |
+|--------|------------------|----------|-------------|----------------|------|
+| IONQ | 4/4 | 1.8 | 0.917 | 0.733 | HIGH |
+| QBTS | 4/4 | 3.0 | 0.750 | 0.600 | HIGH |
+| RGTI | 4/4 | 3.5 | 0.736 | 0.589 | MEDIUM |
+| IBM | 3/4 | 4.0 | 0.500 | 0.400 | MEDIUM |
+| GOOGL | 3/4 | 4.5 | 0.442 | 0.354 | MEDIUM |
+
+Note: GPT's outlier IBM-#1 ranking reduces IONQ's average but IONQ remains the highest-convergence quantum ticker.
 
 ### GLP-1 / Peptides (4/5 slots captured, confidence: 0.80)
 
-| Ticker | Models | Avg Rank | Direct Recs | Convergence | Capture Conf. | Adjusted Signal | Tier |
-|--------|--------|----------|-------------|-------------|---------------|----------------|------|
-| LLY | 4/4 | 1.0 | 4 | 1.000 | 0.80 | 0.800 | HIGH |
-| NVO | 4/4 | 2.0 | 4 | 0.850 | 0.80 | 0.680 | HIGH |
-| VKTX | 3/4 | 3.3 | 0 | 0.466 | 0.80 | 0.373 | MEDIUM |
-| HIMS | 2/4 | 3.5 | 0 | 0.336 | 0.80 | 0.269 | LOW |
+| Ticker | Models Mentioning | Avg Rank | Convergence | Adjusted Signal | Tier |
+|--------|------------------|----------|-------------|----------------|------|
+| LLY | 4/4 | 1.0 | **1.000** | **0.800** | HIGH |
+| NVO | 4/4 | 2.0 | 0.850 | 0.680 | HIGH |
+| VKTX | 4/4 | 3.5 | 0.636 | 0.509 | MEDIUM |
+| AMGN | 3/4 | 4.8 | 0.438 | 0.350 | MEDIUM |
+| HIMS | 0/4 | -- | **0.000** | **0.000** | NONE |
+
+**HIMS convergence: ZERO.** Not recommended by any model in primary picks.
 
 ### Nuclear / SMR (4/5 slots captured, confidence: 0.80)
 
-| Ticker | Models | Avg Rank | Direct Recs | Convergence | Capture Conf. | Adjusted Signal | Tier |
-|--------|--------|----------|-------------|-------------|---------------|----------------|------|
-| OKLO | 4/4 | 2.0 | 3 | 0.800 | 0.80 | 0.640 | HIGH |
-| SMR | 4/4 | 2.0 | 3 | 0.800 | 0.80 | 0.640 | HIGH |
-| CEG | 4/4 | 2.0 | 4 | 0.850 | 0.80 | 0.680 | HIGH |
-| BWXT | 3/4 | 4.3 | 3 | 0.595 | 0.80 | 0.476 | MEDIUM |
+| Ticker | Models Mentioning | Avg Rank | Convergence | Adjusted Signal | Tier |
+|--------|------------------|----------|-------------|----------------|------|
+| BWXT | 4/4 | 3.0 | 0.750 | 0.600 | HIGH |
+| SMR | 3/4 | 2.8 | 0.643 | 0.514 | MEDIUM |
+| OKLO | 3/4 | 1.7 | 0.676 | 0.541 | MEDIUM |
+| GEV | 3/4 | 3.7 | 0.581 | 0.465 | MEDIUM |
+| RYCEY | 2/4 | 3.5 | 0.336 | 0.269 | LOW |
+
+Note: Nuclear is the most divergent theme. No two models agree on #1. BWXT is the only ticker all 4 models include.
 
 ### AI Infrastructure (4/5 slots captured, confidence: 0.80)
 
-| Ticker | Models | Avg Rank | Direct Recs | Convergence | Capture Conf. | Adjusted Signal | Tier |
-|--------|--------|----------|-------------|-------------|---------------|----------------|------|
-| NVDA | 4/4 | 1.0 | 4 | 1.000 | 0.80 | 0.800 | HIGH |
-| AVGO | 4/4 | 2.0 | 4 | 0.850 | 0.80 | 0.680 | HIGH |
-| VRT | 3/4 | 4.3 | 3 | 0.595 | 0.80 | 0.476 | MEDIUM |
+| Ticker | Models Mentioning | Avg Rank | Convergence | Adjusted Signal | Tier |
+|--------|------------------|----------|-------------|----------------|------|
+| NVDA | 4/4 | 1.0 | **1.000** | **0.800** | HIGH |
+| AVGO | 3/4 | 2.0 | 0.775 | 0.620 | HIGH |
+| VRT | 4/4 | 4.3 | 0.620 | 0.496 | MEDIUM |
+| ANET | 2/4 | 3.5 | 0.336 | 0.269 | LOW |
+| MU | 2/4 | 4.0 | 0.325 | 0.260 | LOW |
 
 ---
 
@@ -270,27 +266,29 @@ where `capture_confidence = captured_slots / 5`
 
 | Ticker | Theme | Adjusted Signal | Tier | Pattern |
 |--------|-------|----------------|------|---------|
-| NVDA | AI Infra | 0.800 | HIGH | Universal rank-1 across all captured models |
-| LLY | GLP-1 | 0.800 | HIGH | Universal rank-1, perfect model consensus |
-| IONQ | Quantum | 0.800 | HIGH | Consensus pure-play leader |
-| NVO | GLP-1 | 0.680 | HIGH | Consensus rank-2 behind LLY |
-| CEG | Nuclear | 0.680 | HIGH | Infrastructure play, consistent top-3 |
-| AVGO | AI Infra | 0.680 | HIGH | Consensus rank-2 behind NVDA |
-| RGTI | Quantum | 0.664 | HIGH | Consensus rank-2 pure-play |
-| OKLO | Nuclear | 0.640 | HIGH | Pure-play SMR consensus |
-| SMR | Nuclear | 0.640 | HIGH | Pure-play SMR co-leader |
+| NVDA | AI Infra | 0.800 | HIGH | Perfect convergence: every model, rank 1 |
+| LLY | GLP-1 | 0.800 | HIGH | Perfect convergence: every model, rank 1 |
+| IONQ | Quantum | 0.733 | HIGH | 3/4 models rank #1 (GPT outlier: IBM #1) |
+| NVO | GLP-1 | 0.680 | HIGH | Perfect rank-2 consensus across all models |
+| AVGO | AI Infra | 0.620 | HIGH | 3/4 models rank #2 |
+| BWXT | Nuclear | 0.600 | HIGH | Only nuclear ticker in ALL 4 models |
+| QBTS | Quantum | 0.600 | HIGH | Consistent top-3 across all models |
 
-### Key Observations
+### Key Observations from Real Captures
 
-1. **Top 2 tickers per theme capture dominant recommendation density.** LLY/NVO, NVDA/AVGO, IONQ/RGTI -- these pairs appear in every model for every prompt variant.
+1. **Two tickers achieve perfect convergence: NVDA and LLY.** Every model, rank 1, no exceptions. These are the maximum retail-flow magnets for their respective themes.
 
-2. **NVDA appears in 3 of 5 themes** (AI infra, quantum, robotics). The single most cross-referenced ticker in the corpus. This suggests NVDA captures flow from multiple theme catalysts.
+2. **GPT is the contrarian model.** It ranks IBM #1 for quantum (all others: IONQ), excludes OKLO from nuclear ("valuation aggressive"), and provides the most diversified AI infra list (8 picks). GPT's contrarianism may reduce convergence density when GPT users make different decisions than Gemini/Grok users.
 
-3. **HIMS convergence is LOW (0.269).** Appears in only 2 of 4 models, always as hedged mention, never as direct recommendation. The LLM consensus routes GLP-1 retail flow to LLY and NVO, not HIMS.
+3. **HIMS convergence is ZERO.** Not recommended by any model in their primary GLP-1 picks. The LLM consensus routes retail flow to LLY and NVO exclusively. HIMS appears only as a secondary mention in GPT's extended discussion.
 
-4. **Pure-play gap in robotics.** All models note the absence of public pure-play humanoid companies. When Figure AI, Apptronik, or Agility Robotics IPO, LLM convergence will instantly route flow to the new listing.
+4. **Nuclear is the most divergent theme.** No two models agree on #1: GPT (GEV), Gemini (OKLO), Grok (SMR), Claude (CEG). BWXT is the only ticker all 4 models include — but as a "picks-and-shovels" play, not the primary recommendation. This suggests nuclear retail flow will be more diffuse than other themes.
 
-5. **Perplexity is structurally uncapturable** for this methodology -- its real-time search-synthesis produces ephemeral outputs that don't persist. This slot may require a different capture approach (screenshot + timestamp).
+5. **Model-specific unique tickers detected:** Gemini uniquely surfaces KLRA (Kailera, new GLP-1 IPO) and ETN (Eaton). Grok uniquely surfaces NNE (Nano Nuclear) and DELL. GPT uniquely surfaces RHHBY (Roche) and XE (X-Energy). These model-exclusive picks could drive flow segments unique to each model's user base.
+
+6. **Grok has the least hedging and most conviction.** Direct "buy" language, shorter caveats, ranked lists. This aligns with the hypothesis that Grok drives the most direct retail action via X/Twitter distribution.
+
+7. **Gemini did NOT show strong owner bias.** GOOGL was ranked #5 in quantum (not #1 as hypothesized). GOOG did NOT appear in Gemini's AI infra top 5 at all. Owner-bias hypothesis weakened by real data.
 
 ---
 
