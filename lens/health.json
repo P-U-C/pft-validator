@@ -4,9 +4,9 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-04-27T09:00:00Z",
-  "calculated_at": "2026-04-27T09:01:38Z",
-  "next_update_at": "2026-04-27T10:00:00Z",
+  "snapshot_id": "2026-04-27T10:00:00Z",
+  "calculated_at": "2026-04-27T10:01:37Z",
+  "next_update_at": "2026-04-27T11:00:00Z",
   "refresh_cadence": "hourly",
   "health_score": 0.4985,
   "health_score_formula": "sum(component.score * component.weight)",
@@ -158,24 +158,17 @@
     "clear": 1
   },
   "score_change": {
-    "vs_prior_snapshot": 0.0086,
-    "prior_health_score": 0.4899,
-    "prior_calculated_at": "2026-04-27T08:01:35Z",
-    "largest_movers": [
-      {
-        "component": "memo_velocity",
-        "delta": 0.0087,
-        "raw_delta": 0.0434,
-        "reason": "latest_day_memos=54 vs prior avg=138.4"
-      }
-    ]
+    "vs_prior_snapshot": 0.0,
+    "prior_health_score": 0.4985,
+    "prior_calculated_at": "2026-04-27T09:01:38Z",
+    "largest_movers": []
   },
   "network_summary": {
     "total_accounts": 892,
     "contributors": 151,
     "bots": 733,
     "infrastructure": 8,
-    "total_transactions": 375261,
+    "total_transactions": 375263,
     "memo_transactions": 12827,
     "total_edges": 41390,
     "bidirectional_edges": 39500,
@@ -183,11 +176,11 @@
     "sybil_accounts": 743
   },
   "deltas": {
-    "health_score": 0.0086,
+    "health_score": 0.0,
     "accounts": 0,
-    "memo_transactions": 6,
-    "edges": 1,
-    "since": "2026-04-27T08:01:35Z"
+    "memo_transactions": 0,
+    "edges": 0,
+    "since": "2026-04-27T09:01:38Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -196,5 +189,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:3ec325ecb868b45ad615eae9b07317f4ce95ecf42d92fdd95a9cfefd2360ebc0"
+  "snapshot_hash": "sha256:3f15f7d741563ece1ca79d042e955e91229de3ef6aadf0f4447fa7d0b40b8853"
 }
