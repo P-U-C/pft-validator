@@ -302,4 +302,120 @@ Scheduled for May 4, 2026. Same prompt bank, same 5 LLM slots. Diff against this
 
 ---
 
-*Capture schema, convergence computation, and validation plan are provided as reusable artifacts. No capital was deployed. No trade instructions are included. This is Phase 0 research infrastructure for the Post Fiat Data Lake.*
+---
+
+## 8. Phase 1: Options Signal Framework
+
+The convergence corpus is a lottery ticket selector. The thesis: when a theme catalyst hits, retail asks LLMs, LLMs all recommend the same 2-3 names, concentrated flow spikes those names, and cheap OTM calls on those names produce asymmetric payoffs.
+
+### The Asymmetry Pipeline
+
+```
+Theme at "emerging" or "growing" status
+  → Convergence corpus identifies HIGH-tier tickers
+    → Options chain scan: cheap OTM calls, 30-90 DTE
+      → Filter: low IV rank (cheap), adequate liquidity
+        → Position: small allocation, lottery-ticket sizing
+          → Catalyst hits → retail flow → 5-50x payoff
+```
+
+### Options Selection Criteria
+
+For each HIGH-convergence ticker:
+
+| Filter | Criteria | Rationale |
+|--------|----------|-----------|
+| Strike | 20-50% OTM | Maximum leverage on the flow spike |
+| DTE | 30-90 days | Enough time for catalyst + flow propagation |
+| Premium | $0.05-$1.00 | Lottery-ticket sizing — lose the premium, not the portfolio |
+| IV Rank | < 30th percentile | Buy when vol is cheap, before the catalyst reprices it |
+| Open Interest | > 500 contracts | Enough liquidity to exit on the spike |
+| Delta | 0.05-0.20 | Deep OTM for maximum convexity |
+
+### Convergence × Options Scoring
+
+```
+asymmetry_score = convergence_score × (1 / IV_rank) × log(open_interest)
+```
+
+Higher score = higher convergence into this name + cheaper options + enough liquidity. The top-scoring contracts across all HIGH-convergence tickers become the watchlist.
+
+### Current Watchlist (Illustrative — Requires Live Options Data)
+
+Based on seed corpus convergence scores, the tickers most suited for this strategy:
+
+| Ticker | Theme | Convergence | Why It's the Lottery Ticket |
+|--------|-------|-------------|---------------------------|
+| IONQ | Quantum | 0.925 | Every LLM's #1 quantum pick. Next quantum milestone = flow magnet. |
+| RGTI | Quantum | 0.821 | Consensus #2. Cheaper options than IONQ, similar flow capture. |
+| OKLO | Nuclear | 0.833 | Pure-play SMR. Any nuclear policy catalyst routes here. |
+| VKTX | GLP-1 | 0.580 | Emerging challenger. Phase 3 readout = binary catalyst. Options likely cheap. |
+| CRWV | AI Infra | 0.600 | Pure-play AI cloud. Recently IPO'd — options may have high IV but strong flow capture. |
+
+**Not on the list:** NVDA, LLY — perfect convergence (1.000) but options are expensive because everyone already knows. The edge is in HIGH-convergence tickers where options are still cheap because the convergence hasn't been priced yet.
+
+### IBKR Integration Scope (Phase 1 Build)
+
+Connect to Interactive Brokers API to automate the pipeline:
+
+```
+IBKR TWS API / Client Portal API
+  │
+  ├── Pull options chains for all HIGH-convergence tickers
+  │     └── All strikes, 30-90 DTE, calls only
+  │
+  ├── Compute asymmetry_score per contract
+  │     └── convergence × (1/IV_rank) × log(OI)
+  │
+  ├── Filter by criteria table above
+  │
+  ├── Rank and output top 10 contracts
+  │
+  └── Send to Telegram daily
+        └── "IONQ $80C Jun 60DTE @ $0.35 — convergence 0.925, IV rank 22, OI 2,400"
+```
+
+**Required:**
+- IBKR account with market data subscription (options)
+- TWS or IB Gateway running on server
+- `ib_insync` Python library or IBKR Client Portal REST API
+- Daily cron: pull chains → score → filter → Telegram alert
+
+**Deliverable:** A script that runs daily, scans options chains for high-convergence tickers, and sends the top asymmetric plays to Telegram. The convergence corpus provides the "which tickers" signal. IBKR provides the "which contracts" signal.
+
+### Theme Timing — When to Buy
+
+| Theme Status | Action | Rationale |
+|-------------|--------|-----------|
+| **Emerging** | Buy calls now | IV is lowest, catalysts are months away, maximum asymmetry |
+| **Growing** | Buy calls selectively | IV rising but not peak, catalysts approaching |
+| **Peak hype** | Sell calls / stay out | IV is high, options are expensive, flow is already happening |
+| **Post-peak** | Watch for re-entry | IV crushes, cheap calls reappear for the next cycle |
+
+**Current opportunities by timing:**
+- Photonics (emerging) — not yet in corpus, needs prompts. Potential pre-catalyst opportunity.
+- Longevity (emerging) — same. Low attention, options should be cheap if tickers exist.
+- Robotics (growing) — TSLA calls are expensive but pure-play IPOs (Figure AI) would be the real catalyst.
+- Nuclear (growing) — OKLO/SMR calls may still be reasonably priced before the next policy catalyst.
+
+---
+
+## 9. Model Bias Signals
+
+The corpus reveals systematic biases in specific LLM slots:
+
+| Model | Bias Detected | Implication |
+|-------|--------------|-------------|
+| Gemini | Favors Alphabet/GOOGL in quantum | Owner bias — Gemini recommends its parent company. Inflates GOOGL convergence artificially. |
+| Grok | Favors Tesla/TSLA in robotics | Musk ecosystem bias. Grok on X/Twitter drives the most direct retail action. TSLA calls on robotics catalysts may have a Grok-specific flow component. |
+| Claude | Most heavily hedged responses | Least likely to drive direct retail flow. "Consider consulting a financial advisor." |
+| GPT | Balanced, moderate hedging | Largest user base = largest flow driver. GPT consensus IS the retail consensus. |
+| Perplexity | Ephemeral outputs, no persistence | Hardest to capture but also means less convergence signal from this slot. |
+
+**Hedging gradient:** Claude > GPT > Gemini > Grok (most to least hedged)
+
+**Tradeable insight:** Grok's lack of hedging + X/Twitter distribution = the most actionable retail flow driver. When Grok recommends a ticker, retail on X sees it and acts faster than GPT users. The Grok signal may lead the flow by hours or days.
+
+---
+
+*Capture schema, convergence computation, validation plan, and options framework are provided as reusable artifacts. No capital was deployed in this research phase. The options framework describes a methodology — specific contract recommendations require live IBKR data. This is Phase 0-1 research infrastructure for the Post Fiat Data Lake.*
