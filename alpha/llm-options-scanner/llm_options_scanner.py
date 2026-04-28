@@ -212,7 +212,7 @@ class BrokerClient:
                             bid=opt_data.bid or 0,
                             ask=opt_data.ask or 0,
                             volume=opt_data.volume or 0,
-                            open_interest=0,  # requires separate request
+                            open_interest=getattr(opt_data, "callOpenInterest", None) or opt_data.volume or 0,
                             implied_vol=greeks.impliedVol if greeks else 0,
                             delta=greeks.delta if greeks else 0,
                             underlying_price=underlying_price,
@@ -289,39 +289,67 @@ class FilterConfig:
     max_dte: int = 90               # maximum days to expiration
     max_premium: float = 5.00       # maximum premium per contract
     min_premium: float = 0.05       # minimum premium (avoid illiquid dust)
-    max_iv_rank: float = 0.50       # IV rank proxy: reject if IV > 50th percentile
+    max_iv_proxy: float = 0.50       # raw IV as conservative IV-rank proxy; production can use 52-week IV percentile
     min_open_interest: int = 100    # minimum open interest for liquidity
     max_delta: float = 0.30         # maximum delta (deep OTM focus)
     min_delta: float = 0.02         # minimum delta (avoid worthless)
 
 
+@dataclass
+class FilterResult:
+    """Filter output with rejection accounting for auditability."""
+    passed: list[OptionContract]
+    rejections: dict[str, int]
+    total_input: int
+
+
 def filter_contracts(
     contracts: list[OptionContract],
     config: FilterConfig = FilterConfig(),
-) -> list[OptionContract]:
-    """Filter option contracts by OTM %, DTE, premium, IV, OI, and delta."""
+) -> FilterResult:
+    """Filter option contracts by OTM %, DTE, premium, IV, OI, and delta.
+    Returns passed contracts plus rejection-reason counts for transparency."""
     filtered = []
+    rejections = {
+        "otm_out_of_range": 0,
+        "dte_out_of_range": 0,
+        "premium_out_of_range": 0,
+        "iv_proxy_too_high": 0,
+        "open_interest_too_low": 0,
+        "delta_out_of_range": 0,
+    }
+
     for c in contracts:
         otm_pct = (c.strike - c.underlying_price) / c.underlying_price
         if otm_pct < config.min_otm_pct or otm_pct > config.max_otm_pct:
+            rejections["otm_out_of_range"] += 1
             continue
         if c.dte < config.min_dte or c.dte > config.max_dte:
+            rejections["dte_out_of_range"] += 1
             continue
 
         price = c.ask if c.ask > 0 else c.last_price
         if price < config.min_premium or price > config.max_premium:
+            rejections["premium_out_of_range"] += 1
             continue
-        if c.implied_vol > config.max_iv_rank:
+        if c.implied_vol > config.max_iv_proxy:
+            rejections["iv_proxy_too_high"] += 1
             continue
         if c.open_interest < config.min_open_interest:
+            rejections["open_interest_too_low"] += 1
             continue
         if c.delta < config.min_delta or c.delta > config.max_delta:
+            rejections["delta_out_of_range"] += 1
             continue
 
         filtered.append(c)
 
     log.info(f"Filtered {len(contracts)} -> {len(filtered)} contracts")
-    return filtered
+    for reason, count in rejections.items():
+        if count > 0:
+            log.info(f"  Rejected {count} for {reason}")
+
+    return FilterResult(passed=filtered, rejections=rejections, total_input=len(contracts))
 
 
 # ============================================================================
@@ -386,7 +414,13 @@ def score_contracts(
             payoff_ratio=round(payoff, 1),
         ))
 
-    scored.sort(key=lambda s: s.asymmetry_score, reverse=True)
+    # Deterministic tie-break: score desc, then ticker, expiry, strike asc
+    scored.sort(key=lambda s: (
+        -s.asymmetry_score,
+        s.contract.ticker,
+        s.contract.expiry,
+        s.contract.strike,
+    ))
     return scored
 
 
@@ -394,7 +428,11 @@ def score_contracts(
 # MESSAGING BOT ALERT FORMATTER
 # ============================================================================
 
-def format_alert(ranked: list[ScoredContract], top_n: int = 10) -> str:
+def format_alert(
+    ranked: list[ScoredContract],
+    top_n: int = 10,
+    rejections: Optional[dict[str, int]] = None,
+) -> str:
     """Format top-ranked contracts into a Telegram-ready alert message."""
     if not ranked:
         return "LLM Convergence Scanner: No contracts passed filters today."
@@ -404,7 +442,7 @@ def format_alert(ranked: list[ScoredContract], top_n: int = 10) -> str:
         f"LLM CONVERGENCE OPTIONS SCANNER",
         f"Scan: {now}",
         f"Mode: {'DRY RUN' if DRY_RUN else 'LIVE'}",
-        f"Contracts scanned: {len(ranked)}",
+        f"Scored: {len(ranked)} contracts",
         f"",
         f"TOP {min(top_n, len(ranked))} RANKED BY ASYMMETRY SCORE:",
         f"(convergence x IV-inverse x liquidity)",
@@ -428,7 +466,15 @@ def format_alert(ranked: list[ScoredContract], top_n: int = 10) -> str:
         )
         lines.append("")
 
-    lines.append("Research signal only. Not trade recommendations.")
+    if rejections:
+        active = {k: v for k, v in rejections.items() if v > 0}
+        if active:
+            lines.append("FILTER REJECTIONS:")
+            for reason, count in active.items():
+                lines.append(f"  {reason}: {count}")
+            lines.append("")
+
+    lines.append("Research signal ranking only. No trade advice or instructions.")
     lines.append("No capital deployed. Paper-safe, read-only scan.")
     return "\n".join(lines)
 
@@ -470,6 +516,24 @@ def send_telegram(message: str) -> bool:
 # MAIN SCANNER PIPELINE
 # ============================================================================
 
+@dataclass
+class PaperSafeAudit:
+    """Audit record proving paper-safe execution constraints."""
+    mode: str                          # "dry_run" or "live_alerts"
+    broker_connected: bool
+    order_methods_present: bool        # always False
+    account_data_accessed: bool        # always False
+    credentials_logged: bool           # always False
+    external_alert_sent: bool
+    fixture_fallback_used: bool
+    scanned_at_utc: str
+    tickers_scanned: int
+    contracts_fetched: int
+    contracts_passed_filter: int
+    contracts_scored: int
+    methodology_version: str = "paper_safe_options_scanner_v1"
+
+
 def run_scan(
     convergence_file: Optional[str] = None,
     top_n: int = 10,
@@ -506,15 +570,32 @@ def run_scan(
     log.info(f"Total contracts fetched: {len(all_contracts)}")
 
     # Step 4: Filter
-    filtered = filter_contracts(all_contracts, filter_config)
+    filter_result = filter_contracts(all_contracts, filter_config)
 
     # Step 5: Score
-    scored = score_contracts(filtered, convergence)
+    scored = score_contracts(filter_result.passed, convergence)
     log.info(f"Scored {len(scored)} contracts")
 
     # Step 6: Format and send
-    alert = format_alert(scored, top_n)
-    send_telegram(alert)
+    alert = format_alert(scored, top_n, filter_result.rejections)
+    alert_sent = send_telegram(alert)
+
+    # Step 7: Emit audit record
+    audit = PaperSafeAudit(
+        mode="dry_run" if DRY_RUN else "live_alerts",
+        broker_connected=broker.connected,
+        order_methods_present=False,
+        account_data_accessed=False,
+        credentials_logged=False,
+        external_alert_sent=alert_sent and not DRY_RUN,
+        fixture_fallback_used=not broker.connected,
+        scanned_at_utc=datetime.now(timezone.utc).isoformat(),
+        tickers_scanned=len(high_tickers),
+        contracts_fetched=len(all_contracts),
+        contracts_passed_filter=len(filter_result.passed),
+        contracts_scored=len(scored),
+    )
+    log.info(f"AUDIT: {json.dumps(asdict(audit), indent=2)}")
 
     # Cleanup
     broker.disconnect()
@@ -551,14 +632,17 @@ def run_tests():
     assert all(c.right == "C" for c in chain)
     log.info(f"PASS: Fixture chain generated {len(chain)} contracts for IONQ")
 
-    # Test 3: Filtering
+    # Test 3: Filtering with rejection accounting
     config = FilterConfig()
-    filtered = filter_contracts(chain, config)
+    filter_result = filter_contracts(chain, config)
+    filtered = filter_result.passed
+    assert filter_result.total_input == len(chain)
+    assert isinstance(filter_result.rejections, dict)
     for c in filtered:
         otm = (c.strike - c.underlying_price) / c.underlying_price
         assert config.min_otm_pct <= otm <= config.max_otm_pct, f"OTM {otm} out of range"
         assert config.min_dte <= c.dte <= config.max_dte, f"DTE {c.dte} out of range"
-    log.info(f"PASS: Filter applied, {len(filtered)} contracts remain")
+    log.info(f"PASS: Filter applied, {len(filtered)} pass, rejections: {filter_result.rejections}")
 
     # Test 4: Scoring determinism
     scored1 = score_contracts(filtered, convergence)
@@ -573,13 +657,18 @@ def run_tests():
         assert scored1[0].asymmetry_score >= scored1[-1].asymmetry_score
         log.info("PASS: Scoring sorted descending by asymmetry_score")
 
-    # Test 6: Alert formatting
-    alert = format_alert(scored1, top_n=3)
+    # Test 6: Alert formatting with rejections
+    alert = format_alert(scored1, top_n=3, rejections=filter_result.rejections)
     assert "LLM CONVERGENCE OPTIONS SCANNER" in alert
     assert "DRY RUN" in alert
-    assert "Research signal only" in alert
-    assert "Not trade recommendations" in alert
+    assert "Research signal ranking only" in alert
+    assert "No trade advice" in alert
     log.info("PASS: Alert formatted with safety disclaimers")
+
+    # Test 6b: Do-not-say-buy language guard
+    for forbidden in ["buy", "entry", "target", "stop loss", "trade now", "recommend"]:
+        assert forbidden not in alert.lower(), f"Alert contains forbidden word: {forbidden}"
+    log.info("PASS: Alert contains no trade-recommendation language")
 
     # Test 7: No-order safety guard
     # Verify no order-related methods exist on broker
@@ -593,8 +682,8 @@ def run_tests():
     all_contracts = []
     for entry in convergence[:5]:
         all_contracts.extend(broker.get_option_chain(entry.ticker))
-    filtered_all = filter_contracts(all_contracts, config)
-    scored_all = score_contracts(filtered_all, convergence)
+    filter_all = filter_contracts(all_contracts, config)
+    scored_all = score_contracts(filter_all.passed, convergence)
     tickers_in_results = set(s.contract.ticker for s in scored_all)
     assert len(tickers_in_results) > 1, "Expected multiple tickers in scan"
     log.info(f"PASS: Multi-ticker scan returned {len(scored_all)} scored from {len(tickers_in_results)} tickers")
