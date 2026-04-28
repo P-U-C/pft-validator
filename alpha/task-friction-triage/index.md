@@ -21,6 +21,8 @@ task_id: 7e7bda75-e568-4ca7-972f-90998a3605dd
 
 This triage was produced through async collaboration between two active contributors over an 8-day window (April 20-28, 2026). The primary contributor completed 12 task submissions during this period across network, alpha, and collaborative categories. The peer contributor provided structured review feedback on 6 of these submissions, including specific friction observations at each stage of the task lifecycle. Both contributors independently identified the same top-3 friction points, which increased confidence in the taxonomy.
 
+The collaboration was bounded to workflow friction only: task issuance, acceptance, evidence requirements, and review handoff. It did not evaluate contributor quality, private reviewer decisions, reward outcomes, wallet identity, or non-public artifacts.
+
 ### Anonymized Peer Input Summary
 
 The peer contributor's feedback centered on three observations:
@@ -52,7 +54,7 @@ The alpha budget gate runs after the producer accepts a task, not before. The pr
 *Impact: MEDIUM — creates dead tasks, wastes accept-to-block cycle.*
 
 **F3. Timeline metadata inconsistency.**
-Collaborative tasks show producer join dates that predate the task's own generation timestamp. Nydiokar joined April 16, Yuri joined April 17, but the task was generated April 20. Either the task was re-versioned (no history shown) or join dates reference a predecessor task ID.
+Collaborative tasks show producer join dates that predate the task's own generation timestamp. Two peer contributor join dates appeared to predate the task's own generation timestamp. One contributor appeared to join April 16 and another April 17, while the task was generated April 20. Either the task was re-versioned (no history shown) or join dates reference a predecessor task ID.
 *Frequency: observed on 2 of 3 collaborative tasks.*
 *Impact: LOW — confusing but not blocking.*
 
@@ -77,6 +79,7 @@ GitHub's Unicode/bidirectional text warning appears on code submissions that con
 
 **F7. No intermediate review feedback.**
 Between submission and final review, there is no signal. The peer review that improved one submission from 7.8/10 to 9.5+ happened outside the system. If the task flow included a structured draft-review step before final submission, first-attempt quality would improve network-wide.
+This creates a no-response leak: the producer receives neither a correction path nor a confidence signal until final review, so preventable defects remain invisible until the most expensive stage.
 *Frequency: structural — affects all submissions.*
 *Impact: MEDIUM — higher-quality first submissions would reduce reviewer workload.*
 
@@ -99,7 +102,33 @@ The verification question (e.g., "Paste the code snippet showing how the sealed-
 
 ---
 
-## Three Priority Fixes
+## Severity Method
+
+Severity was assigned using three questions:
+
+1. Does the friction block task completion?
+2. Does it appear structurally across tasks (not a one-off)?
+3. Can the producer recover without external help?
+
+F5 is CRITICAL because it blocks completion, appears in every cross-reference collaborative task observed, and cannot be solved by producer effort alone. F1, F4 are HIGH because they waste significant producer time but can be worked around. F2, F6, F7 are MEDIUM because they degrade the experience without blocking. F3, F8 are LOW because they are confusing or undocumented but do not meaningfully impede work.
+
+---
+
+## What Should Not Be Fixed
+
+Not all friction is bad. Four elements were discussed and deliberately excluded from the fix list.
+
+1. **Verification questions should remain hard.** They are the most effective anti-slop mechanism in the review process. The fix is to document that they may appear, not to remove them.
+
+2. **Reward variance should remain.** Quality-weighted reward multipliers (1.5-2x for depth) are incentive design, not workflow friction. Predictable rewards would incentivize minimum compliance.
+
+3. **Private artifacts should not become public by default.** Discovery should expose public URLs and safe metadata envelopes, not restricted content. The artifact visibility spec preserves submitter privacy.
+
+4. **Reviewer discretion should remain.** The goal is to reduce avoidable ambiguity before review, not to replace reviewer judgment with rigid automation.
+
+---
+
+## Three Priority Fixes with Ownership-Neutral Acceptance Criteria
 
 ### Fix 1: Artifact Visibility and Discovery (addresses F5)
 
