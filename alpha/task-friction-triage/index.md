@@ -35,6 +35,12 @@ The peer contributor's feedback centered on three observations:
 
 These observations, combined with the primary contributor's direct experience of task friction, informed the taxonomy below.
 
+A second peer contributor provided additional friction observations via the collaboration channel:
+
+4. *"Ok so #1 is my main friction point. I constantly get tasks for working on codebases I don't have access to. And then when I have to communicate human to human, that often doesn't work out (humans main friction point)."* — Tasks requiring private codebase access the contributor doesn't have, with human coordination as the failure mode.
+
+5. *"One more comment — often second verification is entirely redundant and feels useless. I think sometimes it's needed, other times not and it's just tedious. An evolved tasknode will be dynamic in verification requirements imo."* — Static verification applied uniformly regardless of task complexity.
+
 ---
 
 ## Task-Friction Taxonomy
@@ -57,6 +63,11 @@ The alpha budget gate runs after the producer accepts a task, not before. The pr
 Collaborative tasks show producer join dates that predate the task's own generation timestamp. Two peer contributor join dates appeared to predate the task's own generation timestamp. One contributor appeared to join April 16 and another April 17, while the task was generated April 20. Either the task was re-versioned (no history shown) or join dates reference a predecessor task ID.
 *Frequency: observed on 2 of 3 collaborative tasks.*
 *Impact: LOW — confusing but not blocking.*
+
+**F9. Tasks requiring inaccessible private codebases.**
+The task node generates work that requires access to private repositories the contributor doesn't have. The contributor then needs human-to-human coordination to get access, which "often doesn't work out." The system creates impossible tasks not just from missing artifacts but from missing access permissions.
+*Frequency: reported by peer contributor as their #1 friction point — "I constantly get tasks for working on codebases I don't have access to."*
+*Impact: HIGH — blocks completion entirely, requires out-of-band human coordination that frequently fails.*
 
 ### Stage 2: Evidence Requirements
 
@@ -83,6 +94,11 @@ This creates a no-response leak: the producer receives neither a correction path
 *Frequency: structural — affects all submissions.*
 *Impact: MEDIUM — higher-quality first submissions would reduce reviewer workload.*
 
+**F10. Redundant/static verification requirements.**
+Second verification is often entirely redundant and feels useless. Sometimes it's needed, other times it adds tedium without value. Static verification requirements applied uniformly to every task don't match the actual work. An evolved task node should be dynamic in verification requirements — scaling verification depth to task complexity and risk.
+*Frequency: reported by peer contributor as a consistent frustration.*
+*Impact: MEDIUM — wastes reviewer and producer time on low-risk tasks, doesn't add value proportional to effort.*
+
 **F8. Verification question as undocumented gate.**
 The verification question (e.g., "Paste the code snippet showing how the sealed-state renderer restricts collaborators to hash-only visibility") is the real review — but producers don't know it's coming. The question tests whether the producer actually built the thing. Producers who generated documentation without building the system will fail. This is good design, but the expectation should be documented so producers prepare accordingly.
 *Frequency: observed on 3 of 4 code/spec submissions.*
@@ -99,6 +115,8 @@ The verification question (e.g., "Paste the code snippet showing how the sealed-
 | 3 | F6 (submission hygiene) added to taxonomy | Not initially considered friction — peer identified it as a trust signal reviewers use | Peer review: "Unicode warning is a bad review smell" |
 | 4 | F8 (verification question) categorized as LOW impact, not a fix target | Initially considered friction, but both contributors agreed the verification question is the most valuable part of review | Discussion on which frictions are bugs vs features |
 | 5 | Removed "reward amount unpredictability" from taxonomy | Initially included, but both contributors agreed that reward multipliers (1.5-2x for depth) are a feature, not friction. The unpredictability incentivizes quality. | Peer disagreed with including it |
+| 6 | F9 (inaccessible codebases) added at HIGH | Second peer contributor identified this as their #1 friction point | Peer 2: "I constantly get tasks for codebases I don't have access to" |
+| 7 | F10 (redundant verification) added at MEDIUM | Second peer contributor reported static verification as consistently tedious | Peer 2: "second verification is entirely redundant and feels useless" |
 
 ---
 
