@@ -31,6 +31,35 @@ reward: 6786 PFT
 
 ---
 
+## Decision Principle
+
+This triage does not judge contributor quality. It separates contributor failure from task-shape failure. A stalled task should be recovered, resized, or cancelled when the blocker is caused by missing public artifacts, private access requirements, duplicate scope, budget exhaustion, unclear verification, or generator-side context drift. The desired outcome is lower reviewer load and fewer impossible tasks entering the queue.
+
+**Contributor-safe invariant:** A refusal, missed verification, or overdue slot should not be treated as low-quality contributor behavior when the task was impossible due to missing artifacts, missing access, post-acceptance budget exhaustion, duplicate scope, or generator-side context drift.
+
+## Decision Grades
+
+| Grade | Meaning |
+|-------|---------|
+| **A** | Auto-actionable — safe to cancel, release, or keep with no further context |
+| **B** | Coordinator review — needs one human decision but no private investigation |
+| **C** | Needs source owner — requires repo owner, product owner, or task generator context |
+| **D** | Evidence blocked — cannot resolve until artifact/evidence discovery improves |
+
+## Stall Root Cause Summary
+
+| Root Cause | Count | Suggested System Fix |
+|-----------|-------|---------------------|
+| Missing source/artifact context | 4 | Add preflight artifact/source availability check |
+| Duplicate or superseded task | 3 | Add prior-work similarity check at generation |
+| Overdue accepted slot | 2 | Auto-release after 48h grace |
+| Verification mismatch | 3 | Dynamic verification depth |
+| Legitimate capacity refusal | 1 | Keep/reassign — no system fix needed |
+| Budget timing | 1 | Move budget check to pre-acceptance |
+| Generator context drift | 1 | Add close condition for unfilled collaborative slots |
+
+---
+
 ## Triage Matrix — 15 Observable Tasks
 
 ### Refused Tasks (contributor-visible, with refusal reason)
@@ -62,6 +91,43 @@ reward: 6786 PFT
 | 13 | Alpha tasks generated after budget exhaustion | Repeating pattern | CANCEL (auto) | Budget check runs after acceptance. Produces dead tasks in "accepted" state that can never be completed. | Move budget check before acceptance. Auto-cancel any accepted task where the budget was exhausted post-acceptance. |
 | 14 | Tasks requiring private codebase access (per peer feedback) | Repeating pattern | NEEDS-SOURCE-CONTEXT | "I constantly get tasks for working on codebases I don't have access to" — reported as the #1 friction by an active contributor. | Tag tasks requiring repo access. Match only to contributors with verified access, or publish the required interface publicly. |
 | 15 | Tasks with redundant/static verification (per peer feedback) | Repeating pattern | RESIZE | "Second verification is entirely redundant and feels useless" — low-risk tasks get the same verification as high-risk tasks. | Implement dynamic verification: scale verification depth to task complexity and risk. Skip second verification for tasks under 3,000 PFT or with high reviewer confidence. |
+
+### Decision Summary — Quick Reference
+
+| # | Task (short) | Grade | One-Line Action |
+|---|-------------|-------|----------------|
+| 1 | Auth Gate Reducer | C | TAG ACCESS REQUIRED — reassign to core team or publish interface |
+| 2 | Credential Access Boundaries | C | CONVERT TO SPEC — cancel implementation, issue spec-only task |
+| 3 | Auth Gate Enforcement Spec | B | CHECK DUPLICATE — verify against existing v1.1 spec, cancel if covered |
+| 4 | Social Graph Visualization | A | AUTO-CANCEL — deliverable already live at Lens dashboard |
+| 5 | Trading Coach QA Scenario | A | AUTO-CANCEL — overlaps with completed coaching feedback pack |
+| 6 | Yield Tracking Dashboard | A | KEEP OPEN — valid task, capacity refusal only |
+| 7 | CMC Portfolio Cross-Check | A | AUTO-CANCEL PATTERN — block until artifact discovery exists |
+| 8 | Alpha Submission (9/12) | B | SET CLOSE DATE — auto-cancel unfilled slots 7 days after deadline |
+| 9 | Alpha Submission (7/12) | D | INVESTIGATE UI BUG — cross-task contamination in collaboration panel |
+| 10 | rKZAv7 overdue slot | A | RELEASE SLOT — accepted >48h overdue, no submission |
+| 11 | rEu2hc overdue slot | A | RELEASE SLOT — accepted >48h overdue, no submission |
+| 12 | Cross-check pattern | A | ADD PREFLIGHT — block when zero public artifacts |
+| 13 | Post-acceptance budget | A | REORDER CHECK — move budget gate before accept button |
+| 14 | Private codebase pattern | C | TAG ACCESS — match tasks to contributors with verified access |
+| 15 | Static verification | B | IMPLEMENT TIERS — scale verification to task risk/reward |
+
+---
+
+## Generator Preflight Checklist
+
+Before issuing a similar task, the generator should answer:
+
+1. Does the task require a private repo, private API, or unavailable artifact?
+2. Is there at least one public artifact to cross-check (if cross-check is required)?
+3. Has a similar task/spec been completed in the last 30-60 days?
+4. Is budget available before acceptance?
+5. Is the verification depth proportional to reward/risk?
+6. Is there a clear close condition if collaborative slots do not fill?
+
+If any answer is "no" or "unknown," the task should be reshaped, tagged with access requirements, or blocked from generation.
+
+**Highest-leverage fix:** Add a task-generation preflight that blocks three task shapes before acceptance: tasks requiring unavailable private access, cross-check tasks with zero discoverable public artifacts, and duplicate tasks whose scope is already covered by a live or recently accepted artifact. This single gate would have prevented a meaningful share of the stalled examples in this pack.
 
 ---
 
