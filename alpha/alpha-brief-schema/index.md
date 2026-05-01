@@ -17,7 +17,7 @@ reward: 3957 PFT
 
 ## 1. JSON Schema
 
-Three brief types, one base schema with type-specific extensions.
+Four brief types, one base schema with type-specific extensions, plus safety gates.
 
 ```json
 {
@@ -29,7 +29,8 @@ Three brief types, one base schema with type-specific extensions.
     "brief_id", "brief_type", "thesis", "asset_or_market",
     "time_horizon", "catalyst", "data_sources", "base_case",
     "upside_case", "downside_case", "invalidation", "confidence",
-    "risk_controls", "evidence_links", "agent_readable_summary"
+    "position_sensitivity_notes", "risk_controls", "evidence_links",
+    "agent_readable_summary", "information_boundary", "machine_checks"
   ],
   "properties": {
     "brief_id": {
@@ -38,7 +39,7 @@ Three brief types, one base schema with type-specific extensions.
     },
     "brief_type": {
       "type": "string",
-      "enum": ["event_trade", "structural_thesis", "intelligence_signal"],
+      "enum": ["event_trade", "structural_thesis", "strategy_observation", "intelligence_signal"],
       "description": "Determines the actionability path and required fields"
     },
     "thesis": {
@@ -156,6 +157,48 @@ Three brief types, one base schema with type-specific extensions.
       "description": "One-paragraph summary an AI agent can parse for routing, scoring, and comparison",
       "maxLength": 300
     },
+    "information_boundary": {
+      "type": "string",
+      "enum": ["public_only", "public_plus_methodology", "restricted_do_not_publish", "unknown_requires_review"],
+      "description": "Classifies the information sensitivity. Briefs with restricted or unknown status are quarantined."
+    },
+    "machine_checks": {
+      "type": "object",
+      "required": ["all_links_public", "has_invalidation", "has_time_horizon", "has_downside_case", "contains_personalized_advice", "contains_private_data"],
+      "properties": {
+        "all_links_public": {"type": "boolean"},
+        "has_invalidation": {"type": "boolean"},
+        "has_time_horizon": {"type": "boolean"},
+        "has_downside_case": {"type": "boolean"},
+        "contains_personalized_advice": {"type": "boolean", "description": "Must be false for agent reuse"},
+        "contains_private_data": {"type": "boolean", "description": "Must be false for publication"}
+      }
+    },
+    "agent_actionability_path": {
+      "type": "object",
+      "required": ["route_to", "next_check", "allowed_agent_actions", "forbidden_agent_actions"],
+      "properties": {
+        "route_to": {"type": "string", "enum": ["research_queue", "watchlist", "signal_backtest", "human_review", "reject"]},
+        "next_check": {"type": "string", "description": "Next observable condition an agent should check"},
+        "allowed_agent_actions": {"type": "array", "items": {"type": "string"}},
+        "forbidden_agent_actions": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "evidence_quality_tier": {
+      "type": "string",
+      "enum": ["primary_source", "reputable_secondary", "derived_analysis", "model_output", "anecdotal", "unsupported"],
+      "description": "Primary: filings, chain data. Reputable secondary: news, analyst reports. Derived: contributor analysis with method. Model output: requires prompt+date+replication. Anecdotal: weak support only. Unsupported: reject."
+    },
+    "lifecycle": {
+      "type": "object",
+      "required": ["status", "created_at", "expires_at"],
+      "properties": {
+        "status": {"type": "string", "enum": ["draft", "submitted", "validated", "reviewed", "agent_reusable", "expired", "invalidated", "archived"]},
+        "created_at": {"type": "string", "format": "date-time"},
+        "expires_at": {"type": "string", "format": "date-time"},
+        "last_reviewed_at": {"type": "string", "format": "date-time"}
+      }
+    },
     "brief_type_extensions": {
       "type": "object",
       "description": "Type-specific fields",
@@ -178,6 +221,16 @@ Three brief types, one base schema with type-specific extensions.
             "sector_correlation": {"type": "string"}
           }
         },
+        "strategy_observation": {
+          "type": "object",
+          "properties": {
+            "strategy_class": {"type": "string", "enum": ["basis", "carry", "liquidity_rotation", "attention_flow", "volatility", "yield", "relative_value", "risk_management"]},
+            "repeatability_claim": {"type": "string"},
+            "required_market_conditions": {"type": "string"},
+            "failure_modes": {"type": "string"},
+            "backtest_or_replay_method": {"type": "string"}
+          }
+        },
         "intelligence_signal": {
           "type": "object",
           "properties": {
@@ -197,9 +250,10 @@ Three brief types, one base schema with type-specific extensions.
 
 | Type | What it is | Path to actionability | Key fields |
 |------|-----------|----------------------|------------|
-| **event_trade** | Time-bound, catalyst-driven | Identify event -> position before -> manage through -> exit after | event_date, pre_event_positioning, iv_consideration |
-| **structural_thesis** | Multi-month repricing | Build conviction -> size position -> scale with confirmation -> kill switch | thesis_duration_months, rebalance_frequency, scaling_rules |
-| **intelligence_signal** | Data/observation others can act on | Produce signal -> document methodology -> enable replication -> refresh | methodology, replication_instructions, refresh_cadence |
+| **event_trade** | Time-bound, catalyst-driven | Track event -> monitor public signal change -> expire quickly | event_date, pre_event_positioning, iv_consideration |
+| **structural_thesis** | Multi-month repricing | Track thesis milestones -> update periodically -> kill switch | thesis_duration_months, rebalance_frequency, scaling_rules |
+| **strategy_observation** | Repeatable market behavior | Backtest -> replay -> compare against future events | strategy_class, repeatability_claim, failure_modes |
+| **intelligence_signal** | Data/methodology others can reuse | Validate methodology -> refresh -> route to consumers | methodology, replication_instructions, refresh_cadence |
 
 ---
 
@@ -319,19 +373,19 @@ What goes wrong: [specific failure mode]
     "observable_trigger": "White House press release, congressional hearing scheduled, or Pentagon declassification order"
   },
   "data_sources": [
-    {"source": "Trump press statement April 29, 2026", "type": "news", "freshness": "today", "url": "https://public-source.example.com"},
+    {"source": "Trump press statement April 29, 2026 (publicly reported)", "type": "news", "freshness": "today"},
     {"source": "UFOD ETF holdings via stockanalysis.com", "type": "public_filing", "freshness": "this_week", "url": "https://stockanalysis.com/etf/ufod/holdings/"},
     {"source": "LLM convergence queries (GPT, Gemini, Grok)", "type": "llm_query", "freshness": "today"}
   ],
   "base_case": {
     "description": "Files released with moderate media coverage. UFOD inflows spike for 1-2 weeks. AMTM/AMSC move 20-30% on flow.",
     "probability": 0.35,
-    "expected_return": "3-5x on OTM calls"
+    "expected_return": "High convexity exposure may outperform spot equity if timing and attention assumptions are correct"
   },
   "upside_case": {
     "description": "Files contain genuinely surprising content. Cable news runs 24/7 for a week. Retail frenzy. AMTM/AMSC move 50-100%.",
     "probability": 0.15,
-    "expected_return": "10-30x on OTM calls",
+    "expected_return": "Significant convexity if attention spike exceeds base case duration and intensity",
     "what_must_go_right": "Files must contain novel, visually compelling content that dominates news cycle for 5+ days"
   },
   "downside_case": {
@@ -350,12 +404,33 @@ What goes wrong: [specific failure mode]
     "basis": "Trump's own public statement plus LLM convergence analysis showing predictable flow path",
     "edge_source": "convergence_analysis"
   },
-  "position_sensitivity_notes": "Highly sensitive to timing. Options must be purchased BEFORE announcement date leaks, as IV will spike immediately on any scheduling news. Deep OTM calls on illiquid small-caps have wide bid-ask spreads.",
+  "position_sensitivity_notes": "Highly timing-sensitive. Implied volatility reprices quickly once event scheduling becomes public. Illiquid small-cap instruments may have wide bid-ask spreads.",
   "risk_controls": {
-    "max_loss_description": "Total premium paid on all tickets. Defined risk.",
-    "stop_condition": "Options expire worthless if no catalyst. No stop needed — max loss is premium.",
-    "position_sizing_guidance": "Lottery-ticket sizing only. 1-2% of trading capital per ticket.",
-    "kill_switch": "Close all if Trump explicitly walks back disclosure"
+    "max_loss_description": "Defined-risk instruments only. Maximum loss equals premium paid.",
+    "stop_condition": "Instruments expire if no catalyst. No active stop needed.",
+    "position_sizing_guidance": "Not provided. This schema is for research classification, not portfolio sizing.",
+    "kill_switch": "Thesis invalidated if catalyst is explicitly cancelled"
+  },
+  "information_boundary": "public_only",
+  "machine_checks": {
+    "all_links_public": true,
+    "has_invalidation": true,
+    "has_time_horizon": true,
+    "has_downside_case": true,
+    "contains_personalized_advice": false,
+    "contains_private_data": false
+  },
+  "agent_actionability_path": {
+    "route_to": "watchlist",
+    "next_check": "Monitor for White House scheduling announcement or congressional hearing date.",
+    "allowed_agent_actions": ["summarize public evidence", "refresh source links", "score falsifiability", "route to reviewer"],
+    "forbidden_agent_actions": ["recommend a trade", "suggest position size", "use private account data", "infer non-public information"]
+  },
+  "evidence_quality_tier": "reputable_secondary",
+  "lifecycle": {
+    "status": "submitted",
+    "created_at": "2026-04-29T22:00:00Z",
+    "expires_at": "2026-07-01T00:00:00Z"
   },
   "evidence_links": [
     "https://stockanalysis.com/etf/ufod/holdings/",
@@ -365,9 +440,9 @@ What goes wrong: [specific failure mode]
   "brief_type_extensions": {
     "event_trade": {
       "event_date": "2026-06-01",
-      "pre_event_positioning": "Buy OTM calls on AMTM and AMSC before announcement date leaks",
-      "post_event_action": "Sell 50% on initial spike, trail remainder with 30% stop",
-      "iv_consideration": "IV is currently low on these names (no one is positioned). Will spike on any scheduling news."
+      "pre_event_positioning": "Monitor listed equity and options sensitivity before catalyst; do not treat this brief as a recommendation to enter a position.",
+      "post_event_action": "Track whether attention, liquidity, and volatility changed after the catalyst.",
+      "iv_consideration": "Implied volatility is currently low on these names relative to historical event-driven spikes. IV reprices quickly once scheduling is announced."
     }
   }
 }
@@ -425,12 +500,33 @@ What goes wrong: [specific failure mode]
     "basis": "Initial seed corpus shows tight convergence (NVDA and LLY at perfect 1.000 scores). Not yet validated against historical catalyst events.",
     "edge_source": "convergence_analysis"
   },
-  "position_sensitivity_notes": "This is a signal, not a trade. Sensitivity depends on how the signal is consumed. Event trades derived from this signal are highly timing-sensitive. Structural positions are less so.",
+  "position_sensitivity_notes": "This is a signal, not a trade. Sensitivity depends on how the signal is consumed by downstream briefs. The signal itself has no position sensitivity.",
   "risk_controls": {
     "max_loss_description": "No capital at risk in signal production. Only research time.",
     "stop_condition": "Discontinue if invalidation condition is met across 3 weekly checks",
-    "position_sizing_guidance": "N/A — this is research infrastructure, not a position",
+    "position_sizing_guidance": "Not applicable. This is research infrastructure.",
     "kill_switch": "If LLM providers add randomization to investment-related queries (breaking convergence)"
+  },
+  "information_boundary": "public_plus_methodology",
+  "machine_checks": {
+    "all_links_public": true,
+    "has_invalidation": true,
+    "has_time_horizon": true,
+    "has_downside_case": true,
+    "contains_personalized_advice": false,
+    "contains_private_data": false
+  },
+  "agent_actionability_path": {
+    "route_to": "signal_backtest",
+    "next_check": "Re-run prompt corpus after next theme catalyst and compare ticker convergence delta.",
+    "allowed_agent_actions": ["summarize public evidence", "refresh source links", "score falsifiability", "route to reviewer", "run weekly re-query"],
+    "forbidden_agent_actions": ["recommend a trade", "suggest position size", "use private account data", "infer non-public information"]
+  },
+  "evidence_quality_tier": "derived_analysis",
+  "lifecycle": {
+    "status": "agent_reusable",
+    "created_at": "2026-04-27T22:00:00Z",
+    "expires_at": "2027-04-30T00:00:00Z"
   },
   "evidence_links": [
     "https://pft.permanentupperclass.com/alpha/llm-retail-signal/",
