@@ -12,11 +12,19 @@ reward: 5000 PFT
 
 *What it is, how it works, and why it matters — in plain language.*
 
+*This is an educational explainer, not financial advice, a solicitation, or a promise of earnings.*
+
+---
+
+## Evidence and Claim Boundaries
+
+This explainer describes the current Post Fiat network model using public network surfaces, visible task activity, and published Post Fiat materials. It is not investment advice, does not promise PFT price appreciation, and does not guarantee task availability, contributor earnings, validator selection, or trading profitability. References to rewards, Data Lake value, and market intelligence describe the intended coordination model and observed network mechanics, not a financial return guarantee. All network activity claims are verifiable at [pft.permanentupperclass.com/lens/](https://pft.permanentupperclass.com/lens/).
+
 ---
 
 ## The One-Paragraph Version
 
-Post Fiat is its own blockchain — an independent Layer 1 network forked from XRP's codebase but running separately with its own validators, its own token (PFT), and its own purpose. Where most crypto networks reward you for holding tokens or running infrastructure, Post Fiat rewards you for doing real work. You submit tasks, an AI evaluates the quality, and you earn PFT based on how useful your contribution actually was. The best contributions feed a collective intelligence system called the Data Lake, which generates real trading profits. Those profits create organic demand for PFT. The token goes up because the network got smarter — not because more people bought in.
+Post Fiat is its own blockchain — an independent Layer 1 network forked from XRP's codebase but running separately with its own validators, its own token (PFT), and its own purpose. Where most crypto networks reward you for holding tokens or running infrastructure, Post Fiat rewards you for doing real work. You submit tasks, an AI evaluates the quality, and you earn PFT based on how useful your contribution actually was. The best contributions feed a collective intelligence system called the Data Lake, which generates real trading profits. Those profits create organic demand for PFT. The network thesis is that better intelligence should create more useful demand for PFT over time: contributors produce intelligence, agents and subscribers consume it, and the token becomes more useful as the coordination layer becomes more valuable. That is the intended flywheel, not a guaranteed price outcome.
 
 ---
 
@@ -60,7 +68,7 @@ Every verified contribution on Post Fiat feeds the Data Lake — a growing repos
 
 The Data Lake is the network's structural advantage. AI models can synthesize public information. They cannot synthesize the operating context of someone who just built a chain indexer, discovered a 733-bot wash trading network, or mapped where crypto signal confidence scoring inverts. That context is non-replicable. It compounds with every new contribution.
 
-Trading agents consume the Data Lake to generate real market positions. The profits from those positions create organic buy pressure on PFT. This is the flywheel: better intelligence produces better trades, better trades create token demand, token demand rewards the contributors who produced the intelligence.
+The Data Lake is designed to become Post Fiat's structural advantage: a repository of verified, human-originated intelligence that agents can consume. Where market intelligence products or trading agents produce revenue, that revenue can create demand for PFT through network-native utility, subscriptions, payments, or treasury flows. The important point is not that every contribution produces profit — it is that useful intelligence becomes a reusable network asset that compounds with every new contribution.
 
 ### PFT Rewards
 
@@ -69,6 +77,40 @@ PFT has a fixed supply of 100 billion tokens with no ongoing issuance. You earn 
 The reward system is quality-weighted, not volume-weighted. Ten mediocre submissions earn less than one deep, original contribution. The review system actively distinguishes between work that an AI could have generated from public data and work that contains genuine human insight. The gap between those two things is what the network pays for.
 
 Daily airdrops recognize the most active contributors based on reputation. These are separate from task rewards — they are recognition payments for sustained, high-quality participation.
+
+---
+
+## Post Fiat in One Mental Model
+
+XRP is payment rails.
+Ethereum is programmable contracts.
+Bitcoin is monetary settlement.
+**Post Fiat is a work-and-intelligence chain.**
+
+Its native unit of value is not blockspace alone — it is verified human contribution routed by AI and recorded on-chain. As AI makes generic content cheaper, the scarce asset becomes verified context: who actually built something, who found something early, who contributed useful judgment, and who can be trusted to do it again. Post Fiat turns that scarce context into network-native reputation and rewards.
+
+## A Typical Contributor Journey
+
+1. Create or activate a Post Fiat wallet
+2. Tell the Task Node what you know or what you can build
+3. Receive a task proposal matched to your context
+4. Complete the work and submit evidence at a public URL
+5. Pass review: novelty check, sybil score, verification question
+6. Earn PFT and build wallet-based reputation
+7. Better reputation improves future task routing — the system gets smarter about you
+
+## Jargon Translation
+
+| Technical Phrase | Retail Meaning |
+|-----------------|---------------|
+| Task Node | The place where you get matched with work |
+| Pseudonymous reputation | Your wallet becomes your resume |
+| AI-mediated routing | AI helps decide what work fits you |
+| Validator selection | The network chooses aligned operators, not passive stakers |
+| Data Lake | A memory bank of verified network intelligence |
+| PFT rewards | Tokens earned for useful, reviewed contributions |
+| Keystone encryption | All your task communication is encrypted end-to-end |
+| Sybil detection | The system identifies and filters fake/bot accounts |
 
 ---
 
@@ -129,6 +171,15 @@ All task communication is encrypted using keystone protocol. Your identity is ps
 
 **Is Post Fiat built on XRP?**
 No. Post Fiat forked XRP's codebase in the same way Bitcoin Cash forked Bitcoin. They share code ancestry but are completely independent networks. PFT does not exist on the XRP ledger.
+
+**Can I use my XRP wallet?**
+No. Post Fiat is a separate network. Some wallet tooling may feel familiar because of the XRP codebase ancestry, but PFT does not live on XRP Ledger mainnet. You need a Post Fiat wallet.
+
+**Do I need to buy PFT before doing tasks?**
+You may need PFT for wallet activation and network fees. Earning through tasks depends on task availability, review quality, and network rules.
+
+**Are rewards guaranteed?**
+No. Rewards depend on accepted tasks, completed evidence, review outcomes, and contribution quality. The system is designed to reward useful work, not participation alone.
 
 ---
 
@@ -194,4 +245,4 @@ No. Post Fiat forked XRP's codebase in the same way Bitcoin Cash forked Bitcoin.
 
 ---
 
-*This explainer uses only publicly available information about the Post Fiat network. It does not constitute financial advice or a solicitation to purchase PFT. All claims about network activity are verifiable at pft.permanentupperclass.com/lens/*
+*This explainer uses only publicly available information about the Post Fiat network. It does not constitute financial advice or a solicitation to purchase PFT. Core network-activity claims are tied to public Post Fiat surfaces and on-chain-verifiable activity where applicable. Post Fiat is its own L1 network — not an XRP token, not an XRP app, not built on XRP mainnet.*
