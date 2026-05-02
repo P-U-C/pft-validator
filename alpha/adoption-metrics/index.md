@@ -38,11 +38,11 @@ This snapshot combines published network surfaces (postfiat.org, explorer) with 
 
 | Metric | Value | Confidence | Source |
 |--------|-------|------------|--------|
-| Active validators | 38 | A | postfiat.org live stats |
-| Publishing domains | 24 | A | postfiat.org live stats |
-| 24h agreement (99.9%+) | 35 of 38 validators | A | postfiat.org |
-| 30d agreement (99%+) | 33 of 38 validators | A | postfiat.org |
-| Verified domains (latest snapshot) | 13 | A | postfiat.org |
+| Active validators | 45 | A | explorer.testnet.postfiat.org |
+| UNL count | 5 | A | explorer.testnet.postfiat.org |
+| UNL 30d agreement | 100.00% | A | explorer.testnet.postfiat.org |
+| Node version | 1.0.4 | A | explorer.testnet.postfiat.org |
+| Current ledger | 2,445,059 | A | explorer.testnet.postfiat.org |
 | Infrastructure wallets (on-chain) | 8 | A | Ledger index: Task Hub + 4 Reward Nodes + Treasury + Reserve + Team |
 
 ### Contributor Activity (from ledger index)
@@ -118,7 +118,7 @@ This snapshot combines published network surfaces (postfiat.org, explorer) with 
 
 | Funnel Stage | Current Proxy | Baseline | Confidence | Interpretation |
 |-------------|--------------|----------|------------|----------------|
-| Infrastructure readiness | Validators at 99%+ agreement | 33-35 of 38 | A | Consensus layer is operational |
+| Infrastructure readiness | Validators at 100% UNL agreement | 45 validators, 5 UNL, 100% 30d | A | Consensus layer is operational |
 | Developer activity | Core repos updated this week | 3 of 9 repos pushed in 7d | A | Active development |
 | Public awareness | Documentation + community surfaces | Task node docs, Discord, website | C | Distribution surface exists |
 | Trial / first contact | New contributors (7d) | 8 | B | New users entering |
@@ -208,7 +208,7 @@ No private dashboards, hidden repos, or privileged access required.
 ### Real Participation Signals
 
 - **Active contributors (7d): 52** — wallets that submitted memos, meaning they did task work
-- **Validator agreement: 99.9%** — consensus layer is healthy and operational
+- **Validator UNL agreement: 100%** — 45 validators, 5 in UNL, perfect 30d agreement
 - **Core repo activity: 3 of 9 repos pushed this week** — active protocol development
 - **PFT distributed (7d): 3.7M** — real token flow from infrastructure to contributors
 
@@ -239,10 +239,10 @@ No private dashboards, hidden repos, or privileged access required.
     "thirty_day_start": "2026-04-02T18:00:02Z"
   },
   "infrastructure": {
-    "validators_active": 38,
-    "publishing_domains": 24,
-    "agreement_24h_99pct": 35,
-    "verified_domains": 13,
+    "validators_active": 45,
+    "unl_count": 5,
+    "unl_30d_agreement": "100.00%",
+    "current_ledger": 2445059,
     "core_repos": 9,
     "repos_pushed_7d": 3
   },
