@@ -90,11 +90,12 @@ Where this intelligence becomes actionable — through market research, trading 
 
 Post Fiat runs on its own Layer 1 blockchain. It forked the XRP codebase and took it in a completely different direction — like Bitcoin Cash forked Bitcoin. Same code ancestry, completely independent network, different purpose.
 
-Why a blockchain? Three reasons:
+Why a blockchain? Four reasons:
 
 1. **Your record is permanent and portable.** No company can erase your contributions or shut down your reputation.
 2. **Verification is transparent.** Every task, review, and reward is on-chain and auditable.
 3. **The system operates in parallel to traditional finance** while standing on its own — decoupled from any single institution's control.
+4. **Validator selection is AI-driven.** Most blockchains let anyone with enough money run a validator — which rewards capital, not alignment. Post Fiat uses AI to score validators on institutional reputation, uptime, and transaction quality. Validators do not earn token rewards. They run because they use the network, not because they are paid to validate. This eliminates the perverse incentive where validators exist only to collect rewards. The result is a network secured by people who actually care whether it works.
 
 That is all you need to know about the blockchain. The technology serves the coordination. The coordination serves the people.
 
@@ -129,6 +130,7 @@ Its native unit of value is verified human contribution — routed by AI, record
 | Task Node | The place where you set goals, get matched with work, and track progress |
 | Pseudonymous reputation | Your wallet becomes your portable track record — no name required |
 | AI-mediated routing | The AI matches you to work that fits your skills and goals |
+| Validator selection | AI picks who runs the network based on reputation and reliability, not how much money they stake |
 | Context document | Your personal operating document — values, strategy, constraints |
 | Data Lake | The collective intelligence built from everyone's verified contributions |
 | PFT rewards | Tokens earned for useful, reviewed work |
