@@ -4,9 +4,9 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-05-03T06:00:00Z",
-  "calculated_at": "2026-05-03T06:00:04Z",
-  "next_update_at": "2026-05-03T07:00:00Z",
+  "snapshot_id": "2026-05-03T07:00:00Z",
+  "calculated_at": "2026-05-03T07:01:46Z",
+  "next_update_at": "2026-05-03T08:00:00Z",
   "refresh_cadence": "hourly",
   "health_score": 0.4567,
   "health_score_formula": "sum(component.score * component.weight)",
@@ -16,7 +16,7 @@
       "score": 1.0,
       "weight": 0.2,
       "contribution": 0.2,
-      "raw_hhi": 0.047928,
+      "raw_hhi": 0.047421,
       "formula": "max(0, min(1, (hhi_bad - HHI) / (hhi_bad - hhi_good)))",
       "description": "Herfindahl-Hirschman Index of memo activity distribution. Lower HHI = more distributed = healthier."
     },
@@ -103,9 +103,9 @@
       "severity": "none",
       "operator": ">",
       "threshold": 0.35,
-      "current_value": 0.0479,
+      "current_value": 0.0474,
       "lookback": "current_snapshot",
-      "reason": "HHI=0.0479 below threshold 0.35. Memo activity is reasonably distributed."
+      "reason": "HHI=0.0474 below threshold 0.35. Memo activity is reasonably distributed."
     },
     {
       "rule": "BOT_CLUSTER_GROWTH",
@@ -160,7 +160,7 @@
   "score_change": {
     "vs_prior_snapshot": 0.0,
     "prior_health_score": 0.4567,
-    "prior_calculated_at": "2026-05-03T05:01:44Z",
+    "prior_calculated_at": "2026-05-03T06:00:04Z",
     "largest_movers": []
   },
   "network_summary": {
@@ -180,7 +180,7 @@
     "accounts": 0,
     "memo_transactions": 0,
     "edges": 0,
-    "since": "2026-05-03T05:01:44Z"
+    "since": "2026-05-03T06:00:04Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -189,5 +189,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:17d5598b811f2da2069fd4c009f27698e57961a3e57051c429158136aece5152"
+  "snapshot_hash": "sha256:9230ca732fdecea0d4731a799c95d4ecd52e5a77d693616799a46d1ede772b31"
 }
