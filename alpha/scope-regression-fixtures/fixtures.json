@@ -1,0 +1,162 @@
+[
+  {
+    "id": "SR-01",
+    "title": "Build Nostr relay integration for task memos",
+    "description": "Create a Nostr relay that mirrors XRPL task memos so contributors can subscribe to task updates via Nostr clients.",
+    "classification": "off-grid",
+    "category": "deprecated_sidecar",
+    "rationale": "Nostr relay integration was explored and deprioritized. Task memos are keystone-encrypted on XRPL — mirroring to Nostr breaks the encryption model and creates a parallel system with no clear consumer.",
+    "expected_guard_action": "reject",
+    "regression_signal": "References a delivery channel that was previously explored and abandoned due to architectural conflict with keystone encryption."
+  },
+  {
+    "id": "SR-02",
+    "title": "Implement esports coaching matchmaking service",
+    "description": "Build a matchmaker that pairs esports coaches with players based on rank and game, using PFT as payment rail.",
+    "classification": "off-grid",
+    "category": "wrong_scope",
+    "rationale": "Esports coaching is unrelated to Post Fiat's mission (AI-coordinated task completion, financial intelligence, network growth). Using PFT as payment rail doesn't make arbitrary services in-scope.",
+    "expected_guard_action": "reject",
+    "regression_signal": "Task domain has zero overlap with network mission. Payment-rail usage alone doesn't qualify work as on-mission."
+  },
+  {
+    "id": "SR-03",
+    "title": "Architecture/engineering/construction bid estimator",
+    "description": "Build an AEC bid estimation tool that uses LLM to price construction projects, deployed as a PFT network service.",
+    "classification": "off-grid",
+    "category": "wrong_scope",
+    "rationale": "AEC services are an unrelated vertical. Wrapping arbitrary SaaS in 'PFT network service' framing doesn't make it on-mission.",
+    "expected_guard_action": "reject",
+    "regression_signal": "Unrelated industry vertical dressed up with network terminology."
+  },
+  {
+    "id": "SR-04",
+    "title": "Re-implement transaction memo parser with new regex",
+    "description": "Rewrite the memo parsing logic to use regex-based extraction instead of the current JSON deserialization approach.",
+    "classification": "off-grid",
+    "category": "deprecated_approach",
+    "rationale": "All memos are now keystone-encrypted. Regex parsing of memo_type/content is impossible — you only see encrypted blobs. This task assumes pre-keystone architecture that no longer exists.",
+    "expected_guard_action": "reject",
+    "regression_signal": "Assumes architectural state that was superseded. The system moved from plaintext memos to keystone encryption."
+  },
+  {
+    "id": "SR-05",
+    "title": "Document task node API endpoints for third-party integrations",
+    "description": "Write comprehensive API documentation for the task node so external developers can build integrations.",
+    "classification": "off-grid",
+    "category": "stale_surface",
+    "rationale": "Task node is undergoing active development with unstable interfaces. Documenting current endpoints creates maintenance burden and misleads integrators when APIs change. Already attempted and abandoned.",
+    "expected_guard_action": "reject",
+    "regression_signal": "Targets a rapidly-changing interface where documentation has negative expected value due to churn."
+  },
+  {
+    "id": "SR-06",
+    "title": "Create subscriber onboarding email sequence",
+    "description": "Write a 5-email drip sequence for new SUBS subscribers explaining Herald features and network benefits.",
+    "classification": "off-grid",
+    "category": "stale_surface",
+    "rationale": "SUBS has <10 subscribers. Email drip campaigns assume a scale that doesn't exist. The bottleneck is subscriber acquisition, not retention nurturing. Premature optimization of a non-existent funnel.",
+    "expected_guard_action": "reject",
+    "regression_signal": "Optimizes a downstream funnel stage when the upstream stage (acquisition) is the actual bottleneck. Wrong altitude."
+  },
+  {
+    "id": "SR-07",
+    "title": "Build duplicate detection for reward payments",
+    "description": "Implement a system that detects and prevents duplicate reward payments to the same address for the same task.",
+    "classification": "off-grid",
+    "category": "already_shipped",
+    "rationale": "Duplicate payment detection already exists in the validator's reward pipeline. The task_id + address combination is checked before any payment memo is constructed. This work is done.",
+    "expected_guard_action": "reject",
+    "regression_signal": "Describes functionality that already exists in production. Issuing this task wastes contributor time rediscovering shipped code."
+  },
+  {
+    "id": "SR-08",
+    "title": "Add sybil similarity scoring to task reviewer",
+    "description": "Implement cosine similarity checks between task submissions to flag potential sybil clusters submitting templated work.",
+    "classification": "off-grid",
+    "category": "already_shipped",
+    "rationale": "Sybil similarity scoring is already implemented and actively penalizing submissions (e.g., 0.864 similarity scores reducing rewards by ~50%). This is live infrastructure.",
+    "expected_guard_action": "reject",
+    "regression_signal": "Core feature already deployed and actively affecting reward calculations."
+  },
+  {
+    "id": "SR-09",
+    "title": "Design encrypted artifact publishing pipeline with IPFS pinning",
+    "description": "Create infrastructure for publishing encrypted content to IPFS with X25519 encryption, pointer memos, and tiered subscriber access.",
+    "classification": "off-grid",
+    "category": "already_shipped",
+    "rationale": "This is literally pft_indexing (agtico/pft_indexing) — already built, documented, and in use. X25519/XChaCha20 encryption, IPFS pinning, pf.ptr:v4 pointers, and tiered access manifests all exist.",
+    "expected_guard_action": "reject",
+    "regression_signal": "Describes an existing open-source project verbatim. Generator unaware of shipped ecosystem tooling."
+  },
+  {
+    "id": "SR-10",
+    "title": "Build contributor reputation scoring from task completion history",
+    "description": "Create a reputation system that scores contributors based on task acceptance rate, completion quality, and reviewer feedback over time.",
+    "classification": "on-mission",
+    "category": "valid_network_infra",
+    "rationale": "Reputation scoring from verifiable on-chain task history is core to network coordination. It helps validators allocate tasks efficiently and helps contributors build portable track records.",
+    "expected_guard_action": "allow",
+    "regression_signal": null
+  },
+  {
+    "id": "SR-11",
+    "title": "Create intelligence publication schema for non-portfolio artifacts",
+    "description": "Design a companion schema to pft.index.snapshot.v1 that handles intelligence briefings, research briefs, signal corpora, and metrics snapshots using the same encryption and access infrastructure.",
+    "classification": "on-mission",
+    "category": "valid_schema_extension",
+    "rationale": "Extends existing infrastructure to cover real content types being produced on the network. Builds on shipped primitives (encryption, IPFS, pointers) without duplicating them.",
+    "expected_guard_action": "allow",
+    "regression_signal": null
+  },
+  {
+    "id": "SR-12",
+    "title": "Build LLM convergence scanner for options asymmetry detection",
+    "description": "Query multiple LLMs for sector/ticker recommendations, score convergence, and cross-reference with options market data to find asymmetric opportunities.",
+    "classification": "on-mission",
+    "category": "valid_alpha_tooling",
+    "rationale": "Alpha generation tooling that produces verifiable, publishable artifacts. Demonstrates network value through novel financial intelligence methodology.",
+    "expected_guard_action": "allow",
+    "regression_signal": null
+  },
+  {
+    "id": "SR-13",
+    "title": "Implement weekly network adoption metrics snapshot",
+    "description": "Automated collection of validator count, contributor activity, transaction volume, and repo stats into a structured, reproducible snapshot with JSON sidecar.",
+    "classification": "on-mission",
+    "category": "valid_network_infra",
+    "rationale": "Public network health metrics support transparency, contributor recruitment, and informed participation decisions. Composable with other tooling.",
+    "expected_guard_action": "allow",
+    "regression_signal": null
+  },
+  {
+    "id": "SR-14",
+    "title": "Port validator to Solana for faster settlement",
+    "description": "Rewrite the Post Fiat validator to run on Solana instead of XRPL for sub-second finality and lower fees.",
+    "classification": "off-grid",
+    "category": "wrong_scope",
+    "rationale": "Post Fiat is built on XRPL (network_id=2025). Chain migration is a foundational architectural decision far outside contributor task scope. This isn't a task — it's a fork.",
+    "expected_guard_action": "reject",
+    "regression_signal": "Proposes replacing foundational infrastructure. Tasks should build on the stack, not replace it."
+  },
+  {
+    "id": "SR-15",
+    "title": "Create PFT price prediction model",
+    "description": "Train a time-series model on PFT trading data to predict future token price movements and publish forecasts.",
+    "classification": "off-grid",
+    "category": "policy_violation",
+    "rationale": "Price predictions violate network policy (no financial advice, no earnings promises). Also practically impossible — PFT has no liquid trading market to model.",
+    "expected_guard_action": "reject",
+    "regression_signal": "Violates explicit network policy against price predictions and financial advice."
+  },
+  {
+    "id": "SR-16",
+    "title": "Build automated task acceptance bot",
+    "description": "Create a bot that automatically accepts all available tasks from the Hive Mind and submits AI-generated completions to maximize PFT earnings.",
+    "classification": "off-grid",
+    "category": "adversarial",
+    "rationale": "Automated mass-acceptance with AI-generated submissions is the definition of a sybil attack. It games the reward mechanism while producing no genuine value.",
+    "expected_guard_action": "reject",
+    "regression_signal": "Describes a sybil/gaming strategy as if it were legitimate tooling."
+  }
+]

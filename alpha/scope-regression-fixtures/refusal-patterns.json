@@ -1,0 +1,54 @@
+[
+  {
+    "id": "RP-01",
+    "pattern_name": "no_response_risk",
+    "description": "Task requires interaction with external parties who have no obligation or incentive to respond, creating unverifiable completion criteria.",
+    "anonymized_example": {
+      "title": "Get confirmation from [External Project] team on integration timeline",
+      "description": "Reach out to the core team of [External Project] and get written confirmation of their planned integration timeline with our network.",
+      "failure_mode": "Contributor has no leverage over external party. Task completion depends entirely on whether a stranger replies to a cold outreach. Contributor cannot succeed through effort alone."
+    },
+    "classifier_signal": "Completion depends on response from party outside the network with no established relationship or incentive to engage.",
+    "expected_classification": "reject",
+    "guard_message": "Task completion depends on uncontrollable external response. Reframe as: produce the outreach artifact (draft, channels identified, value prop) rather than requiring the response itself."
+  },
+  {
+    "id": "RP-02",
+    "pattern_name": "wrong_scope_dressed_up",
+    "description": "Unrelated work wrapped in network terminology to appear on-mission.",
+    "anonymized_example": {
+      "title": "Build [Unrelated Industry] workflow optimizer as PFT-powered service",
+      "description": "Create a [specific vertical] tool that uses PFT tokens for payment and task coordination, bringing [vertical] professionals into the Post Fiat ecosystem.",
+      "failure_mode": "The actual work (building a vertical SaaS tool) has nothing to do with network infrastructure, intelligence, or coordination. 'Uses PFT for payment' is a veneer — any token could substitute."
+    },
+    "classifier_signal": "Remove all PFT/network references from the task. If the remaining work has zero overlap with network mission (AI coordination, financial intelligence, contributor tooling, network growth), it's off-grid regardless of payment-rail framing.",
+    "expected_classification": "reject",
+    "guard_message": "Task is an unrelated vertical service using PFT as payment rail. Payment-rail usage alone does not make arbitrary work on-mission. The work must advance network infrastructure, intelligence, or coordination."
+  },
+  {
+    "id": "RP-03",
+    "pattern_name": "already_done_duplication",
+    "description": "Task describes functionality that already exists in production, either in core infrastructure or community tooling.",
+    "anonymized_example": {
+      "title": "Implement [Feature X] for the network",
+      "description": "Build a system that [does exactly what an existing shipped tool does], with [properties that match the existing implementation's spec].",
+      "failure_mode": "Contributor spends days building something that already exists. If they discover it mid-task, they've wasted time. If they don't discover it, the network pays for duplicate infrastructure."
+    },
+    "classifier_signal": "Task description matches the feature set of existing shipped tooling. Check: (1) core validator codebase, (2) community projects registry, (3) ecosystem repos (agtico/*, postfiatorg/*).",
+    "expected_classification": "reject",
+    "guard_message": "This functionality appears to already exist in [specific location]. If the intent is to improve or extend it, reframe the task to reference the existing implementation and specify what's missing."
+  },
+  {
+    "id": "RP-04",
+    "pattern_name": "context_verification_mismatch",
+    "description": "Task requires verifying claims against data sources that are inaccessible, non-existent, or contradicted by available evidence.",
+    "anonymized_example": {
+      "title": "Verify [Metric] from [Source] and report findings",
+      "description": "Pull [specific metric] from [named source] and cross-reference against [second source] to confirm accuracy of network claims.",
+      "failure_mode": "The named source doesn't expose the claimed metric, or the metric definition has changed, or the source requires authentication that contributors don't have. Task is structurally uncompletable as specified."
+    },
+    "classifier_signal": "Task references specific external data sources. Verify: (1) source is publicly accessible, (2) claimed metric/endpoint actually exists, (3) contributor can access without special credentials.",
+    "expected_classification": "reject",
+    "guard_message": "Verification target is inaccessible or non-existent. Before issuing: confirm the data source exposes the claimed metric publicly. If authentication required, provide it or reframe task."
+  }
+]

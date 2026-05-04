@@ -1,0 +1,94 @@
+{
+  "demo_title": "Before/After: Unguided Generator vs Fixture-Backed Guard",
+  "description": "Demonstrates how an unguided task generator issues problematic tasks, and how a fixture-backed scope guard catches and reclassifies them.",
+  "examples": [
+    {
+      "input_context": "Contributor expressed interest in 'building publishing infrastructure for the network'",
+      "unguided_generator": {
+        "issued_task": {
+          "title": "Build encrypted content publishing pipeline with IPFS",
+          "description": "Design and implement infrastructure for publishing encrypted content to IPFS with public-key encryption, content-addressed storage, and tiered subscriber access control.",
+          "estimated_reward": 6000
+        },
+        "problem": "Generator has no awareness of existing ecosystem tooling. This is pft_indexing — already shipped, open-source, documented. Contributor would either duplicate it or discover it mid-task and waste time.",
+        "failure_cost": "6,000 PFT wasted on duplicate work. Contributor frustrated. No net value created."
+      },
+      "fixture_backed_guard": {
+        "matched_fixture": "SR-09",
+        "classification": "already_shipped",
+        "guard_action": "reject_and_redirect",
+        "reframed_task": {
+          "title": "Extend pft_indexing with intelligence publication schema",
+          "description": "Design a pft.intelligence.v1 companion schema for agtico/pft_indexing that handles non-portfolio content types (briefings, research, signal corpora) using the existing encryption and access infrastructure.",
+          "estimated_reward": 5000
+        },
+        "value_added": "Builds on shipped infrastructure instead of duplicating it. Contributor creates genuine new value. Ecosystem grows compositionally."
+      }
+    },
+    {
+      "input_context": "Network sees increased memo activity, wants better analytics",
+      "unguided_generator": {
+        "issued_task": {
+          "title": "Parse transaction memos to categorize network activity",
+          "description": "Build a memo parser that reads transaction memo fields, applies regex patterns to categorize them by type (task acceptance, reward, subscription, etc.), and produces activity dashboards.",
+          "estimated_reward": 4500
+        },
+        "problem": "All memos are keystone-encrypted. You cannot read memo content from the ledger without the decryption key. This task assumes pre-keystone architecture that hasn't existed for months.",
+        "failure_cost": "4,500 PFT offered for structurally impossible work. Contributor discovers impossibility after accepting. Trust eroded."
+      },
+      "fixture_backed_guard": {
+        "matched_fixture": "SR-04",
+        "classification": "deprecated_approach",
+        "guard_action": "reject_and_redirect",
+        "reframed_task": {
+          "title": "Build network activity classifier from transaction metadata",
+          "description": "Classify network activity using observable transaction properties (amount patterns, destination addresses, timing) without relying on memo content. Produce activity dashboards from metadata signals only.",
+          "estimated_reward": 4500
+        },
+        "value_added": "Acknowledges encryption constraint. Produces genuinely useful tooling that works with current architecture."
+      }
+    },
+    {
+      "input_context": "Contributor wants to help with outreach and growth",
+      "unguided_generator": {
+        "issued_task": {
+          "title": "Get 10 new developers to sign up for task node",
+          "description": "Recruit 10 new developers to create task node accounts and complete their first task. Track signups and report conversion rates.",
+          "estimated_reward": 5000
+        },
+        "problem": "Completion depends entirely on external parties' decisions. Contributor cannot guarantee 10 strangers will sign up regardless of effort quality. Creates perverse incentives (fake accounts, bribery).",
+        "failure_cost": "Contributor does excellent outreach work but only 3 people sign up. Task 'fails' despite high-quality effort. Alternatively, contributor creates sybil accounts to hit the number."
+      },
+      "fixture_backed_guard": {
+        "matched_fixture": "RP-01 (no_response_risk)",
+        "classification": "unverifiable_completion",
+        "guard_action": "reject_and_redirect",
+        "reframed_task": {
+          "title": "Create developer outreach pack with channel strategy",
+          "description": "Produce a developer-focused recruiting artifact: value prop, onboarding guide, 10 targeted community channels with rationale, and template outreach messages. Deliverable is the artifact quality, not signup count.",
+          "estimated_reward": 5000
+        },
+        "value_added": "Completion criteria within contributor's control. Artifact has lasting value regardless of immediate conversion. No perverse incentives."
+      }
+    },
+    {
+      "input_context": "Interest in bringing new verticals onto the network",
+      "unguided_generator": {
+        "issued_task": {
+          "title": "Build real estate valuation tool as PFT service",
+          "description": "Create an automated property valuation tool that uses PFT for payment. Real estate agents can pay in PFT to get AI-powered property valuations.",
+          "estimated_reward": 7000
+        },
+        "problem": "Real estate valuation is an unrelated vertical. 'Uses PFT for payment' is arbitrary — any token could substitute. The actual work (building a proptech tool) has zero overlap with network mission.",
+        "failure_cost": "7,000 PFT spent on work that doesn't advance network intelligence, coordination, or infrastructure. Sets precedent that any SaaS + PFT payment = on-mission."
+      },
+      "fixture_backed_guard": {
+        "matched_fixture": "SR-03, RP-02",
+        "classification": "wrong_scope",
+        "guard_action": "reject",
+        "reframed_task": null,
+        "rejection_reason": "No viable reframe. The work itself is off-mission. Payment-rail integration alone doesn't qualify. If the contributor wants to help with growth, redirect to network-native work (tooling, intelligence, infrastructure)."
+      }
+    }
+  ]
+}
