@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Post Fiat Scope Regression Fixture",
+  "description": "Schema for off-grid scope regression fixtures used by Hive Mind task generation guards.",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "description",
+    "classification",
+    "scope_classification",
+    "category",
+    "rationale",
+    "expected_guard_action",
+    "expected_guard_output"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^SR-\\d{2}$",
+      "description": "Fixture identifier in SR-XX format"
+    },
+    "title": {
+      "type": "string",
+      "description": "Task title as a generator would issue it"
+    },
+    "description": {
+      "type": "string",
+      "description": "Full task description as a generator would issue it"
+    },
+    "classification": {
+      "enum": ["off-grid", "on-mission"],
+      "description": "Top-level binary classification"
+    },
+    "scope_classification": {
+      "enum": [
+        "on_mission",
+        "off_grid",
+        "duplicate",
+        "stale",
+        "deprecated",
+        "unverifiable",
+        "policy_violation",
+        "adversarial"
+      ],
+      "description": "Fine-grained scope classification for guard routing"
+    },
+    "category": {
+      "type": "string",
+      "description": "Human-readable subcategory label"
+    },
+    "rationale": {
+      "type": "string",
+      "description": "Why this classification is correct"
+    },
+    "expected_guard_action": {
+      "enum": ["allow", "reject", "reject_and_redirect", "manual_review"],
+      "description": "What the guard should do with this task"
+    },
+    "expected_guard_output": {
+      "type": "object",
+      "required": ["decision", "scope_classification", "matched_fixture_ids", "confidence", "reason_codes", "safe_reframe_required"],
+      "properties": {
+        "decision": {
+          "enum": ["allow", "reject", "reject_and_redirect", "manual_review"]
+        },
+        "scope_classification": {
+          "enum": ["on_mission", "off_grid", "duplicate", "stale", "deprecated", "unverifiable", "policy_violation", "adversarial"]
+        },
+        "matched_fixture_ids": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "confidence": {
+          "enum": ["high", "medium", "low"]
+        },
+        "reason_codes": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "safe_reframe_required": {
+          "type": "boolean"
+        },
+        "reviewer_note": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "regression_signal": {
+      "type": ["string", "null"],
+      "description": "The detectable pattern that triggers rejection (null for on-mission)"
+    },
+    "boundary_pair": {
+      "type": "string",
+      "description": "ID of the paired fixture showing the valid/invalid boundary"
+    }
+  }
+}

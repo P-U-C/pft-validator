@@ -1,0 +1,37 @@
+{
+  "description": "Quick-lookup expected results for regression test runners. Maps fixture ID to expected guard action.",
+  "results": {
+    "SR-01": "reject",
+    "SR-02": "reject",
+    "SR-03": "reject",
+    "SR-04": "reject_and_redirect",
+    "SR-05": "reject_and_redirect",
+    "SR-06": "reject",
+    "SR-07": "reject",
+    "SR-08": "reject",
+    "SR-09": "reject_and_redirect",
+    "SR-10": "allow",
+    "SR-11": "allow",
+    "SR-12": "allow",
+    "SR-13": "allow",
+    "SR-14": "reject",
+    "SR-15": "reject",
+    "SR-16": "reject",
+    "SR-17": "reject_and_redirect",
+    "SR-18": "allow",
+    "SR-19": "allow",
+    "SR-20": "allow"
+  },
+  "summary": {
+    "total": 20,
+    "allow": 8,
+    "reject": 8,
+    "reject_and_redirect": 4
+  },
+  "boundary_pairs": [
+    {"reject": "SR-04", "allow": "SR-19", "boundary": "memo parsing (deprecated regex vs metadata classifier)"},
+    {"reject": "SR-05", "allow": "SR-20", "boundary": "API docs (static for unstable endpoints vs schema-change watchlist)"},
+    {"reject": "SR-09", "allow": "SR-11", "boundary": "artifact publishing (duplicate pft_indexing vs extend with intelligence schema)"},
+    {"reject": "SR-17", "allow": "SR-18", "boundary": "developer growth (signup-count target vs outreach artifact)"}
+  ]
+}

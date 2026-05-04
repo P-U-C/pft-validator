@@ -4,9 +4,19 @@
     "title": "Build Nostr relay integration for task memos",
     "description": "Create a Nostr relay that mirrors XRPL task memos so contributors can subscribe to task updates via Nostr clients.",
     "classification": "off-grid",
+    "scope_classification": "deprecated",
     "category": "deprecated_sidecar",
     "rationale": "Nostr relay integration was explored and deprioritized. Task memos are keystone-encrypted on XRPL — mirroring to Nostr breaks the encryption model and creates a parallel system with no clear consumer.",
     "expected_guard_action": "reject",
+    "expected_guard_output": {
+      "decision": "reject",
+      "scope_classification": "deprecated",
+      "matched_fixture_ids": ["SR-01"],
+      "confidence": "high",
+      "reason_codes": ["DEPRECATED_SIDECAR", "ENCRYPTION_CONFLICT"],
+      "safe_reframe_required": false,
+      "reviewer_note": "Nostr mirroring was explored and abandoned due to keystone encryption incompatibility. Do not re-issue."
+    },
     "regression_signal": "References a delivery channel that was previously explored and abandoned due to architectural conflict with keystone encryption."
   },
   {
@@ -14,9 +24,19 @@
     "title": "Implement esports coaching matchmaking service",
     "description": "Build a matchmaker that pairs esports coaches with players based on rank and game, using PFT as payment rail.",
     "classification": "off-grid",
+    "scope_classification": "off_grid",
     "category": "wrong_scope",
     "rationale": "Esports coaching is unrelated to Post Fiat's mission (AI-coordinated task completion, financial intelligence, network growth). Using PFT as payment rail doesn't make arbitrary services in-scope.",
     "expected_guard_action": "reject",
+    "expected_guard_output": {
+      "decision": "reject",
+      "scope_classification": "off_grid",
+      "matched_fixture_ids": ["SR-02"],
+      "confidence": "high",
+      "reason_codes": ["WRONG_SCOPE", "PAYMENT_RAIL_VENEER"],
+      "safe_reframe_required": false,
+      "reviewer_note": "Unrelated vertical. Payment-rail usage alone does not make arbitrary services on-mission."
+    },
     "regression_signal": "Task domain has zero overlap with network mission. Payment-rail usage alone doesn't qualify work as on-mission."
   },
   {
@@ -24,9 +44,19 @@
     "title": "Architecture/engineering/construction bid estimator",
     "description": "Build an AEC bid estimation tool that uses LLM to price construction projects, deployed as a PFT network service.",
     "classification": "off-grid",
+    "scope_classification": "off_grid",
     "category": "wrong_scope",
     "rationale": "AEC services are an unrelated vertical. Wrapping arbitrary SaaS in 'PFT network service' framing doesn't make it on-mission.",
     "expected_guard_action": "reject",
+    "expected_guard_output": {
+      "decision": "reject",
+      "scope_classification": "off_grid",
+      "matched_fixture_ids": ["SR-03"],
+      "confidence": "high",
+      "reason_codes": ["WRONG_SCOPE", "UNRELATED_VERTICAL"],
+      "safe_reframe_required": false,
+      "reviewer_note": "AEC is an unrelated industry. 'Deployed as PFT network service' is cosmetic framing."
+    },
     "regression_signal": "Unrelated industry vertical dressed up with network terminology."
   },
   {
@@ -34,29 +64,61 @@
     "title": "Re-implement transaction memo parser with new regex",
     "description": "Rewrite the memo parsing logic to use regex-based extraction instead of the current JSON deserialization approach.",
     "classification": "off-grid",
+    "scope_classification": "deprecated",
     "category": "deprecated_approach",
     "rationale": "All memos are now keystone-encrypted. Regex parsing of memo_type/content is impossible — you only see encrypted blobs. This task assumes pre-keystone architecture that no longer exists.",
     "expected_guard_action": "reject",
-    "regression_signal": "Assumes architectural state that was superseded. The system moved from plaintext memos to keystone encryption."
+    "expected_guard_output": {
+      "decision": "reject_and_redirect",
+      "scope_classification": "deprecated",
+      "matched_fixture_ids": ["SR-04"],
+      "confidence": "high",
+      "reason_codes": ["DEPRECATED_ARCHITECTURE", "KEYSTONE_ENCRYPTION"],
+      "safe_reframe_required": true,
+      "reviewer_note": "Memo content is keystone-encrypted. Redirect to metadata-based classification (amounts, destinations, timing)."
+    },
+    "regression_signal": "Assumes architectural state that was superseded. The system moved from plaintext memos to keystone encryption.",
+    "boundary_pair": "SR-19"
   },
   {
     "id": "SR-05",
     "title": "Document task node API endpoints for third-party integrations",
     "description": "Write comprehensive API documentation for the task node so external developers can build integrations.",
     "classification": "off-grid",
+    "scope_classification": "stale",
     "category": "stale_surface",
     "rationale": "Task node is undergoing active development with unstable interfaces. Documenting current endpoints creates maintenance burden and misleads integrators when APIs change. Already attempted and abandoned.",
-    "expected_guard_action": "reject",
-    "regression_signal": "Targets a rapidly-changing interface where documentation has negative expected value due to churn."
+    "expected_guard_action": "reject_and_redirect",
+    "expected_guard_output": {
+      "decision": "reject_and_redirect",
+      "scope_classification": "stale",
+      "matched_fixture_ids": ["SR-05"],
+      "confidence": "high",
+      "reason_codes": ["STALE_SURFACE", "HIGH_CHURN_INTERFACE"],
+      "safe_reframe_required": true,
+      "reviewer_note": "Interface too unstable for static docs. Redirect to schema-change watchlist or integration risk map."
+    },
+    "regression_signal": "Targets a rapidly-changing interface where documentation has negative expected value due to churn.",
+    "boundary_pair": "SR-20"
   },
   {
     "id": "SR-06",
     "title": "Create subscriber onboarding email sequence",
     "description": "Write a 5-email drip sequence for new SUBS subscribers explaining Herald features and network benefits.",
     "classification": "off-grid",
+    "scope_classification": "stale",
     "category": "stale_surface",
     "rationale": "SUBS has <10 subscribers. Email drip campaigns assume a scale that doesn't exist. The bottleneck is subscriber acquisition, not retention nurturing. Premature optimization of a non-existent funnel.",
     "expected_guard_action": "reject",
+    "expected_guard_output": {
+      "decision": "reject",
+      "scope_classification": "stale",
+      "matched_fixture_ids": ["SR-06"],
+      "confidence": "medium",
+      "reason_codes": ["PREMATURE_OPTIMIZATION", "WRONG_FUNNEL_STAGE"],
+      "safe_reframe_required": false,
+      "reviewer_note": "Subscriber base too small for retention automation. Focus effort on acquisition instead."
+    },
     "regression_signal": "Optimizes a downstream funnel stage when the upstream stage (acquisition) is the actual bottleneck. Wrong altitude."
   },
   {
@@ -64,9 +126,19 @@
     "title": "Build duplicate detection for reward payments",
     "description": "Implement a system that detects and prevents duplicate reward payments to the same address for the same task.",
     "classification": "off-grid",
+    "scope_classification": "duplicate",
     "category": "already_shipped",
     "rationale": "Duplicate payment detection already exists in the validator's reward pipeline. The task_id + address combination is checked before any payment memo is constructed. This work is done.",
     "expected_guard_action": "reject",
+    "expected_guard_output": {
+      "decision": "reject",
+      "scope_classification": "duplicate",
+      "matched_fixture_ids": ["SR-07"],
+      "confidence": "high",
+      "reason_codes": ["ALREADY_SHIPPED", "DUPLICATES_CORE_INFRA"],
+      "safe_reframe_required": false,
+      "reviewer_note": "Duplicate payment detection is production infrastructure in the validator reward pipeline. Do not re-issue."
+    },
     "regression_signal": "Describes functionality that already exists in production. Issuing this task wastes contributor time rediscovering shipped code."
   },
   {
@@ -74,9 +146,19 @@
     "title": "Add sybil similarity scoring to task reviewer",
     "description": "Implement cosine similarity checks between task submissions to flag potential sybil clusters submitting templated work.",
     "classification": "off-grid",
+    "scope_classification": "duplicate",
     "category": "already_shipped",
     "rationale": "Sybil similarity scoring is already implemented and actively penalizing submissions (e.g., 0.864 similarity scores reducing rewards by ~50%). This is live infrastructure.",
     "expected_guard_action": "reject",
+    "expected_guard_output": {
+      "decision": "reject",
+      "scope_classification": "duplicate",
+      "matched_fixture_ids": ["SR-08"],
+      "confidence": "high",
+      "reason_codes": ["ALREADY_SHIPPED", "ACTIVELY_IN_USE"],
+      "safe_reframe_required": false,
+      "reviewer_note": "Sybil similarity scoring is live and actively penalizing submissions. Do not duplicate."
+    },
     "regression_signal": "Core feature already deployed and actively affecting reward calculations."
   },
   {
@@ -84,19 +166,40 @@
     "title": "Design encrypted artifact publishing pipeline with IPFS pinning",
     "description": "Create infrastructure for publishing encrypted content to IPFS with X25519 encryption, pointer memos, and tiered subscriber access.",
     "classification": "off-grid",
+    "scope_classification": "duplicate",
     "category": "already_shipped",
     "rationale": "This is literally pft_indexing (agtico/pft_indexing) — already built, documented, and in use. X25519/XChaCha20 encryption, IPFS pinning, pf.ptr:v4 pointers, and tiered access manifests all exist.",
-    "expected_guard_action": "reject",
-    "regression_signal": "Describes an existing open-source project verbatim. Generator unaware of shipped ecosystem tooling."
+    "expected_guard_action": "reject_and_redirect",
+    "expected_guard_output": {
+      "decision": "reject_and_redirect",
+      "scope_classification": "duplicate",
+      "matched_fixture_ids": ["SR-09"],
+      "confidence": "high",
+      "reason_codes": ["ALREADY_SHIPPED", "DUPLICATES_EXISTING_TOOLING"],
+      "safe_reframe_required": true,
+      "reviewer_note": "This is agtico/pft_indexing. Only issue an extension task if the existing implementation is referenced."
+    },
+    "regression_signal": "Describes an existing open-source project verbatim. Generator unaware of shipped ecosystem tooling.",
+    "boundary_pair": "SR-11"
   },
   {
     "id": "SR-10",
     "title": "Build contributor reputation scoring from task completion history",
     "description": "Create a reputation system that scores contributors based on task acceptance rate, completion quality, and reviewer feedback over time.",
     "classification": "on-mission",
+    "scope_classification": "on_mission",
     "category": "valid_network_infra",
     "rationale": "Reputation scoring from verifiable on-chain task history is core to network coordination. It helps validators allocate tasks efficiently and helps contributors build portable track records.",
     "expected_guard_action": "allow",
+    "expected_guard_output": {
+      "decision": "allow",
+      "scope_classification": "on_mission",
+      "matched_fixture_ids": [],
+      "confidence": "high",
+      "reason_codes": ["VALID_NETWORK_INFRA", "COORDINATION_PRIMITIVE"],
+      "safe_reframe_required": false,
+      "reviewer_note": null
+    },
     "regression_signal": null
   },
   {
@@ -104,19 +207,40 @@
     "title": "Create intelligence publication schema for non-portfolio artifacts",
     "description": "Design a companion schema to pft.index.snapshot.v1 that handles intelligence briefings, research briefs, signal corpora, and metrics snapshots using the same encryption and access infrastructure.",
     "classification": "on-mission",
+    "scope_classification": "on_mission",
     "category": "valid_schema_extension",
     "rationale": "Extends existing infrastructure to cover real content types being produced on the network. Builds on shipped primitives (encryption, IPFS, pointers) without duplicating them.",
     "expected_guard_action": "allow",
-    "regression_signal": null
+    "expected_guard_output": {
+      "decision": "allow",
+      "scope_classification": "on_mission",
+      "matched_fixture_ids": [],
+      "confidence": "high",
+      "reason_codes": ["VALID_EXTENSION", "BUILDS_ON_EXISTING"],
+      "safe_reframe_required": false,
+      "reviewer_note": null
+    },
+    "regression_signal": null,
+    "boundary_pair": "SR-09"
   },
   {
     "id": "SR-12",
     "title": "Build LLM convergence scanner for options asymmetry detection",
     "description": "Query multiple LLMs for sector/ticker recommendations, score convergence, and cross-reference with options market data to find asymmetric opportunities.",
     "classification": "on-mission",
+    "scope_classification": "on_mission",
     "category": "valid_alpha_tooling",
     "rationale": "Alpha generation tooling that produces verifiable, publishable artifacts. Demonstrates network value through novel financial intelligence methodology.",
     "expected_guard_action": "allow",
+    "expected_guard_output": {
+      "decision": "allow",
+      "scope_classification": "on_mission",
+      "matched_fixture_ids": [],
+      "confidence": "high",
+      "reason_codes": ["VALID_ALPHA_TOOLING", "NOVEL_METHODOLOGY"],
+      "safe_reframe_required": false,
+      "reviewer_note": null
+    },
     "regression_signal": null
   },
   {
@@ -124,9 +248,19 @@
     "title": "Implement weekly network adoption metrics snapshot",
     "description": "Automated collection of validator count, contributor activity, transaction volume, and repo stats into a structured, reproducible snapshot with JSON sidecar.",
     "classification": "on-mission",
+    "scope_classification": "on_mission",
     "category": "valid_network_infra",
     "rationale": "Public network health metrics support transparency, contributor recruitment, and informed participation decisions. Composable with other tooling.",
     "expected_guard_action": "allow",
+    "expected_guard_output": {
+      "decision": "allow",
+      "scope_classification": "on_mission",
+      "matched_fixture_ids": [],
+      "confidence": "high",
+      "reason_codes": ["VALID_NETWORK_INFRA", "TRANSPARENCY"],
+      "safe_reframe_required": false,
+      "reviewer_note": null
+    },
     "regression_signal": null
   },
   {
@@ -134,9 +268,19 @@
     "title": "Port validator to Solana for faster settlement",
     "description": "Rewrite the Post Fiat validator to run on Solana instead of XRPL for sub-second finality and lower fees.",
     "classification": "off-grid",
+    "scope_classification": "off_grid",
     "category": "wrong_scope",
     "rationale": "Post Fiat is built on XRPL (network_id=2025). Chain migration is a foundational architectural decision far outside contributor task scope. This isn't a task — it's a fork.",
     "expected_guard_action": "reject",
+    "expected_guard_output": {
+      "decision": "reject",
+      "scope_classification": "off_grid",
+      "matched_fixture_ids": ["SR-14"],
+      "confidence": "high",
+      "reason_codes": ["WRONG_SCOPE", "FOUNDATIONAL_REPLACEMENT"],
+      "safe_reframe_required": false,
+      "reviewer_note": "Chain migration is an architectural decision, not a contributor task. Do not issue."
+    },
     "regression_signal": "Proposes replacing foundational infrastructure. Tasks should build on the stack, not replace it."
   },
   {
@@ -144,9 +288,19 @@
     "title": "Create PFT price prediction model",
     "description": "Train a time-series model on PFT trading data to predict future token price movements and publish forecasts.",
     "classification": "off-grid",
+    "scope_classification": "policy_violation",
     "category": "policy_violation",
     "rationale": "Price predictions violate network policy (no financial advice, no earnings promises). Also practically impossible — PFT has no liquid trading market to model.",
     "expected_guard_action": "reject",
+    "expected_guard_output": {
+      "decision": "reject",
+      "scope_classification": "policy_violation",
+      "matched_fixture_ids": ["SR-15"],
+      "confidence": "high",
+      "reason_codes": ["POLICY_VIOLATION", "NO_FINANCIAL_ADVICE"],
+      "safe_reframe_required": false,
+      "reviewer_note": "Explicit network policy prohibits price predictions and financial advice. Hard reject."
+    },
     "regression_signal": "Violates explicit network policy against price predictions and financial advice."
   },
   {
@@ -154,9 +308,103 @@
     "title": "Build automated task acceptance bot",
     "description": "Create a bot that automatically accepts all available tasks from the Hive Mind and submits AI-generated completions to maximize PFT earnings.",
     "classification": "off-grid",
+    "scope_classification": "adversarial",
     "category": "adversarial",
     "rationale": "Automated mass-acceptance with AI-generated submissions is the definition of a sybil attack. It games the reward mechanism while producing no genuine value.",
     "expected_guard_action": "reject",
+    "expected_guard_output": {
+      "decision": "reject",
+      "scope_classification": "adversarial",
+      "matched_fixture_ids": ["SR-16"],
+      "confidence": "high",
+      "reason_codes": ["ADVERSARIAL", "SYBIL_GAMING"],
+      "safe_reframe_required": false,
+      "reviewer_note": "Describes a sybil/gaming strategy. Hard reject. Flag contributor for review."
+    },
     "regression_signal": "Describes a sybil/gaming strategy as if it were legitimate tooling."
+  },
+  {
+    "id": "SR-17",
+    "title": "Get 20 developers to sign up for Task Node",
+    "description": "Recruit 20 new developers to create Task Node accounts and complete their first task. Track signups and report conversion rates.",
+    "classification": "off-grid",
+    "scope_classification": "unverifiable",
+    "category": "no_response_risk",
+    "rationale": "Completion depends entirely on external parties' decisions. Contributor cannot guarantee signups regardless of effort quality. Creates perverse incentives (fake accounts, bribery).",
+    "expected_guard_action": "reject_and_redirect",
+    "expected_guard_output": {
+      "decision": "reject_and_redirect",
+      "scope_classification": "unverifiable",
+      "matched_fixture_ids": ["SR-17"],
+      "confidence": "high",
+      "reason_codes": ["UNVERIFIABLE_COMPLETION", "EXTERNAL_DEPENDENCY"],
+      "safe_reframe_required": true,
+      "reviewer_note": "Redirect to artifact-based completion: outreach pack, channel strategy, onboarding materials."
+    },
+    "regression_signal": "Completion depends on uncontrollable external response. Contributor cannot succeed through effort alone.",
+    "boundary_pair": "SR-18"
+  },
+  {
+    "id": "SR-18",
+    "title": "Create developer onboarding outreach pack for Task Node",
+    "description": "Produce a developer-focused recruiting artifact: value prop, onboarding guide, 10 targeted community channels with rationale, and template outreach messages. Deliverable is the artifact, not signup count.",
+    "classification": "on-mission",
+    "scope_classification": "on_mission",
+    "category": "valid_network_growth_artifact",
+    "rationale": "Artifact-based growth work. Completion is within contributor's control. Materials have lasting value regardless of immediate conversion. No perverse incentives.",
+    "expected_guard_action": "allow",
+    "expected_guard_output": {
+      "decision": "allow",
+      "scope_classification": "on_mission",
+      "matched_fixture_ids": [],
+      "confidence": "high",
+      "reason_codes": ["VALID_GROWTH_ARTIFACT", "CONTRIBUTOR_CONTROLLED"],
+      "safe_reframe_required": false,
+      "reviewer_note": null
+    },
+    "regression_signal": null,
+    "boundary_pair": "SR-17"
+  },
+  {
+    "id": "SR-19",
+    "title": "Build network activity classifier from transaction metadata",
+    "description": "Classify network activity using observable transaction properties (amount patterns, destination addresses, timing) without relying on memo content. Produce activity dashboards from metadata signals only.",
+    "classification": "on-mission",
+    "scope_classification": "on_mission",
+    "category": "valid_network_infra",
+    "rationale": "Acknowledges encryption constraint. Produces genuinely useful tooling that works with current architecture. Classifies from public metadata rather than attempting to read encrypted memos.",
+    "expected_guard_action": "allow",
+    "expected_guard_output": {
+      "decision": "allow",
+      "scope_classification": "on_mission",
+      "matched_fixture_ids": [],
+      "confidence": "high",
+      "reason_codes": ["VALID_NETWORK_INFRA", "RESPECTS_ENCRYPTION"],
+      "safe_reframe_required": false,
+      "reviewer_note": null
+    },
+    "regression_signal": null,
+    "boundary_pair": "SR-04"
+  },
+  {
+    "id": "SR-20",
+    "title": "Publish task node schema-change watchlist and integration risk map",
+    "description": "Track which task node interfaces are stable vs actively changing. Publish a living watchlist that integrators can check before building against specific endpoints.",
+    "classification": "on-mission",
+    "scope_classification": "on_mission",
+    "category": "valid_network_infra",
+    "rationale": "Instead of static docs for unstable APIs, produces a meta-artifact (what's changing, what's safe to build on). Acknowledges churn rather than pretending stability.",
+    "expected_guard_action": "allow",
+    "expected_guard_output": {
+      "decision": "allow",
+      "scope_classification": "on_mission",
+      "matched_fixture_ids": [],
+      "confidence": "high",
+      "reason_codes": ["VALID_NETWORK_INFRA", "ACKNOWLEDGES_CHURN"],
+      "safe_reframe_required": false,
+      "reviewer_note": null
+    },
+    "regression_signal": null,
+    "boundary_pair": "SR-05"
   }
 ]
