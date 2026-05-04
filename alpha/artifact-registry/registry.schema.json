@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Post Fiat Artifact Registry",
+  "description": "Schema for the Post Fiat artifact reuse registry.",
+  "type": "object",
+  "required": ["schema_version", "generated_at", "entry_count", "privacy_policy", "entries"],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "entry_count": { "type": "integer", "minimum": 15 },
+    "privacy_policy": { "type": "string" },
+    "entries": {
+      "type": "array",
+      "minItems": 15,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "asset_name",
+          "lane",
+          "artifact_type",
+          "public_url",
+          "status",
+          "maintainer_category",
+          "reuse_instructions",
+          "suggested_reproduction_task",
+          "duplicate_risk_notes",
+          "evidence_standard"
+        ],
+        "properties": {
+          "id": { "type": "string", "pattern": "^ART-[0-9]{2,}$" },
+          "asset_name": { "type": "string", "minLength": 3 },
+          "lane": { "type": "string", "minLength": 3 },
+          "artifact_type": { "type": "string", "minLength": 3 },
+          "public_url": {
+            "type": "string",
+            "pattern": "^(https://|project-scoped://)"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["live", "shipped", "in_development", "deprecated", "superseded"]
+          },
+          "maintainer_category": {
+            "type": "string",
+            "enum": ["community_contributor", "ecosystem_developer", "core_maintainer", "project_scoped"]
+          },
+          "reuse_instructions": { "type": "string", "minLength": 20 },
+          "suggested_reproduction_task": { "type": "string", "minLength": 20 },
+          "duplicate_risk_notes": { "type": "string", "minLength": 20 },
+          "evidence_standard": { "type": "string", "minLength": 5 }
+        }
+      }
+    }
+  }
+}

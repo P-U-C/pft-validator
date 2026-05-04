@@ -152,6 +152,19 @@ beginner_tasks = [
 | `reward_mechanism` | Reward scaling, evidence evaluation | Reward cap reducer |
 | `alpha_tooling` | Scanners, scoring engines, trading tools | LLM convergence scanner |
 
+## Duplicate-Risk Decision Matrix
+
+| Proposed task type | Registry match exists? | Correct action |
+|---|---:|---|
+| Same artifact, same purpose | Yes | Reject as duplicate |
+| Same artifact, new fixtures/tests | Yes | Allow as test extension |
+| Same artifact, new lane integration | Yes | Allow as integration extension |
+| Same artifact, beginner walkthrough | Yes | Allow as reproduction |
+| Same problem, no reference to canonical artifact | Yes | Rewrite before issuance — must reference existing |
+| Deprecated/superseded artifact | Yes | Redirect to successor |
+| Private-only artifact | Project-scoped | Require sanitized placeholder or public equivalent |
+| No registry match | No | Allow (new work) |
+
 ## Duplicate-Risk Integration with Scope Regression Fixtures
 
 This registry works alongside the [scope regression fixtures](../scope-regression-fixtures/). The fixtures catch duplicate-risk at the classification level (SR-07, SR-08, SR-09 are all `already_shipped`). This registry provides the **specific artifact** that would be duplicated, plus the **reuse path** to redirect contributor effort productively.
@@ -161,3 +174,60 @@ Example flow:
 2. Scope guard matches SR-09 → `reject_and_redirect`
 3. Registry lookup finds ART-12 (pft_indexing) → provides reuse instructions
 4. Redirected task: "Extend pft_indexing with intelligence schema" → `allow`
+
+## Machine Access
+
+Use raw files for agents and scripts — do not scrape GitHub HTML:
+
+- **JSON**: `https://raw.githubusercontent.com/P-U-C/pft-validator/main/alpha/artifact-registry/registry.json`
+- **CSV**: `https://raw.githubusercontent.com/P-U-C/pft-validator/main/alpha/artifact-registry/registry.csv`
+- **Schema**: `https://raw.githubusercontent.com/P-U-C/pft-validator/main/alpha/artifact-registry/registry.schema.json`
+
+Agents should consume `registry.json` first and use `registry.csv` only for spreadsheet review.
+
+## Validation
+
+The registry is machine-checkable and self-verifying:
+
+```bash
+python validate_registry.py
+```
+
+Expected output:
+
+```text
+OK: registry.json parses
+OK: registry.csv parses
+OK: 18 CSV rows match 18 JSON entries (declared: 18)
+OK: CSV/JSON ID order matches
+OK: all required fields present and non-empty
+OK: no duplicate IDs
+OK: no duplicate asset names
+OK: all URLs use allowed schemes (https:// or project-scoped://)
+OK: privacy pattern checks passed (no wallets, emails, private hosts)
+OK: no bidirectional Unicode control characters
+OK: registry.json validates against registry.schema.json
+
+==================================================
+PASSED: all checks green, 0 warning(s)
+```
+
+Checks performed:
+- JSON and CSV parse without error
+- Entry counts match across declared, JSON, and CSV
+- IDs are unique, non-duplicate, and in matching order
+- All 11 required fields present and non-empty in both formats
+- URL schemes restricted to `https://` and `project-scoped://`
+- No XRPL wallet patterns, email addresses, or private hostnames
+- No bidirectional Unicode control characters
+- Full JSON Schema validation
+
+## Files
+
+| File | Format | Purpose |
+|------|--------|---------|
+| `registry.json` | JSON | Machine-readable registry with 18 entries and full metadata |
+| `registry.csv` | CSV | Spreadsheet-friendly flat format with all required fields |
+| `registry.schema.json` | JSON Schema | Validates registry structure, field types, and allowed values |
+| `validate_registry.py` | Python | Self-verification script (privacy, parity, schema, bidi checks) |
+| `README.md` | Markdown | This documentation |
