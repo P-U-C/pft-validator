@@ -1,0 +1,304 @@
+{
+  "kind": "pft.index.snapshot.v1",
+  "schema": "https://agtico.github.io/pft_indexing/schemas/pft-index-snapshot-v1.schema.json",
+  "index": {
+    "index_id": "herald-daily-2026-05-04",
+    "name": "The Hive Herald \u2014 Edition #21",
+    "symbol": "HERALD",
+    "base_currency": "PFT",
+    "methodology_id": "herald-daily-intelligence",
+    "methodology_version": "2.0.0",
+    "source_index_reference": null
+  },
+  "snapshot": {
+    "snapshot_id": "herald-2026-05-04-1b5163aa",
+    "snapshot_type": "daily_close",
+    "as_of_date": "2026-05-04",
+    "created_at": "2026-05-04T03:08:59Z",
+    "position_count": 6,
+    "coverage": {
+      "status": "full",
+      "notes": [
+        "All Herald sections included"
+      ]
+    },
+    "snapshot_digest": {
+      "algorithm": "sha256",
+      "hex": "1b5163aa7d4c874361f5216aace6b42a93074202008ac143eaac1462ef9a5820"
+    }
+  },
+  "publisher": {
+    "pftl_address": "r9XYDxJDbmmhSGNpUguVhea6xn3Tu2HbeF",
+    "pftl_network": "postfiat_testnet",
+    "display_name": "Permanent Upper Class Validator",
+    "x25519_pubkey": null,
+    "message_key_tx_hash": null
+  },
+  "author": {
+    "author_type": "automated_pipeline",
+    "display_name": "Herald v2 Export",
+    "agent": "herald-v2-export.py",
+    "agent_version": "2.0.0"
+  },
+  "positions": [
+    {
+      "instrument": {
+        "asset_class": "network_metric",
+        "display_name": "Network Health Score",
+        "identifiers": [
+          {
+            "scheme": "pft_internal",
+            "value": "pulse.health_score"
+          }
+        ],
+        "market": "PFT_NETWORK"
+      },
+      "quantity": {
+        "amount": "0.4507",
+        "unit": "score"
+      },
+      "valuation": {
+        "base_currency_value": "158",
+        "price_per_unit": "18",
+        "valuation_source": "chain_index"
+      },
+      "weight": {
+        "basis_points": 1000,
+        "fraction": "0.1",
+        "percent": "10.0"
+      },
+      "metadata": {
+        "health_grade": "C",
+        "total_wallets": 899,
+        "velocity": "dropping",
+        "narrative": "Health: 0.4507 (C). 899 wallets, 158 contributors. 18 memos today vs 131 avg. Velocity dropping."
+      }
+    },
+    {
+      "instrument": {
+        "asset_class": "capital_flow",
+        "display_name": "PFT Reward Flow",
+        "identifiers": [
+          {
+            "scheme": "pft_internal",
+            "value": "flow.rewards"
+          }
+        ],
+        "market": "PFT_NETWORK"
+      },
+      "quantity": {
+        "amount": "0",
+        "unit": "PFT"
+      },
+      "valuation": {
+        "base_currency_value": "0",
+        "price_per_unit": "1",
+        "valuation_source": "chain_index"
+      },
+      "weight": {
+        "basis_points": 2000,
+        "fraction": "0.2",
+        "percent": "20.0"
+      },
+      "metadata": {
+        "top_earner": "rHWKHD9XSire...",
+        "top_earner_pft": 55750,
+        "narrative": "36 reward payments, 225570 PFT distributed to 19 contributors. Top earner: rHWKHD...u2yC (55750 PFT)."
+      }
+    },
+    {
+      "instrument": {
+        "asset_class": "airdrop_flow",
+        "display_name": "Daily Airdrops",
+        "identifiers": [
+          {
+            "scheme": "pft_internal",
+            "value": "airdrops.daily"
+          }
+        ],
+        "market": "PFT_NETWORK"
+      },
+      "quantity": {
+        "amount": "17900",
+        "unit": "PFT"
+      },
+      "valuation": {
+        "base_currency_value": "0",
+        "price_per_unit": "1",
+        "valuation_source": "chain_index"
+      },
+      "weight": {
+        "basis_points": 1500,
+        "fraction": "0.15",
+        "percent": "15.0"
+      },
+      "metadata": {
+        "narrative": "2 daily airdrops issued yesterday totaling 17,900 PFT. Highest: rsS2Y6...aXRZ (9,400 PFT). Lowest: r4ahFv...5XyU (8,500 PFT). 7-day leader: rsS2Y6...aXRZ (75,400 PFT, avg 9,425/day over 7 days)."
+      }
+    },
+    {
+      "instrument": {
+        "asset_class": "sybil_intelligence",
+        "display_name": "Sybil Watch",
+        "identifiers": [
+          {
+            "scheme": "pft_internal",
+            "value": "watch.sybil"
+          }
+        ],
+        "market": "PFT_NETWORK"
+      },
+      "quantity": {
+        "amount": "0",
+        "unit": "accounts"
+      },
+      "valuation": {
+        "base_currency_value": "1",
+        "price_per_unit": "1",
+        "valuation_source": "chain_index"
+      },
+      "weight": {
+        "basis_points": 1500,
+        "fraction": "0.15",
+        "percent": "15.0"
+      },
+      "metadata": {
+        "narrative": "743 sybil accounts tracked across 1 cluster(s). Bot ratio: 81.5%. 1 wallet(s) in review queue. Enforcement: active. Zero reward leaks."
+      }
+    },
+    {
+      "instrument": {
+        "asset_class": "contributor_dynamics",
+        "display_name": "Network Movers",
+        "identifiers": [
+          {
+            "scheme": "pft_internal",
+            "value": "movers.activity"
+          }
+        ],
+        "market": "PFT_NETWORK"
+      },
+      "quantity": {
+        "amount": "5",
+        "unit": "contributors"
+      },
+      "valuation": {
+        "base_currency_value": "0",
+        "price_per_unit": "0",
+        "valuation_source": "chain_index"
+      },
+      "weight": {
+        "basis_points": 2000,
+        "fraction": "0.2",
+        "percent": "20.0"
+      },
+      "metadata": {
+        "narrative": "Most active (7d): r4RPpe...WghS (50 memos). 7 new wallet(s) this week. 30 contributor(s) went quiet (7+ days silent).",
+        "hustlers": []
+      }
+    },
+    {
+      "instrument": {
+        "asset_class": "historical_analysis",
+        "display_name": "Deep Cut",
+        "identifiers": [
+          {
+            "scheme": "pft_internal",
+            "value": "deep_cut.historical"
+          }
+        ],
+        "market": "PFT_NETWORK"
+      },
+      "quantity": {
+        "amount": "1",
+        "unit": "analysis"
+      },
+      "valuation": {
+        "base_currency_value": "0",
+        "price_per_unit": "0",
+        "valuation_source": "chain_index"
+      },
+      "weight": {
+        "basis_points": 2000,
+        "fraction": "0.2",
+        "percent": "20.0"
+      },
+      "metadata": {
+        "narrative": "30 days ago (2026-04-04): 7669 transactions from 70 wallets. Busiest hour ever: 2026-03-02T19:00 UTC (183 memos). First indexed transaction: 2026-02-06 from r4vhrM...7bmA"
+      }
+    }
+  ],
+  "aggregate": {
+    "base_currency": "PFT",
+    "included_position_count": 6,
+    "sum_included_base_currency_value": "0",
+    "weight_sum_basis_points": 10000,
+    "weight_sum_fraction": "1.0",
+    "weight_sum_percent": "100.0",
+    "weight_denominator_source": "explicit_section_weights",
+    "weight_denominator_base_currency_value": null,
+    "is_weight_sum_expected_to_equal_one": true,
+    "valuation_reconciliation": {
+      "status": "not_applicable_intelligence_index",
+      "relative_difference": null,
+      "absolute_difference": null,
+      "notes": [
+        "Intelligence index \u2014 sections are weighted by editorial importance, not financial value"
+      ]
+    }
+  },
+  "provenance": {
+    "created_at": "2026-05-04T03:08:59Z",
+    "created_by": "herald-v2-export.py",
+    "source_records": [
+      {
+        "source": "chain-index.db",
+        "record_type": "database_query",
+        "record_date": "2026-05-04",
+        "hash": null
+      }
+    ],
+    "transformations": [
+      "BFS crawl of PFT ledger",
+      "Section aggregation and narrative generation",
+      "Conversion to pft.index.snapshot.v1 format"
+    ],
+    "calculation_policy": "Metrics computed from public ledger data. No private contributor data included.",
+    "known_limitations": [
+      "Airdrop detection uses 21:05-21:12 UTC window heuristic",
+      "Bot classification depends on behavioral heuristics with potential false positives",
+      "Memo count used as proxy for task activity"
+    ]
+  },
+  "publication": {
+    "access_policy": "subscriber_gated_with_delayed_public",
+    "default_mode": "encrypted_ipfs",
+    "allowed_modes": [
+      "encrypted_ipfs",
+      "public_web"
+    ],
+    "intended_pointer": {
+      "schema_version": 2,
+      "wire_kind": "DOCUMENT",
+      "semantic_kind": "HERALD_DAILY"
+    }
+  },
+  "extensions": {
+    "herald_edition": 21,
+    "herald_date": "2026-05-04",
+    "access_tiers": {
+      "level_0": {
+        "name": "subscriber",
+        "delay_days": 0
+      },
+      "level_1": {
+        "name": "trial",
+        "delay_days": 1
+      },
+      "level_2": {
+        "name": "public",
+        "delay_days": 7
+      }
+    }
+  }
+}
