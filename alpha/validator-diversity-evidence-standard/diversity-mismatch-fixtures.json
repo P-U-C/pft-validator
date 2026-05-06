@@ -1,0 +1,281 @@
+{
+  "schema_version": "1.0.0",
+  "name": "post-fiat-unl-diversity-scoring-fixtures",
+  "description": "Reusable fixtures showing how a Dynamic UNL diversity scorer should treat each evidence-class combination. Inputs are observable validator metadata. Expected output describes the scoring treatment under the proposed v1 privacy-safe spec.",
+  "generated_at": "2026-05-06T00:00:00Z",
+  "spec_version_referenced": "validator-diversity-evidence-standard.v1",
+  "evidence_classes": {
+    "asn_public": "ASN resolved from a public peer-list IP via WHOIS or stable BGP-table lookup",
+    "vps_sentry": "Operator publishes a sentry/forwarder topology; validator IP not directly exposed; sentry ASN(s) public",
+    "homelab_attestation": "Operator publishes a signed attestation: residential/homelab class, country bucket, single-host non-cloud, optionally region bucket",
+    "region_bucket": "Coarse continent or country-level region (no city, no precise geo)",
+    "cloud_classification": "Binary cloud / non-cloud, derived from ASN tags or operator attestation",
+    "toml_domain": "Operator-controlled domain hosts xrp-ledger.toml or equivalent, signed with validator key",
+    "remains_private": "Residential IP, precise physical location, private peer map, sentry network internals"
+  },
+  "scoring_axes": {
+    "concentration_penalty": "Penalty for ASN/provider/country concentration in the UNL set, applied at SET level not per-validator",
+    "transparency_credit": "Credit for verifiable diversity evidence -- public ASN OR signed attestation count equally",
+    "unverifiable_penalty": "Penalty for unverifiable infrastructure claims with NO attestation path attempted",
+    "homelab_credit": "Diversity credit for verified non-cloud / unique-ASN-bucket; equal magnitude to public-cloud-ASN credit"
+  },
+  "fixtures": [
+    {
+      "case_id": "F1",
+      "case_class": "verified-public",
+      "description": "Mainline cloud validator with public ASN, public IP, public TOML/domain. Cloud-concentrated provider.",
+      "input": {
+        "asn_resolution": "AS24940 (Hetzner Online GmbH, DE)",
+        "asn_public": true,
+        "ip_resolved": true,
+        "toml_domain": true,
+        "operator_attestation": null,
+        "cloud_classification": "cloud",
+        "region_bucket": "EU-Central",
+        "concentration_share_at_asn": 0.469
+      },
+      "current_scorer_observed": {
+        "diversity": 80,
+        "identity": 90,
+        "reasoning_excerpt": "ASN and geo resolved; verified public infrastructure"
+      },
+      "proposed_scorer_v1": {
+        "diversity_per_validator": 80,
+        "concentration_penalty_at_set_level": -25,
+        "effective_diversity_contribution": 55,
+        "rationale": "Per-validator transparency is high, but the validator sits inside a 46.9% ASN cluster. Set-level concentration penalty is applied to the network's diversity score, not to this validator's reliability/identity score. The validator is correctly identified as cloud-concentrated."
+      }
+    },
+    {
+      "case_id": "F2",
+      "case_class": "unverifiable-missing",
+      "description": "Validator with no public IP resolution, no signed attestation, no TOML. The current failure mode that fires for genuinely opaque operators.",
+      "input": {
+        "asn_resolution": null,
+        "asn_public": false,
+        "ip_resolved": false,
+        "toml_domain": false,
+        "operator_attestation": null,
+        "cloud_classification": "unknown",
+        "region_bucket": null,
+        "concentration_share_at_asn": null
+      },
+      "current_scorer_observed": {
+        "diversity": 20,
+        "identity": 60,
+        "reasoning_excerpt": "Missing ASN/geolocation data prevents diversity assessment"
+      },
+      "proposed_scorer_v1": {
+        "diversity_per_validator": 20,
+        "unverifiable_penalty": -10,
+        "effective_diversity_contribution": 10,
+        "rationale": "No attestation path attempted. Penalty applies. This is the case the current scorer treats correctly -- but it should NOT be the same case applied to operators with privacy-safe attestation (see F3)."
+      }
+    },
+    {
+      "case_id": "F3",
+      "case_class": "privacy-safe-homelab",
+      "description": "Homelab/residential operator behind VPN. No public IP. Provides signed attestation: residential class, country bucket, single-host non-cloud. ASN of upstream ISP optionally published when safe.",
+      "input": {
+        "asn_resolution": "operator-attested: residential ISP class, ASN published per operator policy",
+        "asn_public": "conditional",
+        "ip_resolved": false,
+        "toml_domain": true,
+        "operator_attestation": {
+          "class": "homelab-residential",
+          "country_bucket": "<region bucket per operator>",
+          "host_topology": "single-host-non-cloud",
+          "signed_with_validator_key": true,
+          "asn_when_safe": "<residential ASN, operator-disclosed when safe>"
+        },
+        "cloud_classification": "non-cloud",
+        "region_bucket": "<region bucket>",
+        "concentration_share_at_asn": 0.020
+      },
+      "current_scorer_observed": {
+        "diversity": 20,
+        "identity": 80,
+        "reasoning_excerpt": "Missing ASN/geolocation data prevents diversity assessment and raises operational uncertainty. The lack of IP resolution is a significant penalty for infrastructure transparency."
+      },
+      "proposed_scorer_v1": {
+        "diversity_per_validator": 85,
+        "homelab_credit": 10,
+        "effective_diversity_contribution": 95,
+        "rationale": "Signed attestation supplies the evidence the IP-resolution path would have. Non-cloud class + unique-ASN-bucket + non-correlated jurisdiction is materially MORE diverse than F1. The current scorer treats this case identically to F2 -- that is the mismatch this spec corrects."
+      }
+    },
+    {
+      "case_id": "F4",
+      "case_class": "cloud-concentration",
+      "description": "Multiple validators on the same ASN. Each validator is verified-public individually, but the SET concentrates risk.",
+      "input": {
+        "asn_resolution": "AS24940 (Hetzner) -- 23 of 49 network nodes",
+        "asn_public": true,
+        "ip_resolved": true,
+        "toml_domain": true,
+        "operator_attestation": null,
+        "cloud_classification": "cloud",
+        "region_bucket": "EU-Central / NA-East",
+        "concentration_share_at_asn": 0.469,
+        "concentration_share_top_two_providers": 0.694
+      },
+      "current_scorer_observed": {
+        "diversity": 80,
+        "set_concentration_warning": false,
+        "reasoning_excerpt": "Verified public infrastructure, ASN resolved"
+      },
+      "proposed_scorer_v1": {
+        "diversity_per_validator": 80,
+        "set_concentration_penalty": -30,
+        "effective_diversity_contribution": 50,
+        "rationale": "Per-validator score is fine. The mismatch is at the SET level: 46.9% Hetzner concentration is a correlated-failure hazard (single-provider outage takes down a near-majority). Scorer should surface a network-level concentration warning whenever any single ASN exceeds 25% of the UNL or any two ASNs exceed 50%."
+      }
+    },
+    {
+      "case_id": "F5",
+      "case_class": "partial-evidence",
+      "description": "Operator publishes TOML/domain but no signed homelab attestation; runs a sentry topology (validator IP hidden behind public sentries with mixed ASNs).",
+      "input": {
+        "asn_resolution": "sentry-only: AS14061 (DigitalOcean), AS24940 (Hetzner)",
+        "asn_public": "partial",
+        "ip_resolved": "sentry-only",
+        "toml_domain": true,
+        "operator_attestation": {
+          "class": "vps-sentry-topology",
+          "validator_class": "non-public-IP-by-design",
+          "sentry_count": 3,
+          "signed_with_validator_key": true
+        },
+        "cloud_classification": "cloud",
+        "region_bucket": "EU-West / NA-East",
+        "concentration_share_at_asn": null
+      },
+      "current_scorer_observed": {
+        "diversity": 50,
+        "identity": 70,
+        "reasoning_excerpt": "Partial infrastructure transparency; validator IP not directly resolvable"
+      },
+      "proposed_scorer_v1": {
+        "diversity_per_validator": 75,
+        "transparency_credit": 5,
+        "effective_diversity_contribution": 80,
+        "rationale": "Sentry topology is a recognized operational pattern (XRPL Validator Operations Guide). Treating it as 'partial' penalizes a security-positive design choice. Signed attestation + sentry ASN list satisfies the transparency requirement without exposing the validator host."
+      }
+    },
+    {
+      "case_id": "F6",
+      "case_class": "privacy_claim_without_reproducible_attestation",
+      "description": "Operator claims non-cloud / homelab class but provides no reproducible signed attestation. Prevents 'trust me, I'm homelab' from getting rewarded.",
+      "input": {
+        "asn_resolution": null,
+        "asn_public": false,
+        "ip_resolved": false,
+        "toml_domain": true,
+        "operator_attestation": {
+          "class_claimed": "non_cloud_or_homelab",
+          "signed_with_validator_key": false,
+          "evidence_confidence": "none"
+        },
+        "cloud_classification": "claimed_non_cloud_unverified",
+        "region_bucket": null,
+        "concentration_share_at_asn": null
+      },
+      "current_scorer_observed": {
+        "diversity": 30,
+        "identity": 60,
+        "reasoning_excerpt": "TOML present but ASN and geo unresolved; no operator attestation"
+      },
+      "proposed_scorer_v1": {
+        "diversity_per_validator": 30,
+        "homelab_credit": 0,
+        "unverifiable_penalty": -5,
+        "evidence_confidence": 0.10,
+        "effective_diversity_contribution": 25,
+        "guard_action": "do_not_award_homelab_credit",
+        "rationale": "Privacy claim is present but not reproducible. The standard explicitly does not reward unverifiable claims. Treatment sits between F2 (no claim) and F3 (signed claim) but closer to F2. The operator can move to F3 by signing the attestation."
+      }
+    },
+    {
+      "case_id": "F7",
+      "case_class": "individually_valid_but_set_concentrated",
+      "description": "Per-validator metadata is fully public and verified. The validator nonetheless sits inside a top-2-provider bucket. Tests that per-validator scoring does not mask set-level risk.",
+      "input": {
+        "asn_resolution": "AS24940 (Hetzner Online GmbH, DE)",
+        "asn_public": true,
+        "ip_resolved": true,
+        "toml_domain": true,
+        "operator_attestation": null,
+        "cloud_classification": "cloud",
+        "provider_bucket": "top_2_provider",
+        "region_bucket": "EU-Central",
+        "concentration_share_at_asn": 0.469,
+        "concentration_share_top_two_providers": 0.694
+      },
+      "current_scorer_observed": {
+        "diversity": 80,
+        "identity": 90,
+        "set_concentration_warning": false,
+        "reasoning_excerpt": "Verified public infrastructure"
+      },
+      "proposed_scorer_v1": {
+        "per_validator_score": 80,
+        "set_level_adjustment": -30,
+        "effective_diversity_contribution": 50,
+        "guard_action": "apply_set_level_concentration_penalty",
+        "rationale": "A validator can be individually well-described while still worsening UNL concentration if it sits inside an already dominant provider bucket. Per-validator transparency is unchanged; the penalty is computed at the set level and surfaced as a network-wide concentration warning."
+      }
+    },
+    {
+      "case_id": "F8",
+      "case_class": "sentry_masked_validator_origin",
+      "description": "Public peer endpoint is a sentry / relay; the validator origin is private by design. Tests that sentry ASN is not falsely equated with validator custody location.",
+      "input": {
+        "public_endpoint_type": "sentry_or_relay",
+        "asn_resolution": "sentry-only: AS14061 (DigitalOcean), AS24940 (Hetzner)",
+        "asn_public": true,
+        "geo_available": "coarse_only",
+        "validator_origin_disclosed": false,
+        "ip_resolved": "sentry-only",
+        "toml_domain": true,
+        "operator_attestation": {
+          "class": "privacy_safe_sentry_topology",
+          "validator_class": "non-public-IP-by-design",
+          "sentry_count": 3,
+          "signed_with_validator_key": true
+        },
+        "cloud_classification": "sentry_cloud_origin_undisclosed",
+        "region_bucket": "EU-West / NA-East"
+      },
+      "current_scorer_observed": {
+        "diversity": 50,
+        "identity": 70,
+        "reasoning_excerpt": "Partial infrastructure transparency"
+      },
+      "proposed_scorer_v1": {
+        "public_endpoint_score": 75,
+        "origin_score_partial": 70,
+        "evidence_confidence": 0.65,
+        "effective_diversity_contribution": 80,
+        "guard_action": "score_endpoint_and_origin_separately",
+        "rationale": "The public peer endpoint may not be the validator origin. Scoring should avoid falsely equating sentry ASN with validator custody location. The endpoint is scored on observed ASN/geo/provider; the origin gets partial credit conditioned on signed sentry-topology attestation."
+      }
+    }
+  ],
+  "test_invariants": [
+    "F1.effective_diversity_contribution < F3.effective_diversity_contribution",
+    "F3.effective_diversity_contribution > F2.effective_diversity_contribution + 20",
+    "F4.set_concentration_penalty < 0",
+    "F5.effective_diversity_contribution > current_scorer_observed.diversity",
+    "F6.effective_diversity_contribution < F3.effective_diversity_contribution",
+    "F6.effective_diversity_contribution > F2.effective_diversity_contribution",
+    "F7.set_level_adjustment < 0",
+    "F7.per_validator_score > F7.effective_diversity_contribution",
+    "F8.public_endpoint_score != F8.origin_score_partial",
+    "F8.effective_diversity_contribution > F8.current_scorer_observed.diversity"
+  ],
+  "non_goals": [
+    "These fixtures do not prescribe absolute score values; they prescribe the ORDERING and the relative magnitudes between cases.",
+    "These fixtures do not require the scorer to bypass identity/reliability checks -- those are independent axes.",
+    "These fixtures do not require operators to publish residential IPs, precise locations, or private infra."
+  ]
+}
