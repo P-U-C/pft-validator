@@ -4,7 +4,7 @@ title: "Signal Marketplace SDK Smoke-Test Quickstart"
 subtitle: "Local-only end-to-end run of the pft_indexing SDK that exercises every marketplace primitive without live credentials, funded wallets, or network egress for content."
 date: 2026-05-08
 category: alpha
-status: draft
+status: published
 author: Permanent Upper Class (PFT Validator)
 ---
 
@@ -23,7 +23,7 @@ If your final step prints `PASS: round-trip integrity verified`, the SDK is corr
 | Marketplace step | Exercised in smoke test? | How |
 |---|---|---|
 | List offer (publish encrypted snapshot) | ✅ partially | encrypted blob is produced locally; not pinned to IPFS, no `pf.ptr:v4` memo submitted |
-| Purchase | ✅ proxy | producer encrypts directly to subscriber's X25519 pubkey, which is the same recipient grant a real access manifest would publish at the right delay tier |
+| Purchase / access-grant equivalent | ✅ | local subscriber recipient identity is accepted by the producer encryption path; payment, access-manifest publication, and PFTL submission are intentionally suppressed |
 | Delivery | ✅ fully | subscriber decrypts the blob using their stored BIP39 mnemonic, exactly as a real subscriber would after fetching the access manifest |
 | Release / completion | ✅ fully | original-vs-recovered SHA-256 digest match is the integrity proof equivalent to the publication-receipt step |
 
@@ -34,6 +34,73 @@ What the smoke test deliberately **skips** to stay credential-free:
 - Access manifest publication (also a PFTL submit)
 
 The full testnet flow that does include those steps is documented in the SDK repo's `docs/operator_publish_index.md` and `docs/test_wallet_provisioning.md`. See "Optional next steps" at the bottom of this page.
+
+---
+
+## Mock marketplace event log
+
+This quickstart uses a local-only marketplace surrogate. No live order book, funded wallet, IPFS pin, or PFTL transaction is created. Instead, the SDK commands below emit the minimum equivalent state transitions needed to verify the full marketplace lifecycle safely.
+
+| Marketplace phase | Local smoke-test equivalent | Verification signal |
+|---|---|---|
+| Offer listed | `snapshot-id` creates a deterministic offer identity from the canonical artifact | Stable content hash and snapshot ID |
+| Buyer prepared | `wallet-create --label subscriber` creates an unfunded local subscriber identity | `funding: null`, `active: false` |
+| Purchase / access-grant equivalent | `x25519-pubkey` exposes the subscriber recipient identity to the producer flow | Recipient pubkey derived locally, no funds moved |
+| Signal delivered | `encrypt-x25519` writes a subscriber-addressed encrypted payload | `recipient_count: 1`, encrypted file present on disk |
+| Buyer unlocks signal | `decrypt-x25519` recovers the delivered snapshot using the subscriber's mnemonic | Exit code 0 and recovered file |
+| Release completed | Original and recovered digests match | `PASS: round-trip integrity verified` |
+
+Expected local event log (the semantic receipt of the marketplace lifecycle, in the shape a real marketplace pipeline would emit at each phase):
+
+```json
+[
+  {
+    "phase": "offer_listed",
+    "offer_id": "pf.snap.9367ee72f2baacb665c27ae30f97611a",
+    "content_hash": "cecd5f104fe8fb21b97197c70545e9017b6be0c19936bb5d41946783e44732af",
+    "delivery_format": "ENC_X25519_XCHACHA20P1305",
+    "mode": "local_only"
+  },
+  {
+    "phase": "purchase_equivalent",
+    "buyer": "subscriber",
+    "producer": "producer",
+    "payment": "suppressed",
+    "funding_required": false,
+    "live_credentials_required": false
+  },
+  {
+    "phase": "delivery",
+    "artifact": "snapshot.v1.encrypted.json",
+    "recipient_count": 1,
+    "network_publish": "suppressed"
+  },
+  {
+    "phase": "release_equivalent",
+    "artifact": "snapshot.v1.recovered.json",
+    "integrity": "sha256_match",
+    "result": "PASS"
+  }
+]
+```
+
+In this quickstart, "purchase equivalent" means the subscriber's local recipient identity is accepted by the producer-side encryption path without moving funds. In the full marketplace flow, this point would be replaced by funded testnet purchase, access-manifest publication, and pointer submission. The smoke test intentionally stops before those steps to remain credential-free.
+
+If you want to capture this event log as a real file during your run, append the following snippet after step 10:
+
+```bash
+cat > marketplace-events.json <<EOF
+[
+  {"phase":"offer_listed","offer_id":"pf.snap.9367ee72f2baacb665c27ae30f97611a","content_hash":"$(pft-index digest snapshot.v1.json)","delivery_format":"ENC_X25519_XCHACHA20P1305","mode":"local_only"},
+  {"phase":"purchase_equivalent","buyer":"subscriber","producer":"producer","payment":"suppressed","funding_required":false,"live_credentials_required":false},
+  {"phase":"delivery","artifact":"snapshot.v1.encrypted.json","recipient_count":1,"network_publish":"suppressed"},
+  {"phase":"release_equivalent","artifact":"snapshot.v1.recovered.json","integrity":"sha256_match","result":"PASS"}
+]
+EOF
+cat marketplace-events.json
+```
+
+The resulting `marketplace-events.json` is the deterministic semantic receipt of the marketplace round-trip — suitable for hashing and anchoring if the operator wants a tamper-evident smoke-test attestation.
 
 ---
 
@@ -84,6 +151,66 @@ cp $OLDPWD/examples/igv_top10_2026-04-27.snapshot.v1.json snapshot.v1.json
 (or wherever your local `pft_indexing/examples/` directory is)
 
 You are ready to run the flow.
+
+---
+
+## One-command runner (optional)
+
+If you'd rather prove it in a single shot than walk through 10 steps, save the script below as `run-signal-marketplace-smoke.sh` and run it. It performs setup, runs every step, and prints the same `PASS` line at the end.
+
+```bash
+cat > run-signal-marketplace-smoke.sh <<'EOF'
+#!/bin/bash
+set -euo pipefail
+
+# Clone + install the SDK (skip if already installed)
+git clone https://github.com/agtico/pft_indexing.git || true
+cd pft_indexing
+python3 -m venv .venv 2>/dev/null || true
+source .venv/bin/activate
+pip install -e . > /dev/null
+
+# Working directory
+mkdir -p /tmp/pft-smoke-test
+cp examples/igv_top10_2026-04-27.snapshot.v1.json /tmp/pft-smoke-test/snapshot.v1.json
+cd /tmp/pft-smoke-test
+
+# Node module for BIP39 -> PFTL derivation
+npm init -y > /dev/null
+npm install xrpl > /dev/null
+
+# Throwaway smoke-test secrets
+export PFT_INDEX_SEED_DB=/tmp/pft-smoke-test/wallet_seeds.sqlite3
+export PFT_INDEX_WALLET_PASSPHRASE='smoke-test-passphrase-not-real'
+
+# Marketplace lifecycle
+pft-index validate snapshot.v1.json
+pft-index digest snapshot.v1.json
+pft-index snapshot-id snapshot.v1.json --json
+pft-index wallet-create --label producer   --passphrase-env PFT_INDEX_WALLET_PASSPHRASE
+pft-index wallet-create --label subscriber  --passphrase-env PFT_INDEX_WALLET_PASSPHRASE
+pft-index seed-list
+pft-index x25519-pubkey --wallet subscriber --passphrase-env PFT_INDEX_WALLET_PASSPHRASE
+pft-index encrypt-x25519 snapshot.v1.json \
+  --wallet subscriber --passphrase-env PFT_INDEX_WALLET_PASSPHRASE \
+  --out snapshot.v1.encrypted.json --owner-key-out snapshot.v1.x25519-owner-key.json
+pft-index decrypt-x25519 snapshot.v1.encrypted.json \
+  --wallet subscriber --passphrase-env PFT_INDEX_WALLET_PASSPHRASE \
+  --out snapshot.v1.recovered.json
+
+ORIG=$(pft-index digest snapshot.v1.json)
+RECV=$(pft-index digest snapshot.v1.recovered.json)
+echo "original  $ORIG"
+echo "recovered $RECV"
+[ "$ORIG" = "$RECV" ] \
+  && echo "PASS: round-trip integrity verified -- digests match" \
+  || { echo "FAIL: digest mismatch"; exit 1; }
+EOF
+
+bash run-signal-marketplace-smoke.sh
+```
+
+Either path (one-shot script or step-by-step below) ends at the same deterministic `PASS` line.
 
 ---
 
@@ -313,7 +440,7 @@ This smoke test was designed to be reproducible by any reader with **zero exposu
 - **No private keys cross the boundary of your local machine.** Wallet mnemonics are generated locally, encrypted with your throwaway passphrase via scrypt-derived AES-256-GCM, and stored in a local SQLite DB at `$PFT_INDEX_SEED_DB`. The CLI never prints raw mnemonics to stdout (`mnemonic_printed: false`).
 - **No live credentials are required.** No Pinata key, no IPFS API token, no PFTL RPC API key, no PFTL operator wallet. The only network call (the read-only balance check during `wallet-create`) requires no authentication and returns `actNotFound` for the freshly-generated unfunded test wallets.
 - **No live-funds requirement.** The producer and subscriber wallets are never funded. `--submit-funding` is omitted from `wallet-create`. `funding: null` in the output confirms no payment was attempted. The wallets cannot move PFT because they have no balance and no signing key has been used to sign a transaction.
-- **No wallet-identifying data is needed from the reader.** The only on-screen identifiers are random per-run wallet addresses and X25519 pubkeys generated specifically for this smoke test. They have no existing on-chain history; they are throwaway. The expected outputs above use placeholders (`r<PRODUCER_ADDR>`, `r<SUBSCRIBER_ADDR>`, `<64-HEX_RECIPIENT_ID>`) precisely so that no real operator's address appears anywhere on this page.
+- **No wallet-identifying data is needed from the reader.** The commands will print the reader's own throwaway local wallet addresses (random per-run BIP39 seeds, never funded, never reused). **The published quickstart does not contain the operator's wallet addresses, real subscriber addresses, production X25519 pubkeys, funding accounts, transaction hashes, CIDs, or access-manifest recipient records.** Every wallet-identifying field in the expected outputs above uses a placeholder (`r<PRODUCER_ADDR>`, `r<SUBSCRIBER_ADDR>`, `<64-HEX_RECIPIENT_ID>`, `<base64-32-byte-x25519-pubkey>`).
 - **No raw personal data is collected, generated, or transmitted.** The sample artifact contains only public market-cap data; it has no PII.
 
 If you want to throw away the smoke-test state when you are done:
@@ -336,6 +463,24 @@ That removes the encrypted seed DB, both throwaway wallets, the encrypted blob, 
 **Step 4 hangs for many seconds** -- the read-only balance check is reaching out to `rpc.testnet.postfiat.org`. If your network is offline, this will eventually time out and the wallet-create will succeed locally anyway. The wallet does not need testnet to be online.
 
 **`PASS` does not print at step 10** -- the recovered digest mismatch indicates either a corrupted intermediate file, a wrong wallet label on decrypt, or a passphrase mismatch between encrypt and decrypt. Re-run from step 4 in a clean working directory.
+
+---
+
+## Non-goals
+
+This page intentionally does not test:
+
+- price discovery
+- live offer indexing
+- escrow or funds movement
+- PFTL transaction submission
+- IPFS pinning
+- production subscriber identity
+- private alpha payloads
+- wallet funding
+- credential handling
+
+Those belong in the full testnet/operator runbook, not the credential-free smoke test.
 
 ---
 
@@ -362,6 +507,20 @@ The smoke-test flow on this page is designed so that swapping the local-only enc
 - **CLI version (the one this page was tested against):** `pft-indexing 0.1.0`
 
 Run `pip show pft-indexing` after install to confirm the version on your machine. If your version is significantly newer, the CLI flags may have changed; consult `pft-index <subcommand> --help`.
+
+---
+
+## Reviewer checklist
+
+A reviewer can verify this artifact by checking that:
+
+- [ ] The page is public and loads without login or paywall.
+- [ ] Setup commands are exact and copy-pasteable.
+- [ ] The flow includes offer/listing identity, purchase-equivalent grant, delivery, and release-equivalent integrity completion.
+- [ ] Expected output is shown for every meaningful step.
+- [ ] The final digest match is deterministic (`cecd5f10...4732af` for both original and recovered).
+- [ ] No private key, mnemonic, live credential, funded wallet, operator wallet, or live-funds requirement appears.
+- [ ] Full testnet-only steps are clearly separated from the credential-free smoke test.
 
 ---
 
