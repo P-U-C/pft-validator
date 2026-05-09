@@ -464,6 +464,27 @@ That removes the encrypted seed DB, both throwaway wallets, the encrypted blob, 
 
 **`PASS` does not print at step 10** -- the recovered digest mismatch indicates either a corrupted intermediate file, a wrong wallet label on decrypt, or a passphrase mismatch between encrypt and decrypt. Re-run from step 4 in a clean working directory.
 
+**`ValueError: No matching key shard for this wallet`** at step 9 -- this happens if you pass `--wallet producer` (or any other label that is NOT the recipient the blob was encrypted for) to `decrypt-x25519`. Verbatim CLI output:
+
+```
+Traceback (most recent call last):
+  File "/.../pft-index", line 8, in <module>
+    sys.exit(main())
+  File "/.../pft_indexing/cli.py", line 670, in main
+    return args.func(args)
+  File "/.../pft_indexing/cli.py", line 183, in cmd_decrypt_x25519
+    plaintext = decrypt_blob_with_mnemonic(blob, mnemonic, access_manifests=manifests)
+  File "/.../pft_indexing/pftasks_crypto.py", line 194, in decrypt_blob_with_mnemonic
+    return decrypt_blob_with_keypair(blob, keypair, access_manifests=access_manifests)
+  File "/.../pft_indexing/pftasks_crypto.py", line 167, in decrypt_blob_with_keypair
+    raise ValueError("No matching key shard for this wallet")
+ValueError: No matching key shard for this wallet
+```
+
+Exit code is `1` and the `--out` file is not written. Fix: pass `--wallet subscriber` (or the label of the wallet whose X25519 pubkey the blob was actually encrypted for in step 8).
+
+This is intentional cryptographic behavior, not a bug. The `ENC_X25519_XCHACHA20P1305` envelope contains per-recipient key shards; only an X25519 private key that was a recipient at encrypt time can unwrap any shard. A real marketplace consumer who somehow obtained an encrypted signal blob without paying for an access grant would see this same error, which is the property that makes the marketplace privacy floor enforceable.
+
 ---
 
 ## Non-goals
