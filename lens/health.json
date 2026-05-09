@@ -4,9 +4,9 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-05-09T11:00:00Z",
-  "calculated_at": "2026-05-09T11:04:41Z",
-  "next_update_at": "2026-05-09T12:00:00Z",
+  "snapshot_id": "2026-05-09T12:00:00Z",
+  "calculated_at": "2026-05-09T12:04:25Z",
+  "next_update_at": "2026-05-09T13:00:00Z",
   "refresh_cadence": "hourly",
   "health_score": 0.4847,
   "health_score_formula": "sum(component.score * component.weight)",
@@ -158,24 +158,17 @@
     "clear": 1
   },
   "score_change": {
-    "vs_prior_snapshot": 0.0044,
-    "prior_health_score": 0.4803,
-    "prior_calculated_at": "2026-05-09T10:04:25Z",
-    "largest_movers": [
-      {
-        "component": "memo_velocity",
-        "delta": 0.0044,
-        "raw_delta": 0.0218,
-        "reason": "latest_day_memos=39 vs prior avg=137.9"
-      }
-    ]
+    "vs_prior_snapshot": 0.0,
+    "prior_health_score": 0.4847,
+    "prior_calculated_at": "2026-05-09T11:04:41Z",
+    "largest_movers": []
   },
   "network_summary": {
     "total_accounts": 912,
     "contributors": 171,
     "bots": 733,
     "infrastructure": 8,
-    "total_transactions": 377407,
+    "total_transactions": 377410,
     "memo_transactions": 14478,
     "total_edges": 41439,
     "bidirectional_edges": 39536,
@@ -183,11 +176,11 @@
     "sybil_accounts": 743
   },
   "deltas": {
-    "health_score": 0.0044,
+    "health_score": 0.0,
     "accounts": 0,
-    "memo_transactions": 3,
+    "memo_transactions": 0,
     "edges": 0,
-    "since": "2026-05-09T10:04:25Z"
+    "since": "2026-05-09T11:04:41Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -196,5 +189,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:d15b4754970428a6b96da6b5d05e89bf8481cb47acf724cddc92671bda779586"
+  "snapshot_hash": "sha256:1557cb54d948eeb5d476eb0adadcf8a88e76d635eb329d4a756191357ddb6ed8"
 }
