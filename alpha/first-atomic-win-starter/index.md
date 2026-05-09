@@ -94,33 +94,55 @@ Total budget: 30 minutes, no SDK required, no validator setup, no private system
 
 ### What a context document actually is
 
-Per goodalexander (Post Fiat founder, Mastermind Update on Full Auto + Task Node), a context document is **"a high-quality prompt for humans and AIs"** — borrowing from Amazon's memo culture. It defines three things: **strategy, constraints, and plans**. It is the input the AI reads every time it generates work for you.
+Per goodalexander (Post Fiat founder, video walkthrough on context documents — quoted verbatim):
 
-The framing matters. Two reasons:
+> "A context document is a document that drives your life. It's basically a way for you to communicate to a large language model what you want out of life, what you're striving for, what your strategies are, what your tactics are, in a way which allows a large language model to provide you with tasks."
 
-**It's not a resume.** A resume sells the past. A context document plans the present. It is the operating document a "personal executive" uses to brief their AI staff every day. You are the executive. The AI is execution capacity. The context document is how you tell it what to optimize for.
+The canonical goal:
 
-**The bottleneck is decision quality, not implementation.** goodalexander's argument: in a world where AI handles execution, the new bottleneck isn't implementation skill but "the number of high-quality decisions a person can make per day." A good context document raises the ceiling on every downstream decision the system makes on your behalf — task proposals, work routing, review weighting. A vague context document caps everything below it.
+> "I want to create a piece of art — a piece of text that adequately represents what I want out of life so that a large language model can bring me towards that objective."
 
-The downstream loop, once your context is in: **describe a goal → AI generates a sprint plan matched to your context → execute → feedback flows back into the next round of decisions**. The context is what makes that loop personal instead of generic. It's the difference between a chatbot and a staff member.
+A good context document says what you want out of life, how you're going to get there, doesn't overwhelm the reader, and fully articulates what's going on in your life. The balance to strike is **thoroughness without becoming overwhelming**.
 
-(There is also an "Ultraheavy Rewrite" feature inside Task Node that iteratively refines your context document using web-search-enhanced reasoning — so v1 doesn't have to be perfect. It just has to exist and be honest.)
+### How values work (read this before writing)
+
+The single most important section of your context document is your values, because values inform constraints, and constraints are how the AI knows what to refuse on your behalf.
+
+goodalexander's definition is tight: **a value motivates you for its own sake, informs constraints, and is not bounded.** That last clause matters — values are not means to ends.
+
+The clearest illustration is what values are *not*:
+
+> "Money is not a value. You probably want money to spend on things. It could be charity, it could be hedonism, it could be winning. In those three examples, charity, hedonism, and winning would be your actual value."
+
+Same logic applies to physical fitness:
+
+> "You either value getting a good physique for sexual access. You maybe value it for health. Maybe you value it for respect. But having a nice body is not a value. It's a means to an end."
+
+The test: *would you still pursue this if it produced no money, no status, and no recognition?* If yes, it's a value. If no, it's a means, and the actual value is whatever you'd be using the means to get.
+
+The downstream effect is automatic. If charity is your value, that constrains you from harming people. If hedonism is your value, that constrains you from work you don't enjoy. If luxury is your value, that constrains you from low-cash-flow life patterns. A well-named value brings its own implicit constraint set, and the AI inherits all of them.
 
 ### A workable starter shape
 
-Five sections, 2-4 sentences each is plenty for v1. ~500 words total. Write in your own voice — the AI is going to read this many times and the prose register matters.
+Five sections. ~500 words total is a strong v1. Write in your own voice — the AI will read this many times and the register matters.
 
-**1. Who you are.** Not your name (your reputation is wallet-bound and pseudonymous). What you do, what you've worked on, what kind of thinker you are. Example: "Ex-quant trader, ten years on FX desks. Strong with Python and stats, weak on frontend. Skeptical of crypto narratives by default but interested in coordination mechanisms."
+**1. What you want out of life.** Three to five outcomes you'd actually pay attention to if the system delivered them. Not "be successful" — concrete: "build durable analytical edge in macro markets," "have a public track record that doesn't depend on a single employer," "operate at the intersection of trading and infrastructure."
 
-**2. What you want to achieve.** Three to five outcomes you'd actually pay attention to if the system delivered them. Example: "Build durable analytical edge in macro markets. Stay technically sharp without being pulled into the day-to-day of a trading shop. Have a public track record that doesn't depend on a single employer."
+**2. Your values.** Per goodalexander's definition: things that motivate you for their own sake, inform what you'd constrain yourself from doing, are not bounded by external goals. Pick 3-5. Examples (yours will differ): "intellectual honesty, even when it costs social capital" / "agency over my own time, even when employment would pay more" / "compounding over decades, not optimizing quarters." These directly shape what the AI will refuse on your behalf.
 
-**3. What you know.** Be specific about domains where you have signal vs. domains where you're a beginner. The AI uses this to scope tasks correctly. Example: "Macro: deep. ML: intermediate (research-grade, not production). Crypto fundamentals: intermediate. Smart contracts: novice. Network architecture: novice."
+**3. Your strategies.** How you plan to get from where you are now to what you want out of life. This is the bridge between values (the why) and tactics (the day-to-day). Example: "Focus on macro signal aggregation rather than building a separate ML stack — leverage existing edges rather than competing with quants on infrastructure."
 
-**4. Your values and strategy.** What you'd refuse to do. What you'd insist on doing. The shape of work that fits you. Example: "Will not produce content that's recycled commentary. Will write code in public if the work calls for it. Prefer building things people actually use over polishing things nobody asked for."
+**4. Your tactics and constraints.** Real ones — time, attention, hardware, geography, regulatory, social. Example: "8 hours/week available. UK-based, GBP-denominated. Linux only, no Mac. Cannot accept tasks requiring US-only data feeds or US-tax-resident accreditation. Prefer asynchronous work."
 
-**5. Your constraints.** Real ones — time, attention, hardware, geography, regulatory. Example: "Roughly 8 hours/week available. UK-based, GBP-denominated. No Mac, Linux only. Cannot accept tasks that require US-only data feeds or US-tax-resident accreditation."
+**5. What you know already.** Domains where you have signal vs. where you're a beginner. The AI uses this to scope tasks correctly. Example: "Macro: deep. ML: intermediate (research-grade, not production). Crypto fundamentals: intermediate. Smart contracts: novice."
 
-You will revise it as you learn what the system does well and badly with — that's expected, not a problem. The Ultraheavy Rewrite tool is designed for that. v1 just has to be honest enough that the AI has signal to work with.
+Write it. Think about it. Don't overdesign v1 — submit something honest in 15 minutes.
+
+### After you submit: Ultraheavy Rewrite
+
+Once your context document exists, Task Node has a feature called **Ultraheavy Rewrite** that uses web-search-enhanced reasoning to iteratively refine your context with you. Use it after v1, not before. The tool sharpens what you actually meant; it cannot replace the underlying thinking.
+
+This sequencing matters. Writing your context yourself is the part that makes the system useful *for you*. Outsourcing the first draft to a tool produces a generic context that produces generic tasks. Doing the thinking first, then iterating with the tool, produces a personal context that produces personal work. That's the difference between a chatbot and a system you actually want to use.
 
 ### Completion standard
 
@@ -166,7 +188,7 @@ Material on this page is distilled from public Post Fiat assets, all of which ar
 - [awesome-postfiat](https://github.com/postfiatorg/awesome-postfiat) — community-maintained reference (README banner, FAQ, projects index)
 - [Post Fiat Explainer — A Retail Guide](https://github.com/postfiatorg/awesome-postfiat/blob/main/resources/explainer.md) — published 2026-05-02, source for the 5-step contributor loop, the Post-Fiat-vs-XRP comparison table, and the "what Post Fiat is not" framing
 - [Post Fiat FAQ](https://github.com/postfiatorg/awesome-postfiat/blob/main/resources/faq.md) — source for the "Can I use my XRP wallet?" / "Is Post Fiat built on XRP?" answers used in the framing section
-- goodalexander, "Mastermind Update: Full Auto and Task Node" — source for the context-document framing as "a high-quality prompt for humans and AIs," the Amazon memo-culture analog, the "personal executive" framing, the decision-quality-as-bottleneck argument, and the Ultraheavy Rewrite reference
+- goodalexander (Post Fiat founder), video walkthrough on context documents — verbatim source for the canonical definition ("a document that drives your life"), the high-order goal framing, the values-inform-constraints argument, the "money is not a value" / "nice body is not a value" examples, and the Ultraheavy Rewrite reference
 - [Task Node](https://tasknode.postfiat.org) — the live destination this page sends you to
 - [Explorer](https://explorer.testnet.postfiat.org) — for verifying on-chain memos
 
