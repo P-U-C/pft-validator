@@ -104,11 +104,25 @@ The canonical goal:
 
 A good context document says what you want out of life, how you're going to get there, doesn't overwhelm the reader, and fully articulates what's going on in your life. The balance to strike is **thoroughness without becoming overwhelming**.
 
-### How values work (read this before writing)
+### The three layers, and the time heuristic
+
+A context document has three nested layers — values, strategies, tactics — each with a different time horizon. From goodalexander:
+
+> "Values your entire life. A strategy is the next year. Tactics are the next three hours."
+
+That's the heuristic to keep in mind while writing. If you find yourself listing 12-month plans under "values," you're confusing strategies with values. If your "tactics" list has lifelong commitments in it, you've gone too high. Each layer answers a different question:
+
+| Layer | Time horizon | Answers |
+|---|---|---|
+| **Values** | your entire life | *why* you do anything |
+| **Strategies** | the next year | *how* you'll get from here to your values |
+| **Tactics** | the next three hours | *what* you're actually doing right now |
+
+### How values work
 
 The single most important section of your context document is your values, because values inform constraints, and constraints are how the AI knows what to refuse on your behalf.
 
-goodalexander's definition is tight: **a value motivates you for its own sake, informs constraints, and is not bounded.** That last clause matters — values are not means to ends.
+goodalexander's definition is tight: **a value motivates you for its own sake, informs constraints, and is not bounded.** That last clause matters — values are not means to ends, and they should pass Kant's universal-maximization test: a good value is something you should be able to have almost unlimited amounts of and still be a good thing.
 
 The clearest illustration is what values are *not*:
 
@@ -121,6 +135,38 @@ Same logic applies to physical fitness:
 The test: *would you still pursue this if it produced no money, no status, and no recognition?* If yes, it's a value. If no, it's a means, and the actual value is whatever you'd be using the means to get.
 
 The downstream effect is automatic. If charity is your value, that constrains you from harming people. If hedonism is your value, that constrains you from work you don't enjoy. If luxury is your value, that constrains you from low-cash-flow life patterns. A well-named value brings its own implicit constraint set, and the AI inherits all of them.
+
+### How strategies work
+
+A strategy is how you actually get from where you are to your values. Per goodalexander, **a good strategy has three attributes**:
+
+1. **It directly links to your value.** "Let's say your goal is getting rich, your strategy can't be working as a mailman. Because mailmen, on average, are not rich." A believable causal chain from strategy → value is non-negotiable.
+
+2. **It has internal justifications.** Real reasoning: industry studies, exit options, skill-set alignment, base-rate math on outcomes. *"If I actually do this strategy, I'm going to stick to it. And if I stick to it, people in a median context actually are going to get the value."*
+
+3. **It has clear acceptance criteria and milestones.** Deadlines. Success cases. Contingency plans. *"Are we going to quit if we don't raise? Are we going to bootstrap? What are the contingency plans if the strategy doesn't work?"* The milestones let you and the AI both tell whether the strategy is working.
+
+### How tactics work
+
+Tactics are task-level. They have timelines. They believably result in **world-class execution** of your strategy.
+
+> "There are a lot of bad tactics that can get a strategy done. You can cut corners, you can make bad decisions, but you should have a standard of excellence when you're generating tactics in your context document."
+
+Bad tactic example: shipping a fundraising demo as a static HTML table when the product is supposed to be a real-time chart. Good tactic: piping in real-time data because that's what the demo actually needs to convince an investor. Same strategy ("build effective real-time chart for fundraiser"), totally different tactical execution.
+
+When you write the tactics section of your context document, ask: *would a top performer in my industry recognize these as the right next steps?* If you don't know what those tactics are, the answer is to go find a top performer and ask. Most top-performer tactics are public; the AI will know them too. The common failure mode isn't carelessness — it's intensity. Tactics that are merely adequate produce results that are merely adequate.
+
+### Pressure-test your draft (before submitting)
+
+Before you submit your context document, walk through three questions goodalexander identifies as the most common failure modes:
+
+1. **Is my value actually honest?** Many people write "freedom" or "supporting my family" when what they actually value is status or power. The give-away: low motivation despite a "good" plan. *"Whatever you want intrinsically should be in your context document."* The AI is not a place of judgment. Spicy values (life extension, dominance, recognition) belong in the doc if they're real.
+
+2. **Does my strategy believably result in my value?** The example: a single man working in a male-only DevOps industry, raising from male-only VCs, who says his strategy is to grind in his job to "earn money to have a family." The strategy doesn't lead to the value — there's no path from his current situation to meeting a wife. Same problem at the value level: if your value is making $100M and your strategy is day trading, even top-1% performance doesn't get you there. The math has to close.
+
+3. **Are my tactics intense enough?** The most common failure isn't SBF-style compliance carelessness — it's *not being intense enough*. If your strategy requires top-1% execution, your tactics need to reflect what top-1% performers actually do, not the median version. If they don't, the gap is itself a signal that the underlying value or strategy may be wrong.
+
+If a section fails one of those tests, fix it now — the rewrite is much cheaper before the AI starts generating tasks against a flawed context than after.
 
 ### A workable starter shape
 
@@ -138,11 +184,16 @@ Five sections. ~500 words total is a strong v1. Write in your own voice — the 
 
 Write it. Think about it. Don't overdesign v1 — submit something honest in 15 minutes.
 
-### After you submit: Ultraheavy Rewrite
+### After you submit: the iteration tools
 
-Once your context document exists, Task Node has a feature called **Ultraheavy Rewrite** that uses web-search-enhanced reasoning to iteratively refine your context with you. Use it after v1, not before. The tool sharpens what you actually meant; it cannot replace the underlying thinking.
+Once your context document exists, Task Node has several built-in tools for iterating it with you. Use them **after** v1, not before. They sharpen what you actually meant; they cannot replace the underlying thinking.
 
-This sequencing matters. Writing your context yourself is the part that makes the system useful *for you*. Outsourcing the first draft to a tool produces a generic context that produces generic tasks. Doing the thinking first, then iterating with the tool, produces a personal context that produces personal work. That's the difference between a chatbot and a system you actually want to use.
+- **Sprint plan / Refine** — fast iteration on tactics. Best when you've already done the strategic work and want help breaking the next quarter into concrete actions.
+- **Targeted Edit** — longer-running, comprehensive rewrite of a specific section. Best for sharpening strategy when you can articulate the gap but can't fix it yourself.
+- **Full Rewrite (Ultraheavy Rewrite)** — web-search-enhanced full pass over the document. Best as a periodic re-grounding after months of accumulated edits. Don't run it on v0 — run it on v1 or later.
+- **Chat modules (ODV, MIRRORS, Brainstorm, Motivate)** — pressure-test conversations against the doc. ODV / MIRRORS are good for "is this value honest?" interrogation. Brainstorm is for generating candidate strategies. Motivate is for execution friction.
+
+The sequencing matters. Writing your context yourself is the part that makes the system useful *for you*. Outsourcing the first draft to a tool produces a generic context that produces generic tasks. Doing the thinking first, then iterating with the tools, produces a personal context that produces personal work. That's the difference between a chatbot and a system you actually want to use.
 
 ### Completion standard
 
@@ -188,7 +239,7 @@ Material on this page is distilled from public Post Fiat assets, all of which ar
 - [awesome-postfiat](https://github.com/postfiatorg/awesome-postfiat) — community-maintained reference (README banner, FAQ, projects index)
 - [Post Fiat Explainer — A Retail Guide](https://github.com/postfiatorg/awesome-postfiat/blob/main/resources/explainer.md) — published 2026-05-02, source for the 5-step contributor loop, the Post-Fiat-vs-XRP comparison table, and the "what Post Fiat is not" framing
 - [Post Fiat FAQ](https://github.com/postfiatorg/awesome-postfiat/blob/main/resources/faq.md) — source for the "Can I use my XRP wallet?" / "Is Post Fiat built on XRP?" answers used in the framing section
-- goodalexander (Post Fiat founder), video walkthrough on context documents — verbatim source for the canonical definition ("a document that drives your life"), the high-order goal framing, the values-inform-constraints argument, the "money is not a value" / "nice body is not a value" examples, and the Ultraheavy Rewrite reference
+- goodalexander (Post Fiat founder), video walkthrough on context documents — verbatim source for the canonical definition ("a document that drives your life"), the values-motivate-for-own-sake / inform-constraints / not-bounded definition, Kant's universal-maximization principle, the "money is not a value" / "nice body is not a value" examples, the three attributes of a good strategy (links to value / internal justifications / clear acceptance criteria), the tactics-as-task-level / world-class-standard framing, the "values your life / strategy your year / tactics your three hours" time heuristic, the three pressure-test questions on honesty / strategy-fit / tactical intensity, and the Sprint Plan / Refine / Targeted Edit / Full Rewrite tooling
 - [Task Node](https://tasknode.postfiat.org) — the live destination this page sends you to
 - [Explorer](https://explorer.testnet.postfiat.org) — for verifying on-chain memos
 
