@@ -74,6 +74,16 @@ This is the full cycle every Post Fiat contributor runs:
 
 Today's atomic win is step 1. The remaining 4 steps unlock once your context exists. **You don't need to complete the full cycle today.** Step 1 is itself the win — without it, the AI has nothing to work with.
 
+### The three task categories your context will route you to
+
+Once your context document exists, the AI generates work in three categories. You don't pick one — you'll likely operate in all three over time, and the AI uses your context to figure out which fits which moment. Knowing the categories matters now because they shape what you should put in your context document.
+
+- **Personal tasks** — Work aligned with your own goals. Develop a trading strategy, learn a new skill, build a project. The system helps you structure, stay accountable, and prove you did it. You are rewarded for having agency over your own growth.
+- **Network tasks** — Contributing to the network itself. Infrastructure, governance, verification systems, tools that make Post Fiat better for everyone. This is how you move from participant to builder. (This page itself was produced as a network task.)
+- **Alpha tasks** — Original research, signal analysis, market intelligence. The highest-value contributions because they translate domain expertise into network edge that downstream trading systems can act on.
+
+A consequence for your context document: include the totality of your life, not just one category. goodalexander makes this point explicitly — *"saying that you are part of a church, or are part of a charity organization which takes multiple hours a week, is a totally reasonable thing to put in a context document. The reason is because context documents are what the large language model is taking in, in order to assess if you can add something new."* If the system doesn't know about your existing commitments, it will overburden you. If it doesn't know about your domain expertise, it will route you to generic network tasks instead of high-value alpha tasks.
+
 ---
 
 ## The 30-minute action: write your context document
@@ -211,7 +221,7 @@ The third condition is the verifiable network-participation bar. Anyone with you
 
 Once your context is in:
 
-- **Request your first task** (loop step 2). The AI generates a proposal matched to what you said you wanted to achieve. You don't have to accept it — you can request alternates until one fits.
+- **Request your first task** (loop step 2). The AI generates a proposal matched to what you said you wanted to achieve, in any of the three categories (personal, network, alpha). You don't have to accept it — you can request alternates until one fits.
 - **Subscribe to The Hive Herald** ([pft.permanentupperclass.com/herald](https://pft.permanentupperclass.com/herald/)) — daily on-chain intelligence briefing on the network: rewards, contributors, sybil watch, deep history. Costs PFT, so it's also a forcing function to actually earn some.
 - **Watch the Lens** ([pft.permanentupperclass.com/lens](https://pft.permanentupperclass.com/lens/)) — live network graph and contributor activity. See where the network's actually working.
 - **Ask questions in Discord** ([discord.gg/U6HjgDSmhR](https://discord.gg/U6HjgDSmhR)) — `#contributor-help` is the right channel for the most common stumbles.
