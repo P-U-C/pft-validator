@@ -92,11 +92,23 @@ Total budget: 30 minutes, no SDK required, no validator setup, no private system
 | 0:28 | Verify it's tied to your wallet on tasknode.postfiat.org | 2 min |
 | 0:30 | Done. You've completed your First Atomic Win. |
 
-### What goes in a context document
+### What a context document actually is
 
-Per the [Post Fiat Explainer](https://github.com/postfiatorg/awesome-postfiat/blob/main/resources/explainer.md), the context document is "**your personal operating document — values, strategy, constraints**." It is **not a resume**. The AI uses it to generate task proposals matched to your goals, so the more honest and specific it is, the better the work routing gets.
+Per goodalexander (Post Fiat founder, Mastermind Update on Full Auto + Task Node), a context document is **"a high-quality prompt for humans and AIs"** — borrowing from Amazon's memo culture. It defines three things: **strategy, constraints, and plans**. It is the input the AI reads every time it generates work for you.
 
-A workable starter shape — fill in each section, 2-4 sentences per section is plenty for v1:
+The framing matters. Two reasons:
+
+**It's not a resume.** A resume sells the past. A context document plans the present. It is the operating document a "personal executive" uses to brief their AI staff every day. You are the executive. The AI is execution capacity. The context document is how you tell it what to optimize for.
+
+**The bottleneck is decision quality, not implementation.** goodalexander's argument: in a world where AI handles execution, the new bottleneck isn't implementation skill but "the number of high-quality decisions a person can make per day." A good context document raises the ceiling on every downstream decision the system makes on your behalf — task proposals, work routing, review weighting. A vague context document caps everything below it.
+
+The downstream loop, once your context is in: **describe a goal → AI generates a sprint plan matched to your context → execute → feedback flows back into the next round of decisions**. The context is what makes that loop personal instead of generic. It's the difference between a chatbot and a staff member.
+
+(There is also an "Ultraheavy Rewrite" feature inside Task Node that iteratively refines your context document using web-search-enhanced reasoning — so v1 doesn't have to be perfect. It just has to exist and be honest.)
+
+### A workable starter shape
+
+Five sections, 2-4 sentences each is plenty for v1. ~500 words total. Write in your own voice — the AI is going to read this many times and the prose register matters.
 
 **1. Who you are.** Not your name (your reputation is wallet-bound and pseudonymous). What you do, what you've worked on, what kind of thinker you are. Example: "Ex-quant trader, ten years on FX desks. Strong with Python and stats, weak on frontend. Skeptical of crypto narratives by default but interested in coordination mechanisms."
 
@@ -108,7 +120,7 @@ A workable starter shape — fill in each section, 2-4 sentences per section is 
 
 **5. Your constraints.** Real ones — time, attention, hardware, geography, regulatory. Example: "Roughly 8 hours/week available. UK-based, GBP-denominated. No Mac, Linux only. Cannot accept tasks that require US-only data feeds or US-tax-resident accreditation."
 
-That's it. ~500 words is a strong v1. You will revise it as you learn what the system does well and badly with — that's expected, not a problem.
+You will revise it as you learn what the system does well and badly with — that's expected, not a problem. The Ultraheavy Rewrite tool is designed for that. v1 just has to be honest enough that the AI has signal to work with.
 
 ### Completion standard
 
@@ -152,8 +164,9 @@ A short list of beginner traps:
 Material on this page is distilled from public Post Fiat assets, all of which are appropriate primary sources for a deeper read:
 
 - [awesome-postfiat](https://github.com/postfiatorg/awesome-postfiat) — community-maintained reference (README banner, FAQ, projects index)
-- [Post Fiat Explainer — A Retail Guide](https://github.com/postfiatorg/awesome-postfiat/blob/main/resources/explainer.md) — published 2026-05-02, source for the 5-step contributor loop, the Post-Fiat-vs-XRP comparison table, the "what Post Fiat is not" framing, and the context-document description
+- [Post Fiat Explainer — A Retail Guide](https://github.com/postfiatorg/awesome-postfiat/blob/main/resources/explainer.md) — published 2026-05-02, source for the 5-step contributor loop, the Post-Fiat-vs-XRP comparison table, and the "what Post Fiat is not" framing
 - [Post Fiat FAQ](https://github.com/postfiatorg/awesome-postfiat/blob/main/resources/faq.md) — source for the "Can I use my XRP wallet?" / "Is Post Fiat built on XRP?" answers used in the framing section
+- goodalexander, "Mastermind Update: Full Auto and Task Node" — source for the context-document framing as "a high-quality prompt for humans and AIs," the Amazon memo-culture analog, the "personal executive" framing, the decision-quality-as-bottleneck argument, and the Ultraheavy Rewrite reference
 - [Task Node](https://tasknode.postfiat.org) — the live destination this page sends you to
 - [Explorer](https://explorer.testnet.postfiat.org) — for verifying on-chain memos
 
