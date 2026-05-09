@@ -3,15 +3,15 @@
   "methodology_version": "2.1.0",
   "classification_ruleset_version": "1.2.0",
   "sybil_ruleset_version": "1.1.0",
-  "generated_at": "2026-05-09T05:00:05.367Z",
+  "generated_at": "2026-05-09T06:03:18.231Z",
   "refresh_cadence": "hourly",
   "coverage": {
-    "node_ledger_range": "1-2628525",
+    "node_ledger_range": "1-2629700",
     "node_peers": 10,
-    "indexed_ledger_range": "3179-2628074",
+    "indexed_ledger_range": "3179-2629070",
     "indexed_time_range": {
       "from": "2026-02-06T16:46:12.000Z",
-      "to": "2026-05-09T04:42:00.000Z"
+      "to": "2026-05-09T05:32:02.000Z"
     },
     "public_node_range": "1750054-latest (~90K ledgers)",
     "our_depth_advantage": "1,746,875 additional ledgers",
@@ -19,21 +19,21 @@
   },
   "totals": {
     "accounts": 912,
-    "transactions": 377389,
+    "transactions": 377392,
     "edges": 41439,
-    "memos": 14466,
+    "memos": 14469,
     "bots_detected": 733,
     "infrastructure_wallets": 8,
-    "sybil_clusters": 1,
+    "sybil_clusters": 2,
     "sybil_flagged_addresses": 743,
     "humans": 171
   },
   "deltas_since_last_update": {
     "summary": {
       "accounts": 0,
-      "transactions": 6,
+      "transactions": 3,
       "edges": 37449,
-      "memos": 6
+      "memos": 3
     },
     "completeness_window_changed": false,
     "methodology_version_changed": false
@@ -92,7 +92,7 @@
   "sample_profile": {
     "address": "rsS2Y6CK9dz9dVFjJvRyD2gBdoLPqjaXRZ",
     "tx_count": 602,
-    "memo_count": 552,
+    "memo_count": 1041,
     "balance_pft": 1349044.66,
     "first_activity": "2026-04-08T18:10:30Z",
     "last_activity": "2026-04-11T13:46:32Z",
@@ -170,7 +170,7 @@
       }
     ],
     "consistency_check": {
-      "tx_gte_memo": true,
+      "tx_gte_memo": false,
       "first_lte_last": true
     }
   }
