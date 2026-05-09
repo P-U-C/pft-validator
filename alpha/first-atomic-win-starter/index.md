@@ -80,7 +80,9 @@ This is the full cycle every Post Fiat contributor runs:
 4. **Pass review.** Quality, novelty, and integrity checks.
 5. **Earn PFT and build reputation.** Your wallet becomes your portable, permanent track record. Better reputation → better tasks → compounding value.
 
-Today's atomic win is step 1. The remaining 4 steps unlock once your context exists. **You don't need to complete the full cycle today.** Step 1 is itself the win — without it, the AI has nothing to work with.
+**The atomic win sequence**: today you'll request your first personal task — and the task itself is *"write your context document."* By doing it this way, you complete the entire 5-step loop end-to-end on the simplest possible task: you request, the AI generates a guided proposal, you do the work, you submit the context document as the task's evidence, and you've now done a real Post Fiat task. The deliverable of your first task IS your context document, which then unlocks every task after it.
+
+Doing it through the task system rather than as a one-off submission is the point. You learn how the loop actually works on the simplest task you'll ever request, and you walk away with both: a working context document AND a completed task cycle in your wallet's on-chain history.
 
 ### The three task categories your context will route you to
 
@@ -102,13 +104,19 @@ Total budget: 30 minutes, no SDK required, no validator setup, no private system
 
 | T+ | What you do | Time |
 |---|---|---|
-| 0:00 | Open `tasknode.postfiat.org` | 1 min |
-| 0:01 | Create a Post Fiat wallet (web flow) and **back up your seed phrase to somewhere offline** | 5 min |
-| 0:06 | Read the value proposition above one more time so the next part isn't generic | 4 min |
-| 0:10 | Write your context document using the structured prompts below | 15 min |
-| 0:25 | Submit the context document to Task Node — paste it into the context interface and confirm | 3 min |
-| 0:28 | Verify it's tied to your wallet on tasknode.postfiat.org | 2 min |
-| 0:30 | Done. You've completed your First Atomic Win. |
+| 0:00 | Open `tasknode.postfiat.org` and **create a Post Fiat wallet**. Back up the seed phrase to somewhere offline (paper or metal — never iCloud, never a screenshot). | 5 min |
+| 0:05 | **Request your first personal task**, with the topic *"write my context document"* (or similar phrasing — the AI will understand the intent). | 2 min |
+| 0:07 | Read the AI-generated **task proposal**. This is your structured walkthrough — the system asks you the right questions about values, strategies, tactics so you don't have to invent the structure yourself. | 3 min |
+| 0:10 | **Write the context document** following the proposal's prompts. Reference the conceptual material below (the three-layer model, the values definition, the strategy attributes, the pressure-test questions) when you need to. | 15 min |
+| 0:25 | **Submit the context document as the task's evidence**, completing your first task cycle. | 3 min |
+| 0:28 | **Verify it's on-chain**: paste your wallet address into `explorer.testnet.postfiat.org` and confirm the task memo is there. | 2 min |
+| 0:30 | Done. You've completed a full task cycle on your first try. The deliverable is your context document, which now unlocks every task after this one. |
+
+This works because the simplest possible personal task to request first is the one whose deliverable becomes the input the system uses for every subsequent task. You're learning the task flow AND producing the operating document at the same time.
+
+### Reference material: how to think about your context document
+
+The sections below are **reference**, not a sequential walkthrough. The Task Node proposal you receive in step T+0:07 is the actual walkthrough — it'll prompt you for what you need section by section. Use the material below when you want a quick refresher on what makes a value a value (not a means), what makes a strategy strong, or how to pressure-test your draft before submission. Skim now, then flip back as the task proposal asks each question.
 
 ### What a context document actually is
 
@@ -215,21 +223,22 @@ The sequencing matters. Writing your context yourself is the part that makes the
 
 ### Completion standard
 
-You have completed the First Atomic Win when:
+You have completed the First Atomic Win when all four are true:
 
-1. Your wallet exists and the seed phrase is backed up offline (paper or metal, not a screenshot in iCloud).
-2. Your context document is submitted to Task Node and visible in your account at `tasknode.postfiat.org`, tied to your wallet address.
-3. The submission has produced an on-chain memo in your wallet's history, viewable on `explorer.testnet.postfiat.org` if you paste your wallet address into the search.
+1. Your wallet exists and the seed phrase is backed up offline (paper or metal — not a screenshot in iCloud, not in a password manager only).
+2. Your first personal task ("write my context document") has been requested, accepted, and **completed** on Task Node — not just opened.
+3. Your context document is submitted as the task's evidence and is visible in your account at `tasknode.postfiat.org`, tied to your wallet address.
+4. The full task cycle has produced on-chain memos in your wallet's history, viewable on `explorer.testnet.postfiat.org` if you paste your wallet address into the search. You should see the task itself, the proposal acceptance, and the submission as separate memos.
 
-The third condition is the verifiable network-participation bar. Anyone with your wallet address can confirm on-chain that you've started, even years from now, without needing the Task Node service to still exist.
+The fourth condition is the verifiable network-participation bar. Anyone with your wallet address can confirm on-chain that you've completed a real task cycle — not just registered an account — even years from now, without needing the Task Node service to still exist. That permanence is the actual deliverable of today's session.
 
 ---
 
 ## What this unlocks
 
-Once your context is in:
+You've completed one task cycle (the context-writing task). The full loop is now open to you:
 
-- **Request your first task** (loop step 2). The AI generates a proposal matched to what you said you wanted to achieve, in any of the three categories (personal, network, alpha). You don't have to accept it — you can request alternates until one fits.
+- **Request your second task** (loop step 2 again, but now with a fully-loaded context document driving the proposal). The AI generates work matched to what you actually said you wanted to achieve, in any of the three categories (personal, network, alpha). You don't have to accept the first proposal — you can request alternates until one fits.
 - **Subscribe to The Hive Herald** ([pft.permanentupperclass.com/herald](https://pft.permanentupperclass.com/herald/)) — daily on-chain intelligence briefing on the network: rewards, contributors, sybil watch, deep history. Costs PFT, so it's also a forcing function to actually earn some.
 - **Watch the Lens** ([pft.permanentupperclass.com/lens](https://pft.permanentupperclass.com/lens/)) — live network graph and contributor activity. See where the network's actually working.
 - **Ask questions in Discord** ([discord.gg/U6HjgDSmhR](https://discord.gg/U6HjgDSmhR)) — `#contributor-help` is the right channel for the most common stumbles.
