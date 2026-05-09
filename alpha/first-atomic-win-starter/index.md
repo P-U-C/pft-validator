@@ -20,6 +20,14 @@ This page is for retail contributors who heard about Post Fiat somewhere and wan
 
 ---
 
+## The user value proposition
+
+> **The average Post Fiat participant should be better off for having contributed. If that stops being true, the model is broken. That is the standard the network holds itself to.**
+
+That's the promise this page is built on. Everything below — the independent-chain framing, the value proposition, the 30-minute action, the iteration tools — exists to operationalize that one sentence. If you finish today's atomic win and the work the system routes to you afterwards doesn't make you better off, that's the network failing to meet its own standard, not you failing to use it correctly.
+
+---
+
 ## Read this first: Post Fiat is NOT XRP
 
 Before anything else: **Post Fiat is an independent Layer 1 blockchain — an XRP hard fork running its own validators, token (PFT), and AI-mediated work coordination system. It is not an XRP token or app.**
