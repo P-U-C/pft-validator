@@ -4,9 +4,9 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-05-12T19:00:00Z",
-  "calculated_at": "2026-05-12T19:04:56Z",
-  "next_update_at": "2026-05-12T20:00:00Z",
+  "snapshot_id": "2026-05-12T20:00:00Z",
+  "calculated_at": "2026-05-12T20:04:51Z",
+  "next_update_at": "2026-05-12T21:00:00Z",
   "refresh_cadence": "hourly",
   "health_score": 0.6347,
   "health_score_formula": "sum(component.score * component.weight)",
@@ -16,7 +16,7 @@
       "score": 1.0,
       "weight": 0.2,
       "contribution": 0.2,
-      "raw_hhi": 0.049196,
+      "raw_hhi": 0.049205,
       "formula": "max(0, min(1, (hhi_bad - HHI) / (hhi_bad - hhi_good)))",
       "description": "Herfindahl-Hirschman Index of memo activity distribution. Lower HHI = more distributed = healthier."
     },
@@ -34,9 +34,9 @@
       "score": 1.0,
       "weight": 0.2,
       "contribution": 0.2,
-      "latest_day_memos": 136,
+      "latest_day_memos": 142,
       "avg_7d_daily": 135.9,
-      "velocity_ratio": 1.0011,
+      "velocity_ratio": 1.0452,
       "formula": "max(0, min(1, latest_day_count / avg_7d_daily))",
       "description": "Latest day memo count vs 7-day rolling average. Detects activity drops."
     },
@@ -45,7 +45,7 @@
       "weight": 0.15,
       "contribution": 0.15,
       "bidirectional_edges": 39568,
-      "total_edges": 41479,
+      "total_edges": 41480,
       "raw_ratio": 0.9539,
       "formula": "max(0, min(1, bidir_edges / total_edges / target))",
       "description": "Fraction of edges where both parties communicate. Higher = more collaborative."
@@ -125,9 +125,9 @@
       "severity": "none",
       "operator": "<",
       "threshold": 0.5,
-      "current_value": 1.0011,
+      "current_value": 1.0452,
       "lookback": "7d",
-      "reason": "Today=136 memos vs 7d avg=135.9 (ratio=1.0). Memo velocity is within normal range."
+      "reason": "Today=142 memos vs 7d avg=135.9 (ratio=1.05). Memo velocity is within normal range."
     },
     {
       "rule": "NEW_SYBIL_CLUSTER",
@@ -158,36 +158,29 @@
     "clear": 2
   },
   "score_change": {
-    "vs_prior_snapshot": 0.0086,
-    "prior_health_score": 0.6261,
-    "prior_calculated_at": "2026-05-12T18:04:46Z",
-    "largest_movers": [
-      {
-        "component": "memo_velocity",
-        "delta": 0.0086,
-        "raw_delta": 0.0431,
-        "reason": "latest_day_memos=136 vs prior avg=135.9"
-      }
-    ]
+    "vs_prior_snapshot": 0.0,
+    "prior_health_score": 0.6347,
+    "prior_calculated_at": "2026-05-12T19:04:56Z",
+    "largest_movers": []
   },
   "network_summary": {
     "total_accounts": 930,
     "contributors": 189,
     "bots": 733,
     "infrastructure": 8,
-    "total_transactions": 378020,
-    "memo_transactions": 14922,
-    "total_edges": 41479,
+    "total_transactions": 378027,
+    "memo_transactions": 14928,
+    "total_edges": 41480,
     "bidirectional_edges": 39568,
     "sybil_clusters": 1,
     "sybil_accounts": 743
   },
   "deltas": {
-    "health_score": 0.0086,
+    "health_score": 0.0,
     "accounts": 0,
     "memo_transactions": 6,
-    "edges": 0,
-    "since": "2026-05-12T18:04:46Z"
+    "edges": 1,
+    "since": "2026-05-12T19:04:56Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -196,5 +189,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:8ebad821ca45f6094cbb7795d44efe668ac7feaf4c6c28b6f3cdad8b534ecdf6"
+  "snapshot_hash": "sha256:61b05072ba3a9a432723f12b1d2d3bfa8ac0fc1a339e9e3959a56f39974fe038"
 }
