@@ -4,9 +4,9 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-05-14T03:00:00Z",
-  "calculated_at": "2026-05-14T03:05:12Z",
-  "next_update_at": "2026-05-14T04:00:00Z",
+  "snapshot_id": "2026-05-14T04:00:00Z",
+  "calculated_at": "2026-05-14T04:05:03Z",
+  "next_update_at": "2026-05-14T05:00:00Z",
   "refresh_cadence": "hourly",
   "health_score": 0.4626,
   "health_score_formula": "sum(component.score * component.weight)",
@@ -158,30 +158,17 @@
     "clear": 1
   },
   "score_change": {
-    "vs_prior_snapshot": 0.0113,
-    "prior_health_score": 0.4513,
-    "prior_calculated_at": "2026-05-14T02:05:07Z",
-    "largest_movers": [
-      {
-        "component": "memo_velocity",
-        "delta": 0.011,
-        "raw_delta": 0.055,
-        "reason": "latest_day_memos=22 vs prior avg=163.7"
-      },
-      {
-        "component": "contributor_ratio",
-        "delta": 0.0003,
-        "raw_delta": 0.0014,
-        "reason": "contributor ratio=20.6% (192/933)"
-      }
-    ]
+    "vs_prior_snapshot": 0.0,
+    "prior_health_score": 0.4626,
+    "prior_calculated_at": "2026-05-14T03:05:12Z",
+    "largest_movers": []
   },
   "network_summary": {
     "total_accounts": 933,
     "contributors": 192,
     "bots": 733,
     "infrastructure": 8,
-    "total_transactions": 378437,
+    "total_transactions": 378438,
     "memo_transactions": 15277,
     "total_edges": 41490,
     "bidirectional_edges": 39574,
@@ -189,11 +176,11 @@
     "sybil_accounts": 743
   },
   "deltas": {
-    "health_score": 0.0113,
-    "accounts": 1,
-    "memo_transactions": 9,
-    "edges": 2,
-    "since": "2026-05-14T02:05:07Z"
+    "health_score": 0.0,
+    "accounts": 0,
+    "memo_transactions": 0,
+    "edges": 0,
+    "since": "2026-05-14T03:05:12Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -202,5 +189,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:2de3f6cdaa4317ef89399e42bd0b621db331620b15e88684d3bd2d6bf4f36b19"
+  "snapshot_hash": "sha256:3b3de60bb5d5b9823fcef2be6029e1bea04b5d4f625d6289cdd50c1d60447108"
 }
