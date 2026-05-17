@@ -4,9 +4,9 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-05-17T01:00:00Z",
-  "calculated_at": "2026-05-17T01:05:45Z",
-  "next_update_at": "2026-05-17T02:00:00Z",
+  "snapshot_id": "2026-05-17T02:00:00Z",
+  "calculated_at": "2026-05-17T02:05:27Z",
+  "next_update_at": "2026-05-17T03:00:00Z",
   "refresh_cadence": "hourly",
   "health_score": 0.4572,
   "health_score_formula": "sum(component.score * component.weight)",
@@ -158,24 +158,17 @@
     "clear": 1
   },
   "score_change": {
-    "vs_prior_snapshot": -0.1038,
-    "prior_health_score": 0.561,
-    "prior_calculated_at": "2026-05-17T00:05:28Z",
-    "largest_movers": [
-      {
-        "component": "memo_velocity",
-        "delta": -0.1037,
-        "raw_delta": -0.5187,
-        "reason": "latest_day_memos=12 vs prior avg=147.6"
-      }
-    ]
+    "vs_prior_snapshot": 0.0,
+    "prior_health_score": 0.4572,
+    "prior_calculated_at": "2026-05-17T01:05:45Z",
+    "largest_movers": []
   },
   "network_summary": {
     "total_accounts": 948,
     "contributors": 207,
     "bots": 733,
     "infrastructure": 8,
-    "total_transactions": 378883,
+    "total_transactions": 378885,
     "memo_transactions": 15591,
     "total_edges": 41520,
     "bidirectional_edges": 39588,
@@ -183,11 +176,11 @@
     "sybil_accounts": 743
   },
   "deltas": {
-    "health_score": -0.1038,
+    "health_score": 0.0,
     "accounts": 0,
-    "memo_transactions": 12,
+    "memo_transactions": 0,
     "edges": 0,
-    "since": "2026-05-17T00:05:28Z"
+    "since": "2026-05-17T01:05:45Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -196,5 +189,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:65e415e92813265f8675caa08e025b96af7f8493abadadf48a83b80018f11b52"
+  "snapshot_hash": "sha256:807ee384daf92caf3561e21fcff19d792df49fda902abee6d037b0de803aea6a"
 }
