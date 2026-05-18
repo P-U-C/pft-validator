@@ -4,9 +4,9 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-05-18T21:00:00Z",
-  "calculated_at": "2026-05-18T21:10:00Z",
-  "next_update_at": "2026-05-18T22:00:00Z",
+  "snapshot_id": "2026-05-18T22:00:00Z",
+  "calculated_at": "2026-05-18T22:09:38Z",
+  "next_update_at": "2026-05-18T23:00:00Z",
   "refresh_cadence": "hourly",
   "health_score": 0.6619,
   "health_score_formula": "sum(component.score * component.weight)",
@@ -158,24 +158,17 @@
     "clear": 3
   },
   "score_change": {
-    "vs_prior_snapshot": 0.0061,
-    "prior_health_score": 0.6558,
-    "prior_calculated_at": "2026-05-18T20:07:53Z",
-    "largest_movers": [
-      {
-        "component": "contributor_ratio",
-        "delta": 0.0061,
-        "raw_delta": 0.0245,
-        "reason": "contributor ratio=26.9% (272/1013)"
-      }
-    ]
+    "vs_prior_snapshot": 0.0,
+    "prior_health_score": 0.6619,
+    "prior_calculated_at": "2026-05-18T21:10:00Z",
+    "largest_movers": []
   },
   "network_summary": {
     "total_accounts": 1013,
     "contributors": 272,
     "bots": 733,
     "infrastructure": 8,
-    "total_transactions": 379481,
+    "total_transactions": 379486,
     "memo_transactions": 15995,
     "total_edges": 41673,
     "bidirectional_edges": 39640,
@@ -183,11 +176,11 @@
     "sybil_accounts": 769
   },
   "deltas": {
-    "health_score": 0.0061,
-    "accounts": 20,
-    "memo_transactions": 105,
-    "edges": 52,
-    "since": "2026-05-18T20:07:53Z"
+    "health_score": 0.0,
+    "accounts": 0,
+    "memo_transactions": 0,
+    "edges": 0,
+    "since": "2026-05-18T21:10:00Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -196,5 +189,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:ea51148a6834293117676e62c4a90f1382239dfd346c091bfbced052742013f4"
+  "snapshot_hash": "sha256:678339ee1512938cbe4d4767d1798808b5fe23a7fa9a6cbbc593b992d5920f13"
 }
