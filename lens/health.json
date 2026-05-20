@@ -4,9 +4,9 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-05-20T01:00:00Z",
-  "calculated_at": "2026-05-20T01:09:56Z",
-  "next_update_at": "2026-05-20T02:00:00Z",
+  "snapshot_id": "2026-05-20T02:00:00Z",
+  "calculated_at": "2026-05-20T02:09:48Z",
+  "next_update_at": "2026-05-20T03:00:00Z",
   "refresh_cadence": "hourly",
   "health_score": 0.4712,
   "health_score_formula": "sum(component.score * component.weight)",
@@ -158,24 +158,17 @@
     "clear": 2
   },
   "score_change": {
-    "vs_prior_snapshot": -0.1773,
-    "prior_health_score": 0.6485,
-    "prior_calculated_at": "2026-05-20T00:09:47Z",
-    "largest_movers": [
-      {
-        "component": "memo_velocity",
-        "delta": -0.1773,
-        "raw_delta": -0.8865,
-        "reason": "latest_day_memos=8 vs prior avg=171.0"
-      }
-    ]
+    "vs_prior_snapshot": 0.0,
+    "prior_health_score": 0.4712,
+    "prior_calculated_at": "2026-05-20T01:09:56Z",
+    "largest_movers": []
   },
   "network_summary": {
     "total_accounts": 1013,
     "contributors": 272,
     "bots": 733,
     "infrastructure": 8,
-    "total_transactions": 379695,
+    "total_transactions": 379696,
     "memo_transactions": 16171,
     "total_edges": 41673,
     "bidirectional_edges": 39640,
@@ -183,11 +176,11 @@
     "sybil_accounts": 769
   },
   "deltas": {
-    "health_score": -0.1773,
+    "health_score": 0.0,
     "accounts": 0,
-    "memo_transactions": 8,
+    "memo_transactions": 0,
     "edges": 0,
-    "since": "2026-05-20T00:09:47Z"
+    "since": "2026-05-20T01:09:56Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -196,5 +189,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:2db71b55cb7ff73c0c0e081ce2dae66e974d1f5a2fdd87454543e3a530aa597e"
+  "snapshot_hash": "sha256:9a11c6d3a0704ff69fb6ded47ae6c5ef541c184a8fa88a371ef8f43206ddc521"
 }
