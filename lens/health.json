@@ -4,11 +4,11 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-05-21T22:00:00Z",
-  "calculated_at": "2026-05-21T22:10:07Z",
-  "next_update_at": "2026-05-21T23:00:00Z",
+  "snapshot_id": "2026-05-21T23:00:00Z",
+  "calculated_at": "2026-05-21T23:10:27Z",
+  "next_update_at": "2026-05-22T00:00:00Z",
   "refresh_cadence": "hourly",
-  "health_score": 0.5246,
+  "health_score": 0.5326,
   "health_score_formula": "sum(component.score * component.weight)",
   "health_grade": "C",
   "component_metrics": {
@@ -16,7 +16,7 @@
       "score": 1.0,
       "weight": 0.2,
       "contribution": 0.2,
-      "raw_hhi": 0.048432,
+      "raw_hhi": 0.048419,
       "formula": "max(0, min(1, (hhi_bad - HHI) / (hhi_bad - hhi_good)))",
       "description": "Herfindahl-Hirschman Index of memo activity distribution. Lower HHI = more distributed = healthier."
     },
@@ -31,12 +31,12 @@
       "description": "Fraction of active accounts that are real contributors (not bots or infrastructure)."
     },
     "memo_velocity": {
-      "score": 0.309,
+      "score": 0.3493,
       "weight": 0.2,
-      "contribution": 0.0618,
-      "latest_day_memos": 46,
+      "contribution": 0.0699,
+      "latest_day_memos": 52,
       "avg_7d_daily": 148.9,
-      "velocity_ratio": 0.309,
+      "velocity_ratio": 0.3493,
       "formula": "max(0, min(1, latest_day_count / avg_7d_daily))",
       "description": "Latest day memo count vs 7-day rolling average. Detects activity drops."
     },
@@ -45,7 +45,7 @@
       "weight": 0.15,
       "contribution": 0.15,
       "bidirectional_edges": 39646,
-      "total_edges": 41680,
+      "total_edges": 41681,
       "raw_ratio": 0.9512,
       "formula": "max(0, min(1, bidir_edges / total_edges / target))",
       "description": "Fraction of edges where both parties communicate. Higher = more collaborative."
@@ -125,9 +125,9 @@
       "severity": "medium",
       "operator": "<",
       "threshold": 0.5,
-      "current_value": 0.309,
+      "current_value": 0.3493,
       "lookback": "7d",
-      "reason": "Today=46 memos vs 7d avg=148.9 (ratio=0.31). Activity dropped below 50% of normal."
+      "reason": "Today=52 memos vs 7d avg=148.9 (ratio=0.35). Activity dropped below 50% of normal."
     },
     {
       "rule": "NEW_SYBIL_CLUSTER",
@@ -158,15 +158,15 @@
     "clear": 2
   },
   "score_change": {
-    "vs_prior_snapshot": 0.0003,
-    "prior_health_score": 0.5243,
-    "prior_calculated_at": "2026-05-21T21:10:31Z",
+    "vs_prior_snapshot": 0.008,
+    "prior_health_score": 0.5246,
+    "prior_calculated_at": "2026-05-21T22:10:07Z",
     "largest_movers": [
       {
-        "component": "contributor_ratio",
-        "delta": 0.0003,
-        "raw_delta": 0.0012,
-        "reason": "contributor ratio=27.1% (275/1016)"
+        "component": "memo_velocity",
+        "delta": 0.0081,
+        "raw_delta": 0.0403,
+        "reason": "latest_day_memos=52 vs prior avg=148.9"
       }
     ]
   },
@@ -175,19 +175,19 @@
     "contributors": 275,
     "bots": 733,
     "infrastructure": 8,
-    "total_transactions": 379925,
-    "memo_transactions": 16343,
-    "total_edges": 41680,
+    "total_transactions": 379932,
+    "memo_transactions": 16349,
+    "total_edges": 41681,
     "bidirectional_edges": 39646,
     "sybil_clusters": 6,
     "sybil_accounts": 769
   },
   "deltas": {
-    "health_score": 0.0003,
-    "accounts": 1,
-    "memo_transactions": 0,
-    "edges": 2,
-    "since": "2026-05-21T21:10:31Z"
+    "health_score": 0.008,
+    "accounts": 0,
+    "memo_transactions": 6,
+    "edges": 1,
+    "since": "2026-05-21T22:10:07Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -196,5 +196,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:b148a3b72f4a04ad1b60de465af792e9b2196e84e8a9692a68bb627f60c1cd71"
+  "snapshot_hash": "sha256:96de46e0a76528c3537aaa9232079f57d318c0c1403241d0a1cdca110a237cd8"
 }
