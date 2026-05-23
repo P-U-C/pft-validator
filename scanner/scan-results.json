@@ -1572,12 +1572,12 @@
     }
   ],
   "book": {
-    "generated_at": "2026-05-22T21:16:38.112133+00:00",
+    "generated_at": "2026-05-23T21:16:36.191800+00:00",
     "live_unlocked": false,
     "go_live_gate": {
       "required_closed_trades": 30,
-      "current_closed_trades": 16,
-      "remaining_trades": 14
+      "current_closed_trades": 17,
+      "remaining_trades": 13
     },
     "paper": {
       "open": [
@@ -2226,17 +2226,40 @@
           "closed_at": "2026-05-22",
           "close_reason": "expiry week",
           "close_price": 4.8
+        },
+        {
+          "id": "CRSP-call_spread-50.0-2026-05-29-2026-05-23",
+          "bucket": "income",
+          "ticker": "CRSP",
+          "theme_id": "synthetic-biology",
+          "catalyst_id": "cat_crsp_q2_2026_earnings",
+          "event_date": "2026-08-06",
+          "structure": "call_spread",
+          "strike": 50.0,
+          "strike_upper": 55.0,
+          "expiry": "2026-05-29",
+          "quantity_contracts": 2,
+          "cost_per_contract_usd": 75.0,
+          "cost_total_usd": 150.0,
+          "entry_date": "2026-05-23",
+          "entry_rationale": "thesis-implied move 0.110 vs market-implied 0.050 (ratio 2.21); earnings in 75d on 2026-08-06",
+          "mark": 75.0,
+          "pct_pnl": 0.0,
+          "status": "closed",
+          "closed_at": "2026-05-23",
+          "close_reason": "expiry week",
+          "close_price": 75.0
         }
       ],
       "stats": {
         "open_count": 12,
-        "closed_count": 16,
+        "closed_count": 17,
         "invested_usd": 1880.25,
         "mark_to_market_usd": 1880.25,
         "unrealized_pnl_usd": 0.0,
         "buckets": {
           "income": {
-            "closed": 16,
+            "closed": 17,
             "wins": 0,
             "hit_rate": 0.0,
             "mean_pct_pnl": 0.0,
