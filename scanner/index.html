@@ -155,13 +155,27 @@ fetch('/scanner/scan-results.json')
   .then(function(d) {
     if (!d) return;
 
-    // Meta bar
-    var m = d.scan_meta;
-    document.getElementById('scanMeta').innerHTML =
-      '<span>Scanned: ' + m.scanned_at + '</span>' +
-      '<span>Tickers: ' + m.tickers_scanned + '</span>' +
-      '<span>Fetched: ' + m.contracts_fetched + '</span>' +
-      '<span>Passed: ' + m.contracts_passed + '</span>';
+    // Meta bar. The live options scan (scan_meta/results) is parked while
+    // market-data access is pending, so it can read months old. The paper
+    // book is the live content -- lead with its freshness and clearly mark
+    // the options scan as paused rather than presenting a stale date as
+    // "last scan".
+    var m = d.scan_meta || {};
+    function _daysAgo(s) {
+      if (!s) return 999;
+      var t = Date.parse(('' + s).replace(' ', 'T'));
+      return isNaN(t) ? 999 : (Date.now() - t) / 86400000;
+    }
+    var scanStale = _daysAgo(m.scanned_at) > 3;
+    var bookDate = (d.book && d.book.generated_at) ? ('' + d.book.generated_at).substring(0, 10) : 'n/a';
+    document.getElementById('scanMeta').innerHTML = scanStale
+      ? '<span>Book updated: ' + bookDate + '</span>' +
+        '<span style="color:var(--dim);">Options scan paused (awaiting market-data) — last ran ' +
+          ('' + m.scanned_at).substring(0, 10) + '</span>'
+      : '<span>Scanned: ' + m.scanned_at + '</span>' +
+        '<span>Tickers: ' + m.tickers_scanned + '</span>' +
+        '<span>Fetched: ' + m.contracts_fetched + '</span>' +
+        '<span>Passed: ' + m.contracts_passed + '</span>';
 
     // Theme cards
     var themes = d.scan_meta.themes || {};
@@ -187,8 +201,8 @@ fetch('/scanner/scan-results.json')
     });
     document.getElementById('themeCards').innerHTML = cardsHtml;
 
-    // Results table
-    var results = d.results || [];
+    // Results table — suppress the stale month-old option rows while parked.
+    var results = scanStale ? [] : (d.results || []);
     var rows = '';
     results.forEach(function(r, i) {
       var convPct = Math.round(r.convergence * 100);
@@ -210,11 +224,15 @@ fetch('/scanner/scan-results.json')
     });
 
     if (!rows) {
-      rows = '<tr><td colspan="11" style="text-align:center;color:var(--dim);">No contracts passed filters. Markets may be closed or IV too high.</td></tr>';
+      rows = scanStale
+        ? '<tr><td colspan="11" style="text-align:center;color:var(--dim);">Options scan paused — awaiting market-data access. The live Positions book is below.</td></tr>'
+        : '<tr><td colspan="11" style="text-align:center;color:var(--dim);">No contracts passed filters. Markets may be closed or IV too high.</td></tr>';
     }
 
     document.getElementById('resultsBody').innerHTML = rows;
-    document.getElementById('footerTime').textContent = 'Last scan: ' + m.scanned_at;
+    document.getElementById('footerTime').textContent = scanStale
+      ? 'Book updated: ' + bookDate
+      : 'Last scan: ' + m.scanned_at;
 
     // ---- Positions / book rendering ----
     var book = d.book;
