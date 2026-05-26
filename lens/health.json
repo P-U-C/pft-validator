@@ -4,9 +4,9 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-05-26T16:00:00Z",
-  "calculated_at": "2026-05-26T16:10:22Z",
-  "next_update_at": "2026-05-26T17:00:00Z",
+  "snapshot_id": "2026-05-26T17:00:00Z",
+  "calculated_at": "2026-05-26T17:10:52Z",
+  "next_update_at": "2026-05-26T18:00:00Z",
   "refresh_cadence": "hourly",
   "health_score": 0.5537,
   "health_score_formula": "sum(component.score * component.weight)",
@@ -158,24 +158,17 @@
     "clear": 2
   },
   "score_change": {
-    "vs_prior_snapshot": 0.0201,
-    "prior_health_score": 0.5336,
-    "prior_calculated_at": "2026-05-26T15:10:43Z",
-    "largest_movers": [
-      {
-        "component": "memo_velocity",
-        "delta": 0.0201,
-        "raw_delta": 0.1005,
-        "reason": "latest_day_memos=58 vs prior avg=129.3"
-      }
-    ]
+    "vs_prior_snapshot": 0.0,
+    "prior_health_score": 0.5537,
+    "prior_calculated_at": "2026-05-26T16:10:22Z",
+    "largest_movers": []
   },
   "network_summary": {
     "total_accounts": 1020,
     "contributors": 279,
     "bots": 733,
     "infrastructure": 8,
-    "total_transactions": 380174,
+    "total_transactions": 380177,
     "memo_transactions": 16542,
     "total_edges": 41690,
     "bidirectional_edges": 39654,
@@ -183,11 +176,11 @@
     "sybil_accounts": 769
   },
   "deltas": {
-    "health_score": 0.0201,
+    "health_score": 0.0,
     "accounts": 0,
-    "memo_transactions": 13,
-    "edges": 1,
-    "since": "2026-05-26T15:10:43Z"
+    "memo_transactions": 0,
+    "edges": 0,
+    "since": "2026-05-26T16:10:22Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -196,5 +189,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:a71e6ed78163b57b083e0712d4a768e75bb9a1ec963fbd56c856f3514c140b6b"
+  "snapshot_hash": "sha256:f9d3da2f38a53198bc3df18a464d070f844d59c44c2a21ded3418902d1a66148"
 }
