@@ -169,9 +169,8 @@ fetch('/scanner/scan-results.json')
     var scanStale = _daysAgo(m.scanned_at) > 3;
     var bookDate = (d.book && d.book.generated_at) ? ('' + d.book.generated_at).substring(0, 10) : 'n/a';
     document.getElementById('scanMeta').innerHTML = scanStale
-      ? '<span>Book updated: ' + bookDate + '</span>' +
-        '<span style="color:var(--dim);">Options scan paused (awaiting market-data) — last ran ' +
-          ('' + m.scanned_at).substring(0, 10) + '</span>'
+      ? '<span>Data as of: ' + bookDate + '</span>' +
+        '<span style="color:var(--dim);">Prices via Yahoo · options-scan rankings parked</span>'
       : '<span>Scanned: ' + m.scanned_at + '</span>' +
         '<span>Tickers: ' + m.tickers_scanned + '</span>' +
         '<span>Fetched: ' + m.contracts_fetched + '</span>' +
@@ -231,7 +230,7 @@ fetch('/scanner/scan-results.json')
 
     document.getElementById('resultsBody').innerHTML = rows;
     document.getElementById('footerTime').textContent = scanStale
-      ? 'Book updated: ' + bookDate
+      ? 'Data as of: ' + bookDate
       : 'Last scan: ' + m.scanned_at;
 
     // ---- Positions / book rendering ----
