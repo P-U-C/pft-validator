@@ -4,11 +4,11 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-06-01T11:00:00Z",
-  "calculated_at": "2026-06-01T11:12:41Z",
-  "next_update_at": "2026-06-01T12:00:00Z",
+  "snapshot_id": "2026-06-01T12:00:00Z",
+  "calculated_at": "2026-06-01T12:12:12Z",
+  "next_update_at": "2026-06-01T13:00:00Z",
   "refresh_cadence": "hourly",
-  "health_score": 0.5547,
+  "health_score": 0.5758,
   "health_score_formula": "sum(component.score * component.weight)",
   "health_grade": "C",
   "component_metrics": {
@@ -16,27 +16,27 @@
       "score": 1.0,
       "weight": 0.2,
       "contribution": 0.2,
-      "raw_hhi": 0.048527,
+      "raw_hhi": 0.048532,
       "formula": "max(0, min(1, (hhi_bad - HHI) / (hhi_bad - hhi_good)))",
       "description": "Herfindahl-Hirschman Index of memo activity distribution. Lower HHI = more distributed = healthier."
     },
     "contributor_ratio": {
-      "score": 0.47,
+      "score": 0.4711,
       "weight": 0.25,
-      "contribution": 0.1175,
-      "raw_ratio": 0.282,
-      "contributors": 291,
-      "total_active": 1032,
+      "contribution": 0.1178,
+      "raw_ratio": 0.2827,
+      "contributors": 292,
+      "total_active": 1033,
       "formula": "max(0, min(1, contributor_count / total_active / target))",
       "description": "Fraction of active accounts that are real contributors (not bots or infrastructure)."
     },
     "memo_velocity": {
-      "score": 0.4362,
+      "score": 0.5401,
       "weight": 0.2,
-      "contribution": 0.0872,
-      "latest_day_memos": 42,
+      "contribution": 0.108,
+      "latest_day_memos": 52,
       "avg_7d_daily": 96.3,
-      "velocity_ratio": 0.4362,
+      "velocity_ratio": 0.5401,
       "formula": "max(0, min(1, latest_day_count / avg_7d_daily))",
       "description": "Latest day memo count vs 7-day rolling average. Detects activity drops."
     },
@@ -44,8 +44,8 @@
       "score": 1.0,
       "weight": 0.15,
       "contribution": 0.15,
-      "bidirectional_edges": 39676,
-      "total_edges": 41729,
+      "bidirectional_edges": 39678,
+      "total_edges": 41731,
       "raw_ratio": 0.9508,
       "formula": "max(0, min(1, bidir_edges / total_edges / target))",
       "description": "Fraction of edges where both parties communicate. Higher = more collaborative."
@@ -56,7 +56,7 @@
       "contribution": 0.0,
       "sybil_accounts": 769,
       "sybil_clusters": 6,
-      "raw_ratio": 0.7452,
+      "raw_ratio": 0.7444,
       "formula": "max(0, min(1, 1 - sybil_ratio / sybil_ratio_max))",
       "description": "Inverse of sybil-flagged account ratio. Fewer sybils = healthier."
     }
@@ -114,20 +114,20 @@
       "severity": "high",
       "operator": ">",
       "threshold": 0.4,
-      "current_value": 0.7103,
+      "current_value": 0.7096,
       "lookback": "current_snapshot",
-      "reason": "Bot ratio=71.0% (733/1032) exceeds 40% threshold. 6 sybil cluster(s) detected."
+      "reason": "Bot ratio=71.0% (733/1033) exceeds 40% threshold. 6 sybil cluster(s) detected."
     },
     {
       "rule": "VELOCITY_DROP",
       "category": "activity",
-      "status": "triggered",
-      "severity": "medium",
+      "status": "clear",
+      "severity": "none",
       "operator": "<",
       "threshold": 0.5,
-      "current_value": 0.4362,
+      "current_value": 0.5401,
       "lookback": "7d",
-      "reason": "Today=42 memos vs 7d avg=96.3 (ratio=0.44). Activity dropped below 50% of normal."
+      "reason": "Today=52 memos vs 7d avg=96.3 (ratio=0.54). Memo velocity is within normal range."
     },
     {
       "rule": "NEW_SYBIL_CLUSTER",
@@ -147,47 +147,53 @@
       "severity": "none",
       "operator": "<",
       "threshold": 0.25,
-      "current_value": 0.282,
+      "current_value": 0.2827,
       "lookback": "current_snapshot",
-      "reason": "Contributor ratio=28.2% (291/1032). Contributor base is healthy."
+      "reason": "Contributor ratio=28.3% (292/1033). Contributor base is healthy."
     }
   ],
   "anomaly_summary": {
     "total_rules": 5,
-    "triggered": 3,
-    "clear": 2
+    "triggered": 2,
+    "clear": 3
   },
   "score_change": {
-    "vs_prior_snapshot": 0.0124,
-    "prior_health_score": 0.5423,
-    "prior_calculated_at": "2026-06-01T10:12:08Z",
+    "vs_prior_snapshot": 0.0211,
+    "prior_health_score": 0.5547,
+    "prior_calculated_at": "2026-06-01T11:12:41Z",
     "largest_movers": [
       {
         "component": "memo_velocity",
-        "delta": 0.0125,
-        "raw_delta": 0.0623,
-        "reason": "latest_day_memos=42 vs prior avg=96.3"
+        "delta": 0.0208,
+        "raw_delta": 0.1039,
+        "reason": "latest_day_memos=52 vs prior avg=96.3"
+      },
+      {
+        "component": "contributor_ratio",
+        "delta": 0.0003,
+        "raw_delta": 0.0011,
+        "reason": "contributor ratio=28.3% (292/1033)"
       }
     ]
   },
   "network_summary": {
-    "total_accounts": 1032,
-    "contributors": 291,
+    "total_accounts": 1033,
+    "contributors": 292,
     "bots": 733,
     "infrastructure": 8,
-    "total_transactions": 381185,
-    "memo_transactions": 17332,
-    "total_edges": 41729,
-    "bidirectional_edges": 39676,
+    "total_transactions": 381198,
+    "memo_transactions": 17342,
+    "total_edges": 41731,
+    "bidirectional_edges": 39678,
     "sybil_clusters": 6,
     "sybil_accounts": 769
   },
   "deltas": {
-    "health_score": 0.0124,
-    "accounts": 0,
-    "memo_transactions": 6,
-    "edges": 0,
-    "since": "2026-06-01T10:12:08Z"
+    "health_score": 0.0211,
+    "accounts": 1,
+    "memo_transactions": 10,
+    "edges": 2,
+    "since": "2026-06-01T11:12:41Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -196,5 +202,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:01212e9edc8deab9d11a2e75b684f99f00f5780bf518cfff84571f93574e838c"
+  "snapshot_hash": "sha256:cda70e6132d2d9d8cdbdd2407819b1c70bd9926b02d12cdb981eaeed0015f584"
 }
