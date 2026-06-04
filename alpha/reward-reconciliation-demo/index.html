@@ -9,7 +9,7 @@
   :root {
     --bg:#0d1117; --panel:#161b22; --panel2:#11161d; --line:#30363d;
     --ink:#e6edf3; --muted:#9da7b3; --accent:#3fb950; --accent2:#58a6ff;
-    --warn:#d29922; --owed:#3fb950; --neutral:#8b949e; --info:#58a6ff; --inelig:#d29922;
+    --warn:#d29922; --owed:#3fb950; --neutral:#8b949e; --info:#58a6ff; --bad:#f85149;
     --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
   }
   * { box-sizing:border-box; }
@@ -41,13 +41,17 @@
   }
   .chip:hover { border-color:var(--accent2); }
   .chip.active { border-color:var(--accent2); background:rgba(88,166,255,0.12); }
-  .result { margin-top:4px; }
+  button.btn {
+    border:1px solid var(--line); background:var(--panel2); color:var(--ink);
+    border-radius:8px; padding:7px 12px; font-size:13px; cursor:pointer;
+  }
+  button.btn:hover { border-color:var(--accent2); }
   .result .head { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px; }
   .wallet { font-family:var(--mono); font-size:15px; color:var(--accent2); word-break:break-all; }
   .pill { display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; letter-spacing:0.02em; }
   .pill.reconciled { background:rgba(63,185,80,0.15); color:var(--owed); border:1px solid rgba(63,185,80,0.4); }
   .pill.informational { background:rgba(88,166,255,0.15); color:var(--info); border:1px solid rgba(88,166,255,0.4); }
-  .pill.ineligible { background:rgba(210,153,34,0.15); color:var(--inelig); border:1px solid rgba(210,153,34,0.4); }
+  .pill.ineligible { background:rgba(210,153,34,0.15); color:var(--warn); border:1px solid rgba(210,153,34,0.4); }
   .blurb { color:var(--muted); font-size:14px; margin:8px 0 14px; }
   table.kv { width:100%; border-collapse:collapse; font-size:14px; }
   table.kv td { padding:8px 6px; border-top:1px solid var(--line); vertical-align:top; }
@@ -56,17 +60,26 @@
   .delta-owed { color:var(--owed); font-weight:700; }
   .delta-zero { color:var(--neutral); }
   .delta-neg { color:var(--info); }
-  .verify { margin-top:12px; font-size:13px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .witness { margin-top:14px; padding:12px; border:1px solid var(--line); border-radius:9px; background:var(--panel2); }
+  .witness .wl { display:flex; justify-content:space-between; gap:10px; font-size:13px; padding:4px 0; flex-wrap:wrap; }
+  .witness .wl .k { color:var(--muted); }
+  .witness .wl .v { font-family:var(--mono); text-align:right; word-break:break-all; }
   .badge { display:inline-flex; align-items:center; gap:6px; padding:4px 9px; border-radius:8px; font-weight:600; font-size:12px; }
   .badge.ok { background:rgba(63,185,80,0.14); color:var(--accent); border:1px solid rgba(63,185,80,0.4); }
   .badge.pending { background:rgba(139,148,163,0.14); color:var(--muted); border:1px solid var(--line); }
-  .badge.bad { background:rgba(248,81,73,0.14); color:#f85149; border:1px solid rgba(248,81,73,0.4); }
+  .badge.bad { background:rgba(248,81,73,0.14); color:var(--bad); border:1px solid rgba(248,81,73,0.4); }
   .hash { font-family:var(--mono); font-size:12px; color:var(--muted); word-break:break-all; }
   .notfound { color:var(--muted); font-size:14px; padding:8px 0; }
   .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
   .stat { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:10px 12px; }
   .stat .n { font-size:20px; font-weight:700; }
   .stat .l { font-size:12px; color:var(--muted); }
+  table.matrix { width:100%; border-collapse:collapse; font-size:13px; }
+  table.matrix th, table.matrix td { text-align:left; padding:8px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.matrix th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:0.04em; }
+  table.matrix td.code { font-family:var(--mono); font-size:12px; }
+  table.matrix td.num { text-align:right; font-family:var(--mono); white-space:nowrap; }
+  .tamperbox { margin-top:10px; }
   details { margin-top:10px; }
   details summary { cursor:pointer; color:var(--accent2); font-size:13px; }
   .small { font-size:12.5px; color:var(--muted); }
@@ -85,9 +98,9 @@
   <div class="banner">
     <b>Audit preview only &mdash; not a payout action.</b> This page recomputes historical
     reward reconciliation as <em>evidence for review</em>. It requires no login, no wallet
-    connection, and no private credentials, and it executes no payout and mutates no state.
-    Authorizing any payment from these records is a separate governance step that lives
-    outside this surface.
+    connection, and no private credentials, and it executes no payout and mutates no
+    state. Authorizing any payment from these records is a separate governance step that
+    lives outside this surface.
   </div>
 
   <div class="card">
@@ -97,6 +110,10 @@
            placeholder="demo-wallet-alpha" />
     <div class="chips" id="chips"></div>
     <p class="small" id="datasetNote" style="margin-top:12px;"></p>
+    <p class="small">Input is trimmed and case-normalized; an unknown or empty wallet shows a
+       clear no-record state. Each demo wallet is shareable by URL
+       (<code>?wallet=demo-wallet-alpha</code>), and repeated lookups always return the same
+       idempotency key (deterministic).</p>
   </div>
 
   <div class="card result" id="resultCard" style="display:none;">
@@ -104,19 +121,35 @@
   </div>
 
   <div class="card">
+    <h2>Scenario matrix &mdash; all demo wallets</h2>
+    <p class="small" style="margin-top:0;">Every demo wallet and its reconciliation outcome, so
+       coverage is visible without clicking each one.</p>
+    <div style="overflow-x:auto;"><table class="matrix"><thead><tr><th>Scenario</th><th>Demo wallet</th><th>Status</th><th>Reason code</th><th>Delta</th><th>Why it matters</th></tr></thead><tbody><tr><td>Balance owed (partial-payment ledger)</td><td class="code">demo-wallet-alpha</td><td>reconciled</td><td class="code">reconciled_owed</td><td class="num">+400 PFT</td><td>Unpaid delta after aggregating three partial payments</td></tr><tr><td>Fully reconciled</td><td class="code">demo-wallet-beta</td><td>reconciled</td><td class="code">reconciled_no_delta</td><td class="num">0 PFT</td><td>No false positive when a contribution is fully paid</td></tr><tr><td>Overpaid</td><td class="code">demo-wallet-gamma</td><td>informational</td><td class="code">overpaid_no_obligation</td><td class="num">-150 PFT</td><td>Recorded as informational; no clawback, no mutation</td></tr><tr><td>Unverified</td><td class="code">demo-wallet-delta</td><td>ineligible</td><td class="code">ineligible_unverified</td><td class="num">0 PFT</td><td>Evidence gating: ineligible until verification clears</td></tr><tr><td>Outside reconciliation window</td><td class="code">demo-wallet-epsilon</td><td>ineligible</td><td class="code">ineligible_outside_window</td><td class="num">0 PFT</td><td>Policy window boundary is enforced</td></tr><tr><td>Already settled</td><td class="code">demo-wallet-zeta</td><td>ineligible</td><td class="code">ineligible_already_settled</td><td class="num">0 PFT</td><td>Terminal; no further obligation can be composed</td></tr><tr><td>Missing payment record</td><td class="code">demo-wallet-eta</td><td>reconciled</td><td class="code">reconciled_owed</td><td class="num">+800 PFT</td><td>Full fair value owed when nothing is on record</td></tr></tbody></table></div>
+  </div>
+
+  <div class="card">
     <h2>Batch integrity</h2>
     <div class="grid" id="statGrid"></div>
-    <div class="verify" id="rootVerify">
-      <span class="badge pending" id="rootBadge">checking&hellip;</span>
-      <span class="small">batch root hash recomputed in your browser</span>
+    <div class="witness" style="margin-top:12px;">
+      <div class="wl"><span class="k">Batch root reproduced in your browser</span>
+        <span class="v"><span class="badge pending" id="rootBadge">checking&hellip;</span></span></div>
+      <div class="wl"><span class="k">record_keys_root</span><span class="v hash" id="rootHash"></span></div>
     </div>
-    <div class="hash" id="rootHash" style="margin-top:8px;"></div>
     <details>
       <summary>What is the batch root hash?</summary>
       <p class="small">It is the SHA-256 over the sorted list of every record&rsquo;s idempotency
       key. If any record&rsquo;s inputs changed, its key changes, and this root changes &mdash;
       so the root is a tamper-evident fingerprint of the whole reconciliation batch.</p>
     </details>
+  </div>
+
+  <div class="card">
+    <h2>Reviewer verification &mdash; reproducible provenance</h2>
+    <p class="small" style="margin-top:0;">The deployed result is derived from the audited
+       Historical Reward Reconciliation Composer, not a reimplemented mock. The composer source,
+       the build script, and the data bundle are published below; re-running the build over the
+       same composer + fixture reproduces the bundle byte-for-byte (checksum below).</p>
+    <div class="witness" style="margin-top:0;"><div class="wl"><span class="k">Composer source</span><span class="v"><a href="reconciliation_composer.py">reconciliation_composer.py</a></span></div><div class="wl"><span class="k">Composer sha256</span><span class="v"><span class="hash">sha256:b56eed68ca8781dcce29673dccc2286b65c53583d8b437a122deab76b14acbad</span></span></div><div class="wl"><span class="k">Build script</span><span class="v"><a href="build_demo_bundle.py">build_demo_bundle.py</a></span></div><div class="wl"><span class="k">Build script sha256</span><span class="v"><span class="hash">sha256:64a62f4d5991721082dd786cb4fb617e230161a3a4e1ca1ecfc862879efc3b26</span></span></div><div class="wl"><span class="k">Data bundle</span><span class="v"><a href="bundle.json">bundle.json</a></span></div><div class="wl"><span class="k">Bundle sha256</span><span class="v"><span class="hash">sha256:05a33a92ccaa3b3c8a2e419307e3d4d1d32135b2f8519e5e5e9ce88f3f1ebfbb</span></span></div><div class="wl"><span class="k">Build command</span><span class="v"><code>python3 build_demo_bundle.py</code></span></div><div class="wl"><span class="k">Composer / schema version</span><span class="v">1.2.0 / pf.reconciliation.composer.v1</span></div><div class="wl"><span class="k">Policy fingerprint</span><span class="v"><span class="hash">sha256:45b98ba8e1b6a8620d0343a1d18ef52d5191ec1512f6605106268a162d243f91</span></span></div><div class="wl"><span class="k">Audit commit (pft-audit, private)</span><span class="v"><code>51398f1</code></span></div><div class="wl"><span class="k">No network calls after load</span><span class="v">yes</span></div><div class="wl"><span class="k">No wallet connect / provider access</span><span class="v">yes</span></div></div><details><summary>How to reproduce this bundle</summary><p class="small" style="margin-top:8px;">Download <a href="reconciliation_composer.py">reconciliation_composer.py</a> and <a href="build_demo_bundle.py">build_demo_bundle.py</a> into the same folder, then run <code>python3 build_demo_bundle.py</code>. It regenerates <code>bundle.json</code> byte-for-byte (matching the <em>Bundle sha256</em> above) from the same audited composer and the synthetic fixture. The composer performs no network, database, wallet, or payout operations.</p></details>
   </div>
 
   <div class="card">
@@ -151,47 +184,34 @@
   "use strict";
   var DATA = JSON.parse(document.getElementById("recon-data").textContent);
 
-  var STATUS_LABEL = {
-    reconciled: "Reconciled",
-    informational: "Informational",
-    ineligible: "Ineligible"
-  };
+  var STATUS_LABEL = { reconciled:"Reconciled", informational:"Informational", ineligible:"Ineligible" };
   var REASON_LABEL = {
-    reconciled_owed: "Balance owed",
-    reconciled_no_delta: "Fully reconciled (no delta)",
-    overpaid_no_obligation: "Overpaid — no obligation",
-    ineligible_already_settled: "Already settled",
-    ineligible_unverified: "Not yet verified",
-    ineligible_outside_window: "Outside policy window",
-    ineligible_duplicate_contribution_ref: "Duplicate contribution",
-    ineligible_missing_fair_value_basis: "Missing fair-value basis",
-    ineligible_malformed_timestamp: "Malformed timestamp",
-    ineligible_malformed_payment_record: "Malformed payment record",
-    ineligible_malformed_policy: "Malformed policy"
+    reconciled_owed:"Balance owed", reconciled_no_delta:"Fully reconciled (no delta)",
+    overpaid_no_obligation:"Overpaid — no obligation", ineligible_already_settled:"Already settled",
+    ineligible_unverified:"Not yet verified", ineligible_outside_window:"Outside policy window",
+    ineligible_duplicate_contribution_ref:"Duplicate contribution",
+    ineligible_missing_fair_value_basis:"Missing fair-value basis",
+    ineligible_malformed_timestamp:"Malformed timestamp",
+    ineligible_malformed_payment_record:"Malformed payment record",
+    ineligible_malformed_policy:"Malformed policy"
   };
 
   var byWallet = {};
   DATA.wallets.forEach(function (w) { byWallet[w.participant_wallet.toLowerCase()] = w; });
+  var rootKeySet = {};
+  DATA.manifest.record_keys_sorted.forEach(function (k) { rootKeySet[k] = true; });
 
-  // Versions + dataset note
-  document.getElementById("versions").textContent =
-    "(" + DATA.composer_version + " / " + DATA.schema_version + ")";
+  document.getElementById("versions").textContent = "(" + DATA.composer_version + " / " + DATA.schema_version + ")";
   document.getElementById("datasetNote").textContent =
     "Demo dataset: " + DATA.dataset + " — policy window " +
     DATA.policy.effective_window_start_iso.slice(0, 10) + " to " +
     DATA.policy.effective_window_end_iso.slice(0, 10) + ".";
 
-  // Chips
   var chips = document.getElementById("chips");
   DATA.wallets.forEach(function (w) {
     var b = document.createElement("button");
-    b.className = "chip";
-    b.type = "button";
-    b.textContent = w.participant_wallet;
-    b.addEventListener("click", function () {
-      document.getElementById("walletInput").value = w.participant_wallet;
-      render(w.participant_wallet);
-    });
+    b.className = "chip"; b.type = "button"; b.textContent = w.participant_wallet;
+    b.addEventListener("click", function () { selectWallet(w.participant_wallet, true); });
     chips.appendChild(b);
   });
 
@@ -219,35 +239,50 @@
   function row(k, v, vClass) {
     return '<tr><td class="k">' + k + '</td><td class="v ' + (vClass || "") + '">' + v + "</td></tr>";
   }
-
   function esc(s) {
     return String(s).replace(/[&<>"]/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c];
     });
+  }
+
+  function selectWallet(wallet, updateInput) {
+    if (updateInput) document.getElementById("walletInput").value = wallet;
+    render(wallet);
+    // URL-shareable state.
+    try {
+      var w = byWallet[(wallet || "").trim().toLowerCase()];
+      var url = new URL(window.location.href);
+      if (w) url.searchParams.set("wallet", w.participant_wallet); else url.searchParams.delete("wallet");
+      window.history.replaceState(null, "", url.toString());
+    } catch (e) {}
   }
 
   function render(walletRaw) {
     var card = document.getElementById("resultCard");
     var body = document.getElementById("resultBody");
-    var w = byWallet[(walletRaw || "").trim().toLowerCase()];
+    var norm = (walletRaw || "").trim().toLowerCase();
+    var w = byWallet[norm];
     setActiveChip(w ? w.participant_wallet : "");
+
+    if (!norm) {
+      card.style.display = "block";
+      body.innerHTML = '<div class="notfound">Enter a demo wallet above, or pick one of the labeled demo wallets.</div>';
+      return;
+    }
     if (!w) {
       card.style.display = "block";
       body.innerHTML =
         '<div class="notfound">No reconciliation record for <code>' + esc(walletRaw) +
-        "</code> in this demo dataset. Pick one of the labeled demo wallets above.</div>";
+        "</code> in this synthetic demo dataset. Pick one of the labeled demo wallets above.</div>";
       return;
     }
     var r = w.record;
-    var deltaStr = r.delta_owed_pft;
-    var dClass = deltaClass(r.status, deltaStr);
+    var deltaStr = r.delta_owed_pft, dClass = deltaClass(r.status, deltaStr);
     var deltaDisplay = (parseFloat(deltaStr) > 0 ? "+" : "") + deltaStr + " PFT";
 
     var html = "";
-    html += '<div class="head">';
-    html += '<span class="wallet">' + esc(w.participant_wallet) + "</span>";
-    html += '<span class="pill ' + r.status + '">' + (STATUS_LABEL[r.status] || r.status) + "</span>";
-    html += "</div>";
+    html += '<div class="head"><span class="wallet">' + esc(w.participant_wallet) + "</span>";
+    html += '<span class="pill ' + r.status + '">' + (STATUS_LABEL[r.status] || r.status) + "</span></div>";
     html += '<p class="blurb">' + esc(r.blurb || "") + "</p>";
 
     html += '<table class="kv">';
@@ -257,80 +292,114 @@
       (r.payment_count ? ' <span class="small">(' + r.payment_count + " payment record" + (r.payment_count === 1 ? "" : "s") + ")</span>" : ""));
     html += row("Computed fair value", esc(r.computed_fair_value_pft) + " PFT");
     html += row("Delta owed", '<span class="' + dClass + '">' + esc(deltaDisplay) + "</span>");
-    html += row("Reason", esc(REASON_LABEL[r.reason_code] || r.reason_code) +
-      ' <span class="small">(' + esc(r.reason_code) + ")</span>");
-    html += row("Idempotency key", '<span class="hash" id="idkey"></span>');
+    html += row("Reason", esc(REASON_LABEL[r.reason_code] || r.reason_code) + ' <span class="small">(' + esc(r.reason_code) + ")</span>");
+    html += row("Idempotency key", '<span class="hash">' + esc(r.idempotency_key) + "</span>");
     html += "</table>";
 
-    html += '<div class="verify"><span class="badge pending" id="keyBadge">verifying in your browser&hellip;</span>' +
-      '<span class="small">SHA-256 of the canonical inputs, recomputed here</span></div>';
+    // Determinism witness
+    var inRoot = rootKeySet[r.idempotency_key] === true;
+    html += '<div class="witness">';
+    html += '<div class="wl"><span class="k">Idempotency key recomputed in your browser</span>' +
+      '<span class="v"><span class="badge pending" id="keyBadge">verifying&hellip;</span></span></div>';
+    html += '<div class="wl"><span class="k">Included in batch root</span><span class="v">' +
+      (inRoot ? "yes" : "no") + "</span></div>";
+    html += '<div class="wl"><span class="k">Result source</span><span class="v">synthetic fixture, no real contributor data</span></div>';
     html += '<details><summary>Show the canonical pre-image that was hashed</summary>' +
       '<p class="hash" style="margin-top:8px;">' + esc(r.idempotency_preimage) + "</p></details>";
+    html += '<div class="tamperbox"><button class="btn" type="button" id="tamperBtn">Run local tamper test</button>' +
+      '<button class="btn" type="button" id="tamperReset" style="display:none;margin-left:8px;">Reset</button>' +
+      '<div id="tamperOut" style="margin-top:10px;"></div></div>';
+    html += "</div>";
 
     body.innerHTML = html;
     card.style.display = "block";
-    document.getElementById("idkey").textContent = r.idempotency_key;
 
-    // Live in-browser verification of the idempotency key.
+    // Live verification of the idempotency key.
     var badge = document.getElementById("keyBadge");
     sha256Hex(r.idempotency_preimage).then(function (hex) {
-      if (hex === null) {
-        badge.className = "badge pending";
-        badge.textContent = "open over https to verify in-browser";
-        return;
-      }
+      if (hex === null) { badge.className = "badge pending"; badge.textContent = "open over https to verify"; return; }
       var recomputed = "sha256:" + hex;
-      if (recomputed === r.idempotency_key) {
-        badge.className = "badge ok";
-        badge.textContent = "✓ key reproduced in your browser";
-      } else {
-        badge.className = "badge bad";
-        badge.textContent = "✗ key mismatch";
-      }
+      if (recomputed === r.idempotency_key) { badge.className = "badge ok"; badge.textContent = "✓ reproduced"; }
+      else { badge.className = "badge bad"; badge.textContent = "✗ mismatch"; }
+    });
+
+    // Tamper test: perturb one fixture input locally and show verification fail.
+    document.getElementById("tamperBtn").addEventListener("click", function () { runTamper(r); });
+    document.getElementById("tamperReset").addEventListener("click", function () {
+      document.getElementById("tamperOut").innerHTML = "";
+      document.getElementById("tamperReset").style.display = "none";
     });
   }
 
-  // Batch integrity panel
+  async function runTamper(r) {
+    var out = document.getElementById("tamperOut");
+    document.getElementById("tamperReset").style.display = "inline-block";
+    // Change exactly one fixture input in the canonical pre-image: bump fair_value_pft by 1.
+    var orig = r.idempotency_preimage;
+    var tampered = orig.replace(/("fair_value_pft":")(\d+)(")/, function (m, a, num, c) {
+      return a + (parseInt(num, 10) + 1) + c;
+    });
+    if (tampered === orig) {
+      // Fallback: perturb paid_amount_pft instead.
+      tampered = orig.replace(/("paid_amount_pft":")(\d+)(")/, function (m, a, num, c) {
+        return a + (parseInt(num, 10) + 1) + c;
+      });
+    }
+    var hex = await sha256Hex(tampered);
+    if (hex === null) { out.innerHTML = '<span class="small">Open over https to run the tamper test.</span>'; return; }
+    var tamperedKey = "sha256:" + hex;
+    var matches = tamperedKey === r.idempotency_key;
+    var inRootNow = rootKeySet[tamperedKey] === true;
+    var html = "";
+    html += '<div class="small" style="margin-bottom:8px;">Changed one fixture input locally ' +
+      '(<code>fair_value</code> +1). Nothing on any server changed; no payout action occurred.</div>';
+    html += '<div class="witness" style="margin-top:0;">';
+    html += '<div class="wl"><span class="k">Original key (untampered)</span>' +
+      '<span class="v"><span class="badge ok">✓ matches</span></span></div>';
+    html += '<div class="wl"><span class="k">Recomputed key (after tamper)</span>' +
+      '<span class="v"><span class="badge ' + (matches ? "ok" : "bad") + '">' +
+      (matches ? "✓ matches" : "✗ no longer matches") + "</span></span></div>";
+    html += '<div class="wl"><span class="k">Still in batch root</span>' +
+      '<span class="v"><span class="badge ' + (inRootNow ? "ok" : "bad") + '">' +
+      (inRootNow ? "yes" : "no — root would change") + "</span></span></div>";
+    html += '<div class="wl"><span class="k">tampered key</span><span class="v hash">' + esc(tamperedKey) + "</span></div>";
+    html += "</div>";
+    out.innerHTML = html;
+  }
+
   function renderBatch() {
     var m = DATA.manifest, grid = document.getElementById("statGrid");
     function stat(n, l) {
       var d = document.createElement("div"); d.className = "stat";
-      d.innerHTML = '<div class="n">' + n + '</div><div class="l">' + l + "</div>";
-      grid.appendChild(d);
+      d.innerHTML = '<div class="n">' + n + '</div><div class="l">' + l + "</div>"; grid.appendChild(d);
     }
     stat(m.record_count, "records");
     stat((m.by_status.reconciled || 0), "reconciled");
     stat((m.by_status.ineligible || 0), "ineligible");
     stat(m.total_delta_owed_pft + " PFT", "total owed (audit)");
-
     document.getElementById("rootHash").textContent = m.record_keys_root;
 
-    // Recompute the root the same way the composer does:
-    // sha256(JSON of the sorted key list with compact separators).
     var canonical = "[" + m.record_keys_sorted.map(function (k) { return JSON.stringify(k); }).join(",") + "]";
     var badge = document.getElementById("rootBadge");
     sha256Hex(canonical).then(function (hex) {
       if (hex === null) { badge.className = "badge pending"; badge.textContent = "open over https to verify"; return; }
       var recomputed = "sha256:" + hex;
-      if (recomputed === m.record_keys_root) {
-        badge.className = "badge ok";
-        badge.textContent = "✓ batch root reproduced in your browser";
-      } else {
-        badge.className = "badge bad";
-        badge.textContent = "✗ root mismatch";
-      }
+      if (recomputed === m.record_keys_root) { badge.className = "badge ok"; badge.textContent = "✓ reproduced"; }
+      else { badge.className = "badge bad"; badge.textContent = "✗ mismatch"; }
     });
   }
 
-  document.getElementById("walletInput").addEventListener("input", function (e) {
-    render(e.target.value);
-  });
+  document.getElementById("walletInput").addEventListener("input", function (e) { selectWallet(e.target.value, false); });
 
   renderBatch();
-  // Open on the first demo wallet so a result is visible immediately.
-  if (DATA.wallets.length) {
-    document.getElementById("walletInput").value = DATA.wallets[0].participant_wallet;
-    render(DATA.wallets[0].participant_wallet);
+
+  // Initial state: ?wallet= query param, else the first demo wallet.
+  var initial = null;
+  try { initial = new URL(window.location.href).searchParams.get("wallet"); } catch (e) {}
+  if (initial && byWallet[initial.trim().toLowerCase()]) {
+    selectWallet(byWallet[initial.trim().toLowerCase()].participant_wallet, true);
+  } else if (DATA.wallets.length) {
+    selectWallet(DATA.wallets[0].participant_wallet, true);
   }
 })();
 </script>
