@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Post Fiat — Reward Reconciliation (Audit Preview)</title>
+<meta name="description" content="Post Fiat reward-integrity infrastructure. A deterministic, audit-only preview of historical reward reconciliation. No login, no credentials, no payout." />
+<style>
+  :root {
+    --bg:#0d1117; --panel:#161b22; --panel2:#11161d; --line:#30363d;
+    --ink:#e6edf3; --muted:#9da7b3; --accent:#3fb950; --accent2:#58a6ff;
+    --warn:#d29922; --owed:#3fb950; --neutral:#8b949e; --info:#58a6ff; --inelig:#d29922;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:var(--bg); color:var(--ink);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap { max-width:880px; margin:0 auto; padding:20px 16px 64px; }
+  header h1 { font-size:22px; margin:0 0 4px; letter-spacing:-0.01em; }
+  header .sub { color:var(--muted); font-size:14px; margin:0 0 16px; }
+  .banner {
+    background:rgba(210,153,34,0.10); border:1px solid var(--warn);
+    border-radius:10px; padding:12px 14px; margin:0 0 18px; font-size:14px;
+  }
+  .banner b { color:var(--warn); }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; margin:0 0 16px; }
+  .card h2 { font-size:13px; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); margin:0 0 12px; font-weight:600; }
+  label { display:block; font-size:13px; color:var(--muted); margin:0 0 6px; }
+  input[type=text] {
+    width:100%; padding:11px 12px; border-radius:9px; border:1px solid var(--line);
+    background:var(--panel2); color:var(--ink); font-family:var(--mono); font-size:14px;
+  }
+  input[type=text]:focus { outline:none; border-color:var(--accent2); }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 0; }
+  .chip {
+    border:1px solid var(--line); background:var(--panel2); color:var(--ink);
+    border-radius:999px; padding:6px 12px; font-size:13px; cursor:pointer; font-family:var(--mono);
+  }
+  .chip:hover { border-color:var(--accent2); }
+  .chip.active { border-color:var(--accent2); background:rgba(88,166,255,0.12); }
+  .result { margin-top:4px; }
+  .result .head { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+  .wallet { font-family:var(--mono); font-size:15px; color:var(--accent2); word-break:break-all; }
+  .pill { display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; letter-spacing:0.02em; }
+  .pill.reconciled { background:rgba(63,185,80,0.15); color:var(--owed); border:1px solid rgba(63,185,80,0.4); }
+  .pill.informational { background:rgba(88,166,255,0.15); color:var(--info); border:1px solid rgba(88,166,255,0.4); }
+  .pill.ineligible { background:rgba(210,153,34,0.15); color:var(--inelig); border:1px solid rgba(210,153,34,0.4); }
+  .blurb { color:var(--muted); font-size:14px; margin:8px 0 14px; }
+  table.kv { width:100%; border-collapse:collapse; font-size:14px; }
+  table.kv td { padding:8px 6px; border-top:1px solid var(--line); vertical-align:top; }
+  table.kv td.k { color:var(--muted); width:42%; }
+  table.kv td.v { font-family:var(--mono); word-break:break-all; }
+  .delta-owed { color:var(--owed); font-weight:700; }
+  .delta-zero { color:var(--neutral); }
+  .delta-neg { color:var(--info); }
+  .verify { margin-top:12px; font-size:13px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .badge { display:inline-flex; align-items:center; gap:6px; padding:4px 9px; border-radius:8px; font-weight:600; font-size:12px; }
+  .badge.ok { background:rgba(63,185,80,0.14); color:var(--accent); border:1px solid rgba(63,185,80,0.4); }
+  .badge.pending { background:rgba(139,148,163,0.14); color:var(--muted); border:1px solid var(--line); }
+  .badge.bad { background:rgba(248,81,73,0.14); color:#f85149; border:1px solid rgba(248,81,73,0.4); }
+  .hash { font-family:var(--mono); font-size:12px; color:var(--muted); word-break:break-all; }
+  .notfound { color:var(--muted); font-size:14px; padding:8px 0; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+  .stat { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:10px 12px; }
+  .stat .n { font-size:20px; font-weight:700; }
+  .stat .l { font-size:12px; color:var(--muted); }
+  details { margin-top:10px; }
+  details summary { cursor:pointer; color:var(--accent2); font-size:13px; }
+  .small { font-size:12.5px; color:var(--muted); }
+  footer { color:var(--muted); font-size:12.5px; margin-top:24px; border-top:1px solid var(--line); padding-top:16px; }
+  code { font-family:var(--mono); background:var(--panel2); padding:1px 5px; border-radius:5px; }
+  a { color:var(--accent2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Reward Reconciliation &mdash; Audit Preview</h1>
+    <p class="sub">Post Fiat reward-integrity infrastructure</p>
+  </header>
+
+  <div class="banner">
+    <b>Audit preview only &mdash; not a payout action.</b> This page recomputes historical
+    reward reconciliation as <em>evidence for review</em>. It requires no login, no wallet
+    connection, and no private credentials, and it executes no payout and mutates no state.
+    Authorizing any payment from these records is a separate governance step that lives
+    outside this surface.
+  </div>
+
+  <div class="card">
+    <h2>Look up a contributor</h2>
+    <label for="walletInput">Enter a demo wallet, or pick one below</label>
+    <input id="walletInput" type="text" autocomplete="off" spellcheck="false"
+           placeholder="demo-wallet-alpha" />
+    <div class="chips" id="chips"></div>
+    <p class="small" id="datasetNote" style="margin-top:12px;"></p>
+  </div>
+
+  <div class="card result" id="resultCard" style="display:none;">
+    <div id="resultBody"></div>
+  </div>
+
+  <div class="card">
+    <h2>Batch integrity</h2>
+    <div class="grid" id="statGrid"></div>
+    <div class="verify" id="rootVerify">
+      <span class="badge pending" id="rootBadge">checking&hellip;</span>
+      <span class="small">batch root hash recomputed in your browser</span>
+    </div>
+    <div class="hash" id="rootHash" style="margin-top:8px;"></div>
+    <details>
+      <summary>What is the batch root hash?</summary>
+      <p class="small">It is the SHA-256 over the sorted list of every record&rsquo;s idempotency
+      key. If any record&rsquo;s inputs changed, its key changes, and this root changes &mdash;
+      so the root is a tamper-evident fingerprint of the whole reconciliation batch.</p>
+    </details>
+  </div>
+
+  <div class="card">
+    <h2>How this works</h2>
+    <p class="small" style="margin-top:0;">
+      Each result is produced by a deterministic reconciliation composer: it compares a
+      historical contribution&rsquo;s <em>fair value</em> against the <em>total already paid</em>
+      (all partial payments aggregated as a ledger, never last-write-wins) and reports the
+      delta owed, a status, and a machine-readable reason code. Every record carries an
+      <em>idempotency key</em> &mdash; a SHA-256 over the exact canonical inputs &mdash; so the
+      same inputs always yield the same key, and any change to payment state or policy changes it.
+    </p>
+    <p class="small">
+      This page re-hashes each idempotency key <b>in your browser</b> from its canonical
+      pre-image and re-derives the batch root, so you can confirm the results are reproducible
+      without trusting any server. The demo data is a synthetic, privacy-safe fixture &mdash;
+      no real participants or wallets.
+    </p>
+  </div>
+
+  <footer>
+    <p>Post Fiat reward-integrity infrastructure &middot; audit preview, not a payout action &middot;
+       deterministic reconciliation composer <span id="versions" class="small"></span></p>
+    <p class="small">Reconciliation is evidence for governance review. It does not authorize payment,
+       request credentials, or move funds.</p>
+  </footer>
+</div>
+
+<script id="recon-data" type="application/json">{"composer_version":"1.2.0","dataset":"synthetic privacy-safe demo fixture (no real participants or wallets)","manifest":{"by_reason_code":{"ineligible_already_settled":1,"ineligible_outside_window":1,"ineligible_unverified":1,"overpaid_no_obligation":1,"reconciled_no_delta":1,"reconciled_owed":2},"by_status":{"ineligible":3,"informational":1,"reconciled":3},"composer_version":"1.2.0","policy_fingerprint":"sha256:45b98ba8e1b6a8620d0343a1d18ef52d5191ec1512f6605106268a162d243f91","record_count":7,"record_keys_root":"sha256:96f405e2ece6b847f95a56334254c528496d33bbd18c3a05fdac4d338841aaba","record_keys_sorted":["sha256:17fd023d33a754b024872240cd865f6a9b93c786fa8bbb284ca87064b31a4b93","sha256:22c9ac88c6602d7b0ea1551419ad2572c1ac887bbd8396deddc6836d0e4fcea5","sha256:2ed78f319c942ae8a88e8cf736e3004e754c1b6d36efa06bc61d77b6b1696e11","sha256:6175e63c81d8a0717315c2bcf3db2d03b7d7bf589637a51462ff622ee677e534","sha256:7ba4caf65c4da30d26fbec3794582ef17f98829e905543be2c79ec7d7a3b3271","sha256:aa7d296526a3fe8b429756d3d48d5577c52676bb372b3eca75670d64e36b9881","sha256:b5e71eef285ea6de6839acd45bf41cda29c77561449b7f843ee0df737725b5ec"],"schema_version":"pf.reconciliation.composer.v1","total_computed_fair_value_pft":"2600","total_delta_owed_pft":"1200","total_paid_amount_pft":"2450"},"policy":{"effective_window_end_iso":"2026-04-30T23:59:59Z","effective_window_start_iso":"2026-01-01T00:00:00Z","fair_value_method":"from_record","minimum_delta_pft":"0","policy_fingerprint":"sha256:45b98ba8e1b6a8620d0343a1d18ef52d5191ec1512f6605106268a162d243f91","policy_version":"demo-reconciliation-policy-2026-q1-v1","require_verification":true,"rounding":"floor"},"schema_version":"pf.reconciliation.composer.v1","wallets":[{"observed_at_iso":"2026-03-01T12:00:00Z","participant_wallet":"demo-wallet-alpha","record":{"blurb":"Verified contribution, partially paid across three records; a balance remains.","composer_version":"1.2.0","computed_fair_value_pft":"1000","contribution_ref":"demo-contrib-alpha","delta_owed_pft":"400","idempotency_key":"sha256:aa7d296526a3fe8b429756d3d48d5577c52676bb372b3eca75670d64e36b9881","idempotency_preimage":"{\"contribution_ref\":\"demo-contrib-alpha\",\"extra_tags\":[],\"fair_value_pft\":\"1000\",\"observed_at_iso\":\"2026-03-01T12:00:00Z\",\"paid_amount_pft\":\"600\",\"participant_wallet\":\"demo-wallet-alpha\",\"payment_count\":3,\"payment_fingerprint\":\"sha256:799f3029b188fbcd3f1e42a2033fbba8dcfc6e9f2f999e09f091cd90fa8b50e1\",\"policy_fingerprint\":\"sha256:45b98ba8e1b6a8620d0343a1d18ef52d5191ec1512f6605106268a162d243f91\",\"policy_version\":\"demo-reconciliation-policy-2026-q1-v1\",\"schema_version\":\"pf.reconciliation.composer.v1\",\"settled\":false}","notes":"delta > minimum_delta_pft; recorded as audit evidence, not authorization","paid_amount_pft":"600","participant_wallet":"demo-wallet-alpha","payment_count":3,"reason_code":"reconciled_owed","schema_version":"pf.reconciliation.composer.v1","status":"reconciled"},"verified":true},{"observed_at_iso":"2026-03-15T09:30:00Z","participant_wallet":"demo-wallet-beta","record":{"blurb":"Verified contribution, fully paid; nothing outstanding.","composer_version":"1.2.0","computed_fair_value_pft":"500","contribution_ref":"demo-contrib-beta","delta_owed_pft":"0","idempotency_key":"sha256:2ed78f319c942ae8a88e8cf736e3004e754c1b6d36efa06bc61d77b6b1696e11","idempotency_preimage":"{\"contribution_ref\":\"demo-contrib-beta\",\"extra_tags\":[],\"fair_value_pft\":\"500\",\"observed_at_iso\":\"2026-03-15T09:30:00Z\",\"paid_amount_pft\":\"500\",\"participant_wallet\":\"demo-wallet-beta\",\"payment_count\":1,\"payment_fingerprint\":\"sha256:9d74d1c2a6e6ef50516873fee50877906c33e02c0fea88231775cbc2bb2bed9b\",\"policy_fingerprint\":\"sha256:45b98ba8e1b6a8620d0343a1d18ef52d5191ec1512f6605106268a162d243f91\",\"policy_version\":\"demo-reconciliation-policy-2026-q1-v1\",\"schema_version\":\"pf.reconciliation.composer.v1\",\"settled\":false}","notes":"delta at or below minimum_delta_pft floor","paid_amount_pft":"500","participant_wallet":"demo-wallet-beta","payment_count":1,"reason_code":"reconciled_no_delta","schema_version":"pf.reconciliation.composer.v1","status":"reconciled"},"verified":true},{"observed_at_iso":"2026-03-20T15:00:00Z","participant_wallet":"demo-wallet-gamma","record":{"blurb":"Verified contribution, paid above fair value; recorded as informational, no clawback.","composer_version":"1.2.0","computed_fair_value_pft":"300","contribution_ref":"demo-contrib-gamma","delta_owed_pft":"-150","idempotency_key":"sha256:6175e63c81d8a0717315c2bcf3db2d03b7d7bf589637a51462ff622ee677e534","idempotency_preimage":"{\"contribution_ref\":\"demo-contrib-gamma\",\"extra_tags\":[],\"fair_value_pft\":\"300\",\"observed_at_iso\":\"2026-03-20T15:00:00Z\",\"paid_amount_pft\":\"450\",\"participant_wallet\":\"demo-wallet-gamma\",\"payment_count\":1,\"payment_fingerprint\":\"sha256:b4976d3c061a0a08b8a41f460a1f7a7fe316dfe04aa7f59ef93a378da690c403\",\"policy_fingerprint\":\"sha256:45b98ba8e1b6a8620d0343a1d18ef52d5191ec1512f6605106268a162d243f91\",\"policy_version\":\"demo-reconciliation-policy-2026-q1-v1\",\"schema_version\":\"pf.reconciliation.composer.v1\",\"settled\":false}","notes":"paid_amount exceeds fair_value; no clawback obligation in this composer","paid_amount_pft":"450","participant_wallet":"demo-wallet-gamma","payment_count":1,"reason_code":"overpaid_no_obligation","schema_version":"pf.reconciliation.composer.v1","status":"informational"},"verified":true},{"observed_at_iso":"2026-03-22T11:00:00Z","participant_wallet":"demo-wallet-delta","record":{"blurb":"Contribution not yet verified; ineligible until verification clears.","composer_version":"1.2.0","computed_fair_value_pft":"0","contribution_ref":"demo-contrib-delta","delta_owed_pft":"0","idempotency_key":"sha256:17fd023d33a754b024872240cd865f6a9b93c786fa8bbb284ca87064b31a4b93","idempotency_preimage":"{\"contribution_ref\":\"demo-contrib-delta\",\"extra_tags\":[],\"fair_value_pft\":\"0\",\"observed_at_iso\":\"2026-03-22T11:00:00Z\",\"paid_amount_pft\":\"0\",\"participant_wallet\":\"demo-wallet-delta\",\"payment_count\":0,\"payment_fingerprint\":\"sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945\",\"policy_fingerprint\":\"sha256:45b98ba8e1b6a8620d0343a1d18ef52d5191ec1512f6605106268a162d243f91\",\"policy_version\":\"demo-reconciliation-policy-2026-q1-v1\",\"schema_version\":\"pf.reconciliation.composer.v1\",\"settled\":false}","notes":"policy.require_verification is True and contribution.verified is False","paid_amount_pft":"0","participant_wallet":"demo-wallet-delta","payment_count":0,"reason_code":"ineligible_unverified","schema_version":"pf.reconciliation.composer.v1","status":"ineligible"},"verified":false},{"observed_at_iso":"2025-12-01T08:00:00Z","participant_wallet":"demo-wallet-epsilon","record":{"blurb":"Contribution observed before the policy window; ineligible under this window.","composer_version":"1.2.0","computed_fair_value_pft":"0","contribution_ref":"demo-contrib-epsilon","delta_owed_pft":"0","idempotency_key":"sha256:b5e71eef285ea6de6839acd45bf41cda29c77561449b7f843ee0df737725b5ec","idempotency_preimage":"{\"contribution_ref\":\"demo-contrib-epsilon\",\"extra_tags\":[],\"fair_value_pft\":\"0\",\"observed_at_iso\":\"2025-12-01T08:00:00Z\",\"paid_amount_pft\":\"0\",\"participant_wallet\":\"demo-wallet-epsilon\",\"payment_count\":0,\"payment_fingerprint\":\"sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945\",\"policy_fingerprint\":\"sha256:45b98ba8e1b6a8620d0343a1d18ef52d5191ec1512f6605106268a162d243f91\",\"policy_version\":\"demo-reconciliation-policy-2026-q1-v1\",\"schema_version\":\"pf.reconciliation.composer.v1\",\"settled\":false}","notes":"observed_at 2025-12-01T08:00:00+00:00 outside [2026-01-01T00:00:00Z, 2026-04-30T23:59:59Z]","paid_amount_pft":"0","participant_wallet":"demo-wallet-epsilon","payment_count":0,"reason_code":"ineligible_outside_window","schema_version":"pf.reconciliation.composer.v1","status":"ineligible"},"verified":true},{"observed_at_iso":"2026-02-10T14:00:00Z","participant_wallet":"demo-wallet-zeta","record":{"blurb":"Contribution already settled; terminal, no further obligation can be composed.","composer_version":"1.2.0","computed_fair_value_pft":"0","contribution_ref":"demo-contrib-zeta","delta_owed_pft":"0","idempotency_key":"sha256:22c9ac88c6602d7b0ea1551419ad2572c1ac887bbd8396deddc6836d0e4fcea5","idempotency_preimage":"{\"contribution_ref\":\"demo-contrib-zeta\",\"extra_tags\":[],\"fair_value_pft\":\"0\",\"observed_at_iso\":\"2026-02-10T14:00:00Z\",\"paid_amount_pft\":\"900\",\"participant_wallet\":\"demo-wallet-zeta\",\"payment_count\":1,\"payment_fingerprint\":\"sha256:038236f676f05e2d1efe68763766528d895b299446ab433d175976c8b483c6f7\",\"policy_fingerprint\":\"sha256:45b98ba8e1b6a8620d0343a1d18ef52d5191ec1512f6605106268a162d243f91\",\"policy_version\":\"demo-reconciliation-policy-2026-q1-v1\",\"schema_version\":\"pf.reconciliation.composer.v1\",\"settled\":true}","notes":"at least one payment record is marked settled; no further obligation may be composed","paid_amount_pft":"900","participant_wallet":"demo-wallet-zeta","payment_count":1,"reason_code":"ineligible_already_settled","schema_version":"pf.reconciliation.composer.v1","status":"ineligible"},"verified":true},{"observed_at_iso":"2026-04-05T16:45:00Z","participant_wallet":"demo-wallet-eta","record":{"blurb":"Verified contribution with no payment on record; full fair value is outstanding.","composer_version":"1.2.0","computed_fair_value_pft":"800","contribution_ref":"demo-contrib-eta","delta_owed_pft":"800","idempotency_key":"sha256:7ba4caf65c4da30d26fbec3794582ef17f98829e905543be2c79ec7d7a3b3271","idempotency_preimage":"{\"contribution_ref\":\"demo-contrib-eta\",\"extra_tags\":[],\"fair_value_pft\":\"800\",\"observed_at_iso\":\"2026-04-05T16:45:00Z\",\"paid_amount_pft\":\"0\",\"participant_wallet\":\"demo-wallet-eta\",\"payment_count\":0,\"payment_fingerprint\":\"sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945\",\"policy_fingerprint\":\"sha256:45b98ba8e1b6a8620d0343a1d18ef52d5191ec1512f6605106268a162d243f91\",\"policy_version\":\"demo-reconciliation-policy-2026-q1-v1\",\"schema_version\":\"pf.reconciliation.composer.v1\",\"settled\":false}","notes":"delta > minimum_delta_pft; recorded as audit evidence, not authorization","paid_amount_pft":"0","participant_wallet":"demo-wallet-eta","payment_count":0,"reason_code":"reconciled_owed","schema_version":"pf.reconciliation.composer.v1","status":"reconciled"},"verified":true}]}</script>
+<script>
+(function () {
+  "use strict";
+  var DATA = JSON.parse(document.getElementById("recon-data").textContent);
+
+  var STATUS_LABEL = {
+    reconciled: "Reconciled",
+    informational: "Informational",
+    ineligible: "Ineligible"
+  };
+  var REASON_LABEL = {
+    reconciled_owed: "Balance owed",
+    reconciled_no_delta: "Fully reconciled (no delta)",
+    overpaid_no_obligation: "Overpaid — no obligation",
+    ineligible_already_settled: "Already settled",
+    ineligible_unverified: "Not yet verified",
+    ineligible_outside_window: "Outside policy window",
+    ineligible_duplicate_contribution_ref: "Duplicate contribution",
+    ineligible_missing_fair_value_basis: "Missing fair-value basis",
+    ineligible_malformed_timestamp: "Malformed timestamp",
+    ineligible_malformed_payment_record: "Malformed payment record",
+    ineligible_malformed_policy: "Malformed policy"
+  };
+
+  var byWallet = {};
+  DATA.wallets.forEach(function (w) { byWallet[w.participant_wallet.toLowerCase()] = w; });
+
+  // Versions + dataset note
+  document.getElementById("versions").textContent =
+    "(" + DATA.composer_version + " / " + DATA.schema_version + ")";
+  document.getElementById("datasetNote").textContent =
+    "Demo dataset: " + DATA.dataset + " — policy window " +
+    DATA.policy.effective_window_start_iso.slice(0, 10) + " to " +
+    DATA.policy.effective_window_end_iso.slice(0, 10) + ".";
+
+  // Chips
+  var chips = document.getElementById("chips");
+  DATA.wallets.forEach(function (w) {
+    var b = document.createElement("button");
+    b.className = "chip";
+    b.type = "button";
+    b.textContent = w.participant_wallet;
+    b.addEventListener("click", function () {
+      document.getElementById("walletInput").value = w.participant_wallet;
+      render(w.participant_wallet);
+    });
+    chips.appendChild(b);
+  });
+
+  function setActiveChip(wallet) {
+    var k = (wallet || "").toLowerCase();
+    Array.prototype.forEach.call(chips.children, function (c) {
+      c.classList.toggle("active", c.textContent.toLowerCase() === k);
+    });
+  }
+
+  function deltaClass(status, deltaStr) {
+    if (status === "informational") return "delta-neg";
+    if (parseFloat(deltaStr) > 0) return "delta-owed";
+    return "delta-zero";
+  }
+
+  async function sha256Hex(str) {
+    if (!(window.crypto && window.crypto.subtle)) return null;
+    var buf = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+    var bytes = new Uint8Array(buf), hex = "";
+    for (var i = 0; i < bytes.length; i++) hex += bytes[i].toString(16).padStart(2, "0");
+    return hex;
+  }
+
+  function row(k, v, vClass) {
+    return '<tr><td class="k">' + k + '</td><td class="v ' + (vClass || "") + '">' + v + "</td></tr>";
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+
+  function render(walletRaw) {
+    var card = document.getElementById("resultCard");
+    var body = document.getElementById("resultBody");
+    var w = byWallet[(walletRaw || "").trim().toLowerCase()];
+    setActiveChip(w ? w.participant_wallet : "");
+    if (!w) {
+      card.style.display = "block";
+      body.innerHTML =
+        '<div class="notfound">No reconciliation record for <code>' + esc(walletRaw) +
+        "</code> in this demo dataset. Pick one of the labeled demo wallets above.</div>";
+      return;
+    }
+    var r = w.record;
+    var deltaStr = r.delta_owed_pft;
+    var dClass = deltaClass(r.status, deltaStr);
+    var deltaDisplay = (parseFloat(deltaStr) > 0 ? "+" : "") + deltaStr + " PFT";
+
+    var html = "";
+    html += '<div class="head">';
+    html += '<span class="wallet">' + esc(w.participant_wallet) + "</span>";
+    html += '<span class="pill ' + r.status + '">' + (STATUS_LABEL[r.status] || r.status) + "</span>";
+    html += "</div>";
+    html += '<p class="blurb">' + esc(r.blurb || "") + "</p>";
+
+    html += '<table class="kv">';
+    html += row("Contribution", esc(r.contribution_ref));
+    html += row("Observed", esc(w.observed_at_iso) + (w.verified ? " &middot; verified" : " &middot; unverified"));
+    html += row("Total paid", esc(r.paid_amount_pft) + " PFT" +
+      (r.payment_count ? ' <span class="small">(' + r.payment_count + " payment record" + (r.payment_count === 1 ? "" : "s") + ")</span>" : ""));
+    html += row("Computed fair value", esc(r.computed_fair_value_pft) + " PFT");
+    html += row("Delta owed", '<span class="' + dClass + '">' + esc(deltaDisplay) + "</span>");
+    html += row("Reason", esc(REASON_LABEL[r.reason_code] || r.reason_code) +
+      ' <span class="small">(' + esc(r.reason_code) + ")</span>");
+    html += row("Idempotency key", '<span class="hash" id="idkey"></span>');
+    html += "</table>";
+
+    html += '<div class="verify"><span class="badge pending" id="keyBadge">verifying in your browser&hellip;</span>' +
+      '<span class="small">SHA-256 of the canonical inputs, recomputed here</span></div>';
+    html += '<details><summary>Show the canonical pre-image that was hashed</summary>' +
+      '<p class="hash" style="margin-top:8px;">' + esc(r.idempotency_preimage) + "</p></details>";
+
+    body.innerHTML = html;
+    card.style.display = "block";
+    document.getElementById("idkey").textContent = r.idempotency_key;
+
+    // Live in-browser verification of the idempotency key.
+    var badge = document.getElementById("keyBadge");
+    sha256Hex(r.idempotency_preimage).then(function (hex) {
+      if (hex === null) {
+        badge.className = "badge pending";
+        badge.textContent = "open over https to verify in-browser";
+        return;
+      }
+      var recomputed = "sha256:" + hex;
+      if (recomputed === r.idempotency_key) {
+        badge.className = "badge ok";
+        badge.textContent = "✓ key reproduced in your browser";
+      } else {
+        badge.className = "badge bad";
+        badge.textContent = "✗ key mismatch";
+      }
+    });
+  }
+
+  // Batch integrity panel
+  function renderBatch() {
+    var m = DATA.manifest, grid = document.getElementById("statGrid");
+    function stat(n, l) {
+      var d = document.createElement("div"); d.className = "stat";
+      d.innerHTML = '<div class="n">' + n + '</div><div class="l">' + l + "</div>";
+      grid.appendChild(d);
+    }
+    stat(m.record_count, "records");
+    stat((m.by_status.reconciled || 0), "reconciled");
+    stat((m.by_status.ineligible || 0), "ineligible");
+    stat(m.total_delta_owed_pft + " PFT", "total owed (audit)");
+
+    document.getElementById("rootHash").textContent = m.record_keys_root;
+
+    // Recompute the root the same way the composer does:
+    // sha256(JSON of the sorted key list with compact separators).
+    var canonical = "[" + m.record_keys_sorted.map(function (k) { return JSON.stringify(k); }).join(",") + "]";
+    var badge = document.getElementById("rootBadge");
+    sha256Hex(canonical).then(function (hex) {
+      if (hex === null) { badge.className = "badge pending"; badge.textContent = "open over https to verify"; return; }
+      var recomputed = "sha256:" + hex;
+      if (recomputed === m.record_keys_root) {
+        badge.className = "badge ok";
+        badge.textContent = "✓ batch root reproduced in your browser";
+      } else {
+        badge.className = "badge bad";
+        badge.textContent = "✗ root mismatch";
+      }
+    });
+  }
+
+  document.getElementById("walletInput").addEventListener("input", function (e) {
+    render(e.target.value);
+  });
+
+  renderBatch();
+  // Open on the first demo wallet so a result is visible immediately.
+  if (DATA.wallets.length) {
+    document.getElementById("walletInput").value = DATA.wallets[0].participant_wallet;
+    render(DATA.wallets[0].participant_wallet);
+  }
+})();
+</script>
+</body>
+</html>
