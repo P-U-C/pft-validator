@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Swell — Trend Emergence Radar</title>
+<style>
+  :root { --bg:#0a0a0f; --card:#12121a; --accent:#6ec8c0; --green:#10b981; --red:#ef4444; --blue:#60a5fa; --text:#e0e0e0; --dim:#666; --border:#1e1e2e; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); padding:20px; max-width:1100px; margin:0 auto; }
+  h1 { font-size:1.6rem; color:var(--accent); text-align:center; letter-spacing:2px; text-transform:uppercase; margin-bottom:4px; }
+  .sub { text-align:center; color:var(--dim); font-size:0.75rem; margin-bottom:24px; }
+  .meta { display:flex; justify-content:center; gap:24px; font-size:0.7rem; color:var(--dim); margin-bottom:20px; flex-wrap:wrap; }
+  .meta span { background:var(--card); padding:6px 12px; border-radius:4px; }
+
+  h2 { font-size:1rem; color:var(--accent); margin:20px 0 12px; text-transform:uppercase; letter-spacing:1px; }
+
+  table { width:100%; border-collapse:collapse; font-size:0.72rem; }
+  th { background:var(--card); color:var(--accent); padding:8px 6px; text-align:left; font-size:0.65rem; text-transform:uppercase; letter-spacing:0.5px; position:sticky; top:0; }
+  td { padding:8px 6px; border-bottom:1px solid var(--border); }
+  tr:hover { background:#1a1a2e; }
+  tr.cal td { opacity:0.45; }
+  .name { font-weight:700; color:var(--text); font-size:0.78rem; }
+  .cat-tag { font-size:0.6rem; padding:2px 6px; border-radius:3px; background:#1e1e2e; color:var(--dim); }
+  .cal-tag { font-size:0.55rem; padding:1px 5px; border-radius:3px; background:#1e1e2e; color:var(--accent); text-transform:uppercase; letter-spacing:0.5px; margin-left:6px; }
+  .stage { font-size:0.62rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--dim); }
+  .stage.approaching { color:var(--blue); }
+  .stage.crossing { color:var(--green); }
+
+  .score-bar { display:flex; align-items:center; gap:6px; }
+  .bar-bg { height:6px; border-radius:3px; background:#222; width:70px; overflow:hidden; }
+  .bar-fill { height:6px; border-radius:3px; background:var(--accent); }
+  .bar-fill.hot { background:var(--green); }
+  .comp { font-weight:700; font-size:0.8rem; }
+  .delta-up { color:var(--green); }
+  .delta-down { color:var(--red); }
+  .delta-flat { color:var(--dim); }
+  .sig { color:var(--dim); font-variant-numeric:tabular-nums; }
+  .fire-dot { color:var(--green); }
+
+  .footer { text-align:center; margin-top:30px; padding:16px; font-size:0.6rem; color:var(--dim); border-top:1px solid var(--border); }
+  .footer a { color:var(--accent); text-decoration:none; }
+
+  @media(max-width:600px) { table { font-size:0.65rem; } th,td { padding:6px 4px; } .hide-sm { display:none; } }
+</style>
+</head>
+<body>
+
+<h1>🌊 The Swell</h1>
+<p class="sub">Consumer trend emergence radar — capital velocity × deployment spread × vocabulary</p>
+
+<div class="meta" id="meta"><span>Loading…</span></div>
+
+<h2>Firing <span style="color:var(--dim);font-size:0.7rem;" id="fireCount"></span></h2>
+<table>
+  <thead><tr>
+    <th>#</th><th>Trend</th><th>Composite</th><th>Δ 7d</th>
+    <th class="hide-sm">Velocity</th><th class="hide-sm">Spread</th><th class="hide-sm">Vocab</th>
+    <th>Stage</th><th class="hide-sm">Events 7d</th>
+  </tr></thead>
+  <tbody id="firingBody"></tbody>
+</table>
+
+<h2>Watching</h2>
+<table>
+  <thead><tr>
+    <th>#</th><th>Trend</th><th>Composite</th><th>Δ 7d</th>
+    <th class="hide-sm">Velocity</th><th class="hide-sm">Spread</th><th class="hide-sm">Vocab</th>
+    <th>Stage</th><th class="hide-sm">Events 7d</th>
+  </tr></thead>
+  <tbody id="watchBody"></tbody>
+</table>
+
+<div class="footer" id="footer">
+  Scores refresh daily ~13:00 UTC from the swell-checker pipeline ·
+  <a href="/scanner/">LLM Convergence Scanner</a>
+</div>
+
+<script>
+fetch('swell.json?t=' + Date.now())
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    document.getElementById('meta').innerHTML =
+      '<span>As of: ' + d.as_of + '</span>' +
+      '<span>Threshold: ' + d.threshold + '</span>' +
+      '<span>Tracked: ' + d.candidate_count + '</span>' +
+      '<span>Firing: ' + d.firing_count + '</span>';
+    document.getElementById('fireCount').textContent =
+      '— composite ≥ ' + d.threshold;
+
+    function deltaCell(v) {
+      if (v === null || v === undefined) return '<span class="delta-flat">·</span>';
+      if (v > 0.005) return '<span class="delta-up">▲ ' + v.toFixed(2) + '</span>';
+      if (v < -0.005) return '<span class="delta-down">▼ ' + Math.abs(v).toFixed(2) + '</span>';
+      return '<span class="delta-flat">· 0.00</span>';
+    }
+
+    function row(c, i) {
+      var pct = Math.round(c.composite * 100);
+      var hot = c.composite >= d.threshold ? ' hot' : '';
+      return '<tr class="' + (c.is_calibration ? 'cal' : '') + '">' +
+        '<td>' + (i + 1) + '</td>' +
+        '<td><span class="name">' + c.name + '</span>' +
+          (c.is_calibration ? '<span class="cal-tag">calibration</span>' : '') +
+          ' <span class="cat-tag">' + (c.category || '') + '</span></td>' +
+        '<td><div class="score-bar"><div class="bar-bg"><div class="bar-fill' + hot + '" style="width:' + pct + '%"></div></div>' +
+          '<span class="comp">' + c.composite.toFixed(3) + '</span></div></td>' +
+        '<td>' + deltaCell(c.delta_7d) + '</td>' +
+        '<td class="sig hide-sm">' + c.velocity.toFixed(2) + '</td>' +
+        '<td class="sig hide-sm">' + c.spread.toFixed(2) + '</td>' +
+        '<td class="sig hide-sm">' + c.vocabulary.toFixed(2) + '</td>' +
+        '<td><span class="stage ' + (c.stage || '') + '">' + (c.stage || c.status) + '</span></td>' +
+        '<td class="sig hide-sm">' + c.events_7d + '</td>' +
+        '</tr>';
+    }
+
+    var firing = d.candidates.filter(function(c) { return c.firing; });
+    var watching = d.candidates.filter(function(c) { return !c.firing; });
+    document.getElementById('firingBody').innerHTML =
+      firing.map(row).join('') ||
+      '<tr><td colspan="9" style="text-align:center;color:var(--dim);">Nothing over the threshold today.</td></tr>';
+    document.getElementById('watchBody').innerHTML = watching.map(row).join('');
+
+    document.getElementById('footer').innerHTML =
+      'Generated ' + d.generated_at + ' · scores refresh daily ~13:00 UTC · ' +
+      '<a href="/scanner/">LLM Convergence Scanner</a>';
+  })
+  .catch(function(e) {
+    document.getElementById('meta').innerHTML = '<span>Failed to load swell.json — ' + e + '</span>';
+  });
+</script>
+
+</body>
+</html>
