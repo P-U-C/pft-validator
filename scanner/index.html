@@ -57,6 +57,10 @@
   .gate-banner b { color:var(--blue); }
   .bucket-tag { font-size:0.6rem; padding:2px 6px; border-radius:3px; background:#1e1e2e; color:var(--accent); text-transform:uppercase; }
   .bucket-tag.lottery { background:#241c1c; color:#fb923c; }
+  .bucket-tag.long_term { background:#16231c; color:var(--green); }
+  .bucket-tag.short_term { background:#1a2030; color:var(--blue); }
+  .compound-banner { background:var(--card); border-left:3px solid var(--green); padding:10px 14px; border-radius:4px; font-size:0.72rem; color:var(--text); margin-bottom:14px; }
+  .compound-banner b { color:var(--green); }
   details summary { cursor:pointer; color:var(--dim); padding:8px 0; font-size:0.72rem; text-transform:uppercase; letter-spacing:1px; }
   details summary:hover { color:var(--accent); }
 
@@ -82,6 +86,7 @@
   </div>
 </div>
 <div id="bookGate"></div>
+<div id="bookCompound"></div>
 <div class="book-stats" id="bookStats"></div>
 <table>
   <thead>
@@ -256,6 +261,13 @@ fetch('/scanner/scan-results.json')
       return (v * 100).toFixed(1) + '%';
     }
 
+    // pct_pnl is stored as a percent already (30.12 == +30.12%), unlike
+    // hit_rate which is a 0-1 fraction -- do not multiply by 100.
+    function fmtPnl(v) {
+      if (v == null) return '--';
+      return Number(v).toFixed(1) + '%';
+    }
+
     function fmtUsd(v) {
       if (v == null) return '--';
       var s = Math.abs(v).toFixed(0);
@@ -268,6 +280,7 @@ fetch('/scanner/scan-results.json')
         document.getElementById('openBody').innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--dim);">no ' + side + ' book data</td></tr>';
         document.getElementById('closedBody').innerHTML = '';
         document.getElementById('bookStats').innerHTML = '';
+        document.getElementById('bookCompound').innerHTML = '';
         return;
       }
 
@@ -281,6 +294,17 @@ fetch('/scanner/scan-results.json')
       }
       document.getElementById('bookGate').innerHTML = gateHtml;
 
+      // Compounding banner: short-term realized P&L feeds long-term capital.
+      var compHtml = '';
+      if (side === 'paper' && b.stats && b.stats.compounding) {
+        var cp = b.stats.compounding;
+        compHtml = '<div class="compound-banner"><b>Compounding</b> &middot; ' +
+          'short-term realized ' + fmtUsd(cp.short_term_realized_usd) +
+          ' &rarr; long-term capital ' + fmtUsd(cp.long_term_capital_usd) +
+          ' <span style="color:var(--dim);">(' + cp.rule + ')</span></div>';
+      }
+      document.getElementById('bookCompound').innerHTML = compHtml;
+
       // Stats
       var s = b.stats || {};
       var statsHtml = '';
@@ -290,9 +314,14 @@ fetch('/scanner/scan-results.json')
       var pcls = pnlClass(s.unrealized_pnl_usd);
       statsHtml += '<div class="stat-card"><span class="l">Unrealized P&amp;L</span><span class="v ' + pcls + '">' + fmtUsd(s.unrealized_pnl_usd) + '</span></div>';
       if (s.buckets) {
-        Object.keys(s.buckets).forEach(function(bk) {
+        Object.keys(s.buckets).sort().forEach(function(bk) {
           var bs = s.buckets[bk];
-          statsHtml += '<div class="stat-card"><span class="l">' + bk + ' hit rate</span><span class="v">' + fmtPct(bs.hit_rate) + ' <span style="font-size:0.6rem;color:var(--dim);">(' + bs.closed + ')</span></span></div>';
+          var label = bk.replace('_', '-');
+          var rcls = pnlClass(bs.realized_usd);
+          statsHtml += '<div class="stat-card"><span class="l">' + label + ' hit rate</span><span class="v">' + fmtPct(bs.hit_rate) + ' <span style="font-size:0.6rem;color:var(--dim);">(' + bs.closed + ')</span></span></div>';
+          if (bs.realized_usd != null) {
+            statsHtml += '<div class="stat-card"><span class="l">' + label + ' realized</span><span class="v ' + rcls + '">' + fmtUsd(bs.realized_usd) + '</span></div>';
+          }
         });
       }
       document.getElementById('bookStats').innerHTML = statsHtml;
@@ -315,7 +344,7 @@ fetch('/scanner/scan-results.json')
           '<td>' + (p.quantity_contracts != null ? p.quantity_contracts : '--') + '</td>' +
           '<td>' + fmtUsd(p.cost_total_usd) + '</td>' +
           '<td>' + (p.mark != null ? '$' + Number(p.mark).toFixed(2) : '--') + '</td>' +
-          '<td class="' + pcls2 + '" style="color:var(--' + (pcls2 || 'text') + ');font-weight:700;">' + fmtPct(p.pct_pnl) + '</td>' +
+          '<td class="' + pcls2 + '" style="color:var(--' + (pcls2 || 'text') + ');font-weight:700;">' + fmtPnl(p.pct_pnl) + '</td>' +
           '<td style="font-size:0.65rem;">' + (p.entry_date || '--') + '</td>' +
           '<td style="font-size:0.6rem;color:var(--dim);">' + catalyst + '</td>' +
           '</tr>';
@@ -337,7 +366,7 @@ fetch('/scanner/scan-results.json')
           '<td style="font-size:0.65rem;">' + (p.entry_date || '--') + '</td>' +
           '<td style="font-size:0.65rem;">' + (p.closed_at || '--') + '</td>' +
           '<td style="font-size:0.65rem;color:var(--dim);">' + (p.close_reason || '--') + '</td>' +
-          '<td class="' + pcls3 + '" style="color:var(--' + (pcls3 || 'text') + ');">' + fmtPct(p.pct_pnl) + '</td>' +
+          '<td class="' + pcls3 + '" style="color:var(--' + (pcls3 || 'text') + ');">' + fmtPnl(p.pct_pnl) + '</td>' +
           '</tr>';
       });
       document.getElementById('closedBody').innerHTML = closedRows || '<tr><td colspan="7" style="text-align:center;color:var(--dim);">no closed positions</td></tr>';
