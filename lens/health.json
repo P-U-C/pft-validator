@@ -4,9 +4,9 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-06-16T07:00:00Z",
-  "calculated_at": "2026-06-16T07:20:30Z",
-  "next_update_at": "2026-06-16T08:00:00Z",
+  "snapshot_id": "2026-06-16T08:00:00Z",
+  "calculated_at": "2026-06-16T08:19:44Z",
+  "next_update_at": "2026-06-16T09:00:00Z",
   "refresh_cadence": "hourly",
   "health_score": 0.5209,
   "health_score_formula": "sum(component.score * component.weight)",
@@ -158,17 +158,10 @@
     "clear": 2
   },
   "score_change": {
-    "vs_prior_snapshot": 0.0025,
-    "prior_health_score": 0.5184,
-    "prior_calculated_at": "2026-06-16T06:22:50Z",
-    "largest_movers": [
-      {
-        "component": "memo_velocity",
-        "delta": 0.0025,
-        "raw_delta": 0.0127,
-        "reason": "latest_day_memos=56 vs prior avg=237.4"
-      }
-    ]
+    "vs_prior_snapshot": 0.0,
+    "prior_health_score": 0.5209,
+    "prior_calculated_at": "2026-06-16T07:20:30Z",
+    "largest_movers": []
   },
   "network_summary": {
     "total_accounts": 1054,
@@ -183,11 +176,11 @@
     "sybil_accounts": 769
   },
   "deltas": {
-    "health_score": 0.0025,
+    "health_score": 0.0,
     "accounts": 0,
-    "memo_transactions": 3,
+    "memo_transactions": 0,
     "edges": 0,
-    "since": "2026-06-16T06:22:50Z"
+    "since": "2026-06-16T07:20:30Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -196,5 +189,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:012024f978edae55a254634ac39c26ccccad18dd62521dfcd356bd70703aa759"
+  "snapshot_hash": "sha256:ee618cfe8b63c7489a4fdf915b1c09ebf8ceedbd56b14a0146a74c4f67139504"
 }
