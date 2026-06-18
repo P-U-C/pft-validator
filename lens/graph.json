@@ -2,8 +2,8 @@
   "stats": {
     "total_accounts": 1057,
     "total_edges": 3978,
-    "total_transactions": 384388,
-    "memo_transactions": 20324,
+    "total_transactions": 384391,
+    "memo_transactions": 20327,
     "sybil_clusters": 6,
     "concentration_hhi": 0.0448,
     "bidirectional_edges": 1005,
@@ -38,7 +38,7 @@
       296,
       195,
       267,
-      72
+      75
     ],
     "sparkline_days": [
       "2026-05-20",
@@ -73,7 +73,7 @@
       "2026-06-18"
     ],
     "new_wallets_this_week": 0,
-    "generated_at": "2026-06-18T08:00:01.814Z",
+    "generated_at": "2026-06-18T09:00:01.715Z",
     "airdrops": {
       "cumulative_recipients": 25,
       "cumulative_drops": 144,
@@ -92,6 +92,13 @@
         "age_days": 3,
         "memos_per_day": 8.0,
         "first_tx": "2026-06-15"
+      },
+      {
+        "address": "rMozpsQ1CgvxwtJ2rrragoCHHrtyt6SkKc",
+        "memos": 6,
+        "age_days": 1,
+        "memos_per_day": 6.0,
+        "first_tx": "2026-06-17"
       },
       {
         "address": "rUjqjrb1rH6jESDvTzjYbLbd3ZUcDrPFdn",
@@ -117,11 +124,11 @@
     ],
     "deltas": {
       "accounts": 0,
-      "transactions": 1,
+      "transactions": 3,
       "edges": 0,
-      "memos": 1
+      "memos": 3
     },
-    "delta_since": "2026-06-18T07:00:04.894Z"
+    "delta_since": "2026-06-18T08:00:01.814Z"
   },
   "nodes": [
     {
@@ -141,11 +148,11 @@
       "id": "rwdm72S9YVKkZjeADKU2bbUMuY4vPnSfH7",
       "label": "Task Hub",
       "type": "infrastructure",
-      "memo_count": 1481,
-      "tx_count": 1791,
+      "memo_count": 1482,
+      "tx_count": 1792,
       "balance_pft": 494217232.96,
       "peers": 348,
-      "activity_score": 0.6184,
+      "activity_score": 0.6186,
       "sybil_flagged": false,
       "sybil_cluster": null,
       "sybil_confidence": null
@@ -1698,6 +1705,19 @@
       "sybil_confidence": null
     },
     {
+      "id": "rMozpsQ1CgvxwtJ2rrragoCHHrtyt6SkKc",
+      "label": "rMozpsQ1...SkKc",
+      "type": "contributor",
+      "memo_count": 6,
+      "tx_count": 6,
+      "balance_pft": 313.5,
+      "peers": 1,
+      "activity_score": 0.0113,
+      "sybil_flagged": false,
+      "sybil_cluster": null,
+      "sybil_confidence": null
+    },
+    {
       "id": "rgqgbkKwh6cZVzYw1J47E3Y5UWvV9vZq7",
       "label": "rgqgbkKw...vZq7",
       "type": "contributor",
@@ -2224,19 +2244,6 @@
       "memo_count": 4,
       "tx_count": 4,
       "balance_pft": 153.2,
-      "peers": 1,
-      "activity_score": 0.0109,
-      "sybil_flagged": false,
-      "sybil_cluster": null,
-      "sybil_confidence": null
-    },
-    {
-      "id": "rMozpsQ1CgvxwtJ2rrragoCHHrtyt6SkKc",
-      "label": "rMozpsQ1...SkKc",
-      "type": "contributor",
-      "memo_count": 4,
-      "tx_count": 4,
-      "balance_pft": 313.5,
       "peers": 1,
       "activity_score": 0.0109,
       "sybil_flagged": false,
@@ -3094,7 +3101,7 @@
       "type": "bot",
       "memo_count": 0,
       "tx_count": 1627,
-      "balance_pft": 55529.45,
+      "balance_pft": 55429.45,
       "peers": 818,
       "activity_score": 0.3,
       "sybil_flagged": true,
@@ -16112,6 +16119,17 @@
       "last_seen": "2026-06-18T03:01:11.000Z"
     },
     {
+      "source": "rwdm72S9YVKkZjeADKU2bbUMuY4vPnSfH7",
+      "target": "rMozpsQ1CgvxwtJ2rrragoCHHrtyt6SkKc",
+      "memo_count": 10,
+      "tx_count": 10,
+      "amount_pft": 313.5,
+      "trust_flow": "TRUST_PLUS_VALUE",
+      "bidirectional": true,
+      "first_seen": "2026-06-17T03:32:32.000Z",
+      "last_seen": "2026-06-18T08:58:43.000Z"
+    },
+    {
       "source": "rGBKxoTcavpfEso7ASRELZAMcCMqKa8oFk",
       "target": "rs5hbB6HCiYSonfz5Dtxi6yKQupZLMwcZQ",
       "memo_count": 9,
@@ -16143,17 +16161,6 @@
       "bidirectional": false,
       "first_seen": "2026-03-10T17:04:10.000Z",
       "last_seen": "2026-04-06T21:34:30.000Z"
-    },
-    {
-      "source": "rwdm72S9YVKkZjeADKU2bbUMuY4vPnSfH7",
-      "target": "rMozpsQ1CgvxwtJ2rrragoCHHrtyt6SkKc",
-      "memo_count": 9,
-      "tx_count": 9,
-      "amount_pft": 313.5,
-      "trust_flow": "TRUST_PLUS_VALUE",
-      "bidirectional": true,
-      "first_seen": "2026-06-17T03:32:32.000Z",
-      "last_seen": "2026-06-18T02:01:12.000Z"
     },
     {
       "source": "rJNwqDPKSkbqDPNoNxbW6C3KCS84ZaQc96",
