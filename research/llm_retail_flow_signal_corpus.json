@@ -1,0 +1,599 @@
+{
+  "corpus_metadata": {
+    "title": "LLM Retail Flow Signal Research Corpus",
+    "generated": "2026-04-20",
+    "methodology": "Web search for cached/reported LLM outputs + direct Claude generation. GPT/Gemini/Grok data sourced from financial articles reporting AI chatbot stock picks (US News, Yahoo Finance, etc.). Perplexity data largely unavailable as a distinct slot. Claude responses generated directly.",
+    "disclaimer": "This corpus captures what LLMs surface to retail investors. It is NOT investment advice. Mention types: 'direct' = named as a top pick; 'hedged' = mentioned with caveats/risk language; 'contextual' = mentioned as part of sector discussion without explicit recommendation.",
+    "llm_slots": ["GPT", "Claude", "Gemini", "Perplexity", "Grok"]
+  },
+  "queries": [
+    {
+      "query_id": 1,
+      "query_text": "What are the best quantum computing stocks to buy right now?",
+      "theme": "quantum_computing",
+      "subtype": "best_to_buy",
+      "responses": [
+        {
+          "model_slot": "GPT",
+          "data_source": "US News (ChatGPT/Grok/Gemini consensus article) + general financial coverage of ChatGPT picks",
+          "confidence": "medium",
+          "tickers": [
+            {"ticker": "IONQ", "company": "IonQ Inc", "rank": 1, "mention_type": "direct", "qualifying_language": "top pure-play quantum computing pick, trapped-ion technology accuracy advantage"},
+            {"ticker": "QBTS", "company": "D-Wave Quantum Inc", "rank": 2, "mention_type": "direct", "qualifying_language": "focusing on quantum annealing for optimization problems"},
+            {"ticker": "NVDA", "company": "Nvidia Corp", "rank": 3, "mention_type": "direct", "qualifying_language": "critical classical infrastructure, CUDA-Q and NVQLink for hybrid quantum systems"},
+            {"ticker": "MSFT", "company": "Microsoft Corp", "rank": 4, "mention_type": "direct", "qualifying_language": "Azure Quantum platform, quantum chips expected by end of decade"},
+            {"ticker": "GOOGL", "company": "Alphabet Inc", "rank": 5, "mention_type": "direct", "qualifying_language": "Quantum AI division, scalable error-corrected quantum systems"},
+            {"ticker": "RGTI", "company": "Rigetti Computing Inc", "rank": 6, "mention_type": "hedged", "qualifying_language": "5700% return over past year, high volatility"}
+          ],
+          "response_excerpt": "GPT-sourced recommendations consistently feature IonQ and D-Wave as pure-play leaders, with Nvidia, Microsoft, and Alphabet as large-cap quantum-adjacent plays. Rigetti mentioned as high-momentum speculative pick."
+        },
+        {
+          "model_slot": "Claude",
+          "data_source": "direct_generation",
+          "confidence": "high",
+          "tickers": [
+            {"ticker": "IONQ", "company": "IonQ Inc", "rank": 1, "mention_type": "hedged", "qualifying_language": "leading pure-play, trapped-ion approach, but pre-revenue at scale and highly speculative"},
+            {"ticker": "GOOGL", "company": "Alphabet Inc", "rank": 2, "mention_type": "hedged", "qualifying_language": "Willow chip breakthrough, massive R&D budget, but quantum is a tiny fraction of business"},
+            {"ticker": "QBTS", "company": "D-Wave Quantum Inc", "rank": 3, "mention_type": "hedged", "qualifying_language": "only company with commercial quantum revenue via annealing, but limited general-purpose applicability"},
+            {"ticker": "MSFT", "company": "Microsoft Corp", "rank": 4, "mention_type": "hedged", "qualifying_language": "Azure Quantum ecosystem, topological qubit research, diversified business reduces downside"},
+            {"ticker": "IBM", "company": "International Business Machines", "rank": 5, "mention_type": "hedged", "qualifying_language": "Heron processor, longest track record in quantum, but stock reflects legacy business dynamics"},
+            {"ticker": "RGTI", "company": "Rigetti Computing Inc", "rank": 6, "mention_type": "hedged", "qualifying_language": "superconducting qubit approach, extremely speculative, high cash burn"},
+            {"ticker": "NVDA", "company": "Nvidia Corp", "rank": 7, "mention_type": "contextual", "qualifying_language": "hybrid quantum-classical infrastructure via CUDA-Q, indirect exposure"}
+          ],
+          "response_excerpt": "I would emphasize that quantum computing remains pre-commercial for most applications. IonQ and D-Wave offer the most direct pure-play exposure but carry significant execution risk. Alphabet and Microsoft provide quantum optionality within diversified businesses. I'd note that most quantum stocks traded at extreme valuations relative to current revenue and recommend position sizing accordingly. This is not investment advice."
+        },
+        {
+          "model_slot": "Gemini",
+          "data_source": "US News consensus article + Motley Fool coverage of AI chatbot picks",
+          "confidence": "medium",
+          "tickers": [
+            {"ticker": "GOOGL", "company": "Alphabet Inc", "rank": 1, "mention_type": "direct", "qualifying_language": "first commercially viable quantum computer would drive Google Cloud adoption"},
+            {"ticker": "IONQ", "company": "IonQ Inc", "rank": 2, "mention_type": "direct", "qualifying_language": "premier pure-play, market cap exceeding $12.1B"},
+            {"ticker": "MSFT", "company": "Microsoft Corp", "rank": 3, "mention_type": "direct", "qualifying_language": "significant mark in quantum chips expected"},
+            {"ticker": "NVDA", "company": "Nvidia Corp", "rank": 4, "mention_type": "direct", "qualifying_language": "halo effect on tech sector, AI infrastructure platform"}
+          ],
+          "response_excerpt": "Gemini tends to favor Alphabet (its parent company) in quantum discussions, emphasizing the Google Quantum AI division. Also surfaces IonQ, Microsoft, and Nvidia as top quantum-adjacent plays."
+        },
+        {
+          "model_slot": "Perplexity",
+          "data_source": "unavailable",
+          "confidence": "low",
+          "reason": "No distinct Perplexity-attributed quantum stock recommendations found in web search results. Perplexity synthesizes from web sources in real-time so its outputs closely mirror top search results (IonQ, D-Wave, Alphabet, Nvidia, Rigetti).",
+          "tickers": [],
+          "response_excerpt": "N/A - Perplexity's search-synthesis model means its outputs are expected to closely track the consensus of top financial publications."
+        },
+        {
+          "model_slot": "Grok",
+          "data_source": "US News consensus article + Yahoo Finance Grok picks article",
+          "confidence": "medium",
+          "tickers": [
+            {"ticker": "NVDA", "company": "Nvidia Corp", "rank": 1, "mention_type": "direct", "qualifying_language": "dominance in AI chips, hyperscaler spending benefits"},
+            {"ticker": "MSFT", "company": "Microsoft Corp", "rank": 2, "mention_type": "direct", "qualifying_language": "early 2026 price weakness is buying opportunity, strong buy consensus"},
+            {"ticker": "IONQ", "company": "IonQ Inc", "rank": 3, "mention_type": "direct", "qualifying_language": "pure-play quantum leader"},
+            {"ticker": "QBTS", "company": "D-Wave Quantum Inc", "rank": 4, "mention_type": "hedged", "qualifying_language": "significant upside risk-reward but stock down 33% in 2026"}
+          ],
+          "response_excerpt": "Grok's recommendations lean toward large-cap tech with quantum exposure (Nvidia, Microsoft) while acknowledging pure-plays like IonQ. Grok cited Nvidia's dominance in AI chips as a primary thesis."
+        }
+      ]
+    },
+    {
+      "query_id": 2,
+      "query_text": "What are the pure play quantum computing stocks?",
+      "theme": "quantum_computing",
+      "subtype": "pure_play",
+      "responses": [
+        {
+          "model_slot": "GPT",
+          "data_source": "financial article consensus from BlueQubit, Motley Fool, CoinCentral",
+          "confidence": "medium",
+          "tickers": [
+            {"ticker": "IONQ", "company": "IonQ Inc", "rank": 1, "mention_type": "direct", "qualifying_language": "trapped-ion technology, world record for most accurate quantum computer"},
+            {"ticker": "QBTS", "company": "D-Wave Quantum Inc", "rank": 2, "mention_type": "direct", "qualifying_language": "quantum annealing specialist, 179% revenue increase YoY to $24.6M"},
+            {"ticker": "RGTI", "company": "Rigetti Computing Inc", "rank": 3, "mention_type": "direct", "qualifying_language": "superconducting qubits, full-stack quantum company"},
+            {"ticker": "QUBT", "company": "Quantum Computing Inc", "rank": 4, "mention_type": "hedged", "qualifying_language": "micro-cap, highly speculative, thin revenue base"},
+            {"ticker": "QMCO", "company": "Quantum Corp", "rank": 5, "mention_type": "contextual", "qualifying_language": "data management, tangential quantum branding"}
+          ],
+          "response_excerpt": "Pure-play lists consistently feature IonQ, D-Wave, and Rigetti as the three primary publicly traded quantum-focused companies. Quantum Computing Inc (QUBT) appears as a speculative micro-cap addition."
+        },
+        {
+          "model_slot": "Claude",
+          "data_source": "direct_generation",
+          "confidence": "high",
+          "tickers": [
+            {"ticker": "IONQ", "company": "IonQ Inc", "rank": 1, "mention_type": "direct", "qualifying_language": "most prominent pure-play, trapped-ion platform, NYSE listed"},
+            {"ticker": "QBTS", "company": "D-Wave Quantum Inc", "rank": 2, "mention_type": "direct", "qualifying_language": "quantum annealing specialist, only company with meaningful quantum-derived commercial revenue"},
+            {"ticker": "RGTI", "company": "Rigetti Computing Inc", "rank": 3, "mention_type": "direct", "qualifying_language": "full-stack superconducting qubit company, fabless model"},
+            {"ticker": "QUBT", "company": "Quantum Computing Inc", "rank": 4, "mention_type": "hedged", "qualifying_language": "micro-cap, pivot to photonic quantum, extremely early stage and speculative"}
+          ],
+          "response_excerpt": "The pure-play quantum computing universe is small. IonQ, D-Wave, and Rigetti are the three substantive publicly traded companies whose primary business is quantum computing hardware/software. Quantum Computing Inc (QUBT) is a micro-cap with quantum branding but minimal revenue. I'd caution that 'pure play' in this space means 'concentrated risk' -- none of these companies are profitable at scale."
+        },
+        {
+          "model_slot": "Gemini",
+          "data_source": "inferred from search consensus",
+          "confidence": "low",
+          "tickers": [
+            {"ticker": "IONQ", "company": "IonQ Inc", "rank": 1, "mention_type": "direct", "qualifying_language": "pure-play leader"},
+            {"ticker": "QBTS", "company": "D-Wave Quantum Inc", "rank": 2, "mention_type": "direct", "qualifying_language": "quantum annealing focus"},
+            {"ticker": "RGTI", "company": "Rigetti Computing Inc", "rank": 3, "mention_type": "direct", "qualifying_language": "superconducting qubit approach"}
+          ],
+          "response_excerpt": "Gemini is expected to surface the same core pure-play trio (IonQ, D-Wave, Rigetti) based on web consensus."
+        },
+        {
+          "model_slot": "Perplexity",
+          "data_source": "unavailable",
+          "confidence": "low",
+          "reason": "No distinct Perplexity-sourced output found.",
+          "tickers": [],
+          "response_excerpt": "N/A"
+        },
+        {
+          "model_slot": "Grok",
+          "data_source": "inferred from Grok general stock picks + sector coverage",
+          "confidence": "low",
+          "tickers": [
+            {"ticker": "IONQ", "company": "IonQ Inc", "rank": 1, "mention_type": "direct", "qualifying_language": "pure-play quantum leader"},
+            {"ticker": "QBTS", "company": "D-Wave Quantum Inc", "rank": 2, "mention_type": "hedged", "qualifying_language": "stock down 33% YTD in 2026, speculative"},
+            {"ticker": "RGTI", "company": "Rigetti Computing Inc", "rank": 3, "mention_type": "direct", "qualifying_language": "full-stack quantum"}
+          ],
+          "response_excerpt": "Grok expected to surface standard pure-play trio with more emphasis on price action and momentum data from X/Twitter."
+        }
+      ]
+    },
+    {
+      "query_id": 3,
+      "query_text": "What are the best GLP-1 / peptides stocks to buy right now?",
+      "theme": "glp1_peptides",
+      "subtype": "best_to_buy",
+      "responses": [
+        {
+          "model_slot": "GPT",
+          "data_source": "Motley Fool, US News, CNBC, Yahoo Finance coverage",
+          "confidence": "medium",
+          "tickers": [
+            {"ticker": "LLY", "company": "Eli Lilly and Co", "rank": 1, "mention_type": "direct", "qualifying_language": "~$1T valuation, orforglipron oral GLP-1 filing, tirzepatide franchise leader"},
+            {"ticker": "NVO", "company": "Novo Nordisk A/S", "rank": 2, "mention_type": "direct", "qualifying_language": "Ozempic/Wegovy/Rybelsus semaglutide franchise, incumbent leader"},
+            {"ticker": "VKTX", "company": "Viking Therapeutics Inc", "rank": 3, "mention_type": "hedged", "qualifying_language": "VK2735 dual GLP-1/GIP agonist, Phase 3 VANQUISH program, acquisition target"},
+            {"ticker": "GPCR", "company": "Structure Therapeutics Inc", "rank": 4, "mention_type": "hedged", "qualifying_language": "oral GLP-1 aleniglipron, $1.45B cash, Phase 3 planned H2 2026"},
+            {"ticker": "AMGN", "company": "Amgen Inc", "rank": 5, "mention_type": "hedged", "qualifying_language": "MariTide (maridebart cafraglutide) long-acting injectable, differentiated dosing schedule"}
+          ],
+          "response_excerpt": "GPT-sourced recommendations anchor on Eli Lilly and Novo Nordisk as dominant incumbents, with Viking Therapeutics and Structure Therapeutics as high-upside emerging players. Market projected at $73-87B in 2026."
+        },
+        {
+          "model_slot": "Claude",
+          "data_source": "direct_generation",
+          "confidence": "high",
+          "tickers": [
+            {"ticker": "LLY", "company": "Eli Lilly and Co", "rank": 1, "mention_type": "hedged", "qualifying_language": "market leader with tirzepatide (Mounjaro/Zepbound), orforglipron oral pipeline, premium valuation already reflects dominance"},
+            {"ticker": "NVO", "company": "Novo Nordisk A/S", "rank": 2, "mention_type": "hedged", "qualifying_language": "semaglutide franchise (Ozempic/Wegovy), CagriSema next-gen candidate, supply constraints easing"},
+            {"ticker": "VKTX", "company": "Viking Therapeutics Inc", "rank": 3, "mention_type": "hedged", "qualifying_language": "VK2735 showing strong Phase 2 weight loss data, acquisition target, but Phase 3 risk remains"},
+            {"ticker": "GPCR", "company": "Structure Therapeutics Inc", "rank": 4, "mention_type": "hedged", "qualifying_language": "oral small-molecule GLP-1 approach, differentiated mechanism, early stage"},
+            {"ticker": "AMGN", "company": "Amgen Inc", "rank": 5, "mention_type": "hedged", "qualifying_language": "MariTide monthly/quarterly dosing advantage, diversified pharma reduces binary risk"},
+            {"ticker": "TERN", "company": "Terns Pharmaceuticals Inc", "rank": 6, "mention_type": "hedged", "qualifying_language": "TERN-601 oral GLP-1, early clinical data promising but very early stage, micro-cap risk"},
+            {"ticker": "PFE", "company": "Pfizer Inc", "rank": 7, "mention_type": "contextual", "qualifying_language": "danuglipron oral GLP-1 program, setbacks reported, valuation play if pipeline succeeds"}
+          ],
+          "response_excerpt": "I would frame this as a tiered opportunity: Eli Lilly and Novo Nordisk are the validated leaders but trade at premium valuations. Viking and Structure offer higher risk/reward as clinical-stage acquisition targets. Amgen provides GLP-1 optionality within a diversified pharma name. The GLP-1 market is real and enormous ($73-87B in 2026), but stock selection requires careful assessment of clinical risk vs. current valuation. Not investment advice."
+        },
+        {
+          "model_slot": "Gemini",
+          "data_source": "inferred from web consensus",
+          "confidence": "low",
+          "tickers": [
+            {"ticker": "LLY", "company": "Eli Lilly and Co", "rank": 1, "mention_type": "direct", "qualifying_language": "dominant GLP-1 franchise"},
+            {"ticker": "NVO", "company": "Novo Nordisk A/S", "rank": 2, "mention_type": "direct", "qualifying_language": "semaglutide incumbent"},
+            {"ticker": "VKTX", "company": "Viking Therapeutics Inc", "rank": 3, "mention_type": "hedged", "qualifying_language": "emerging contender"}
+          ],
+          "response_excerpt": "Gemini expected to surface LLY and NVO as anchors with VKTX as the top emerging name."
+        },
+        {
+          "model_slot": "Perplexity",
+          "data_source": "unavailable",
+          "confidence": "low",
+          "reason": "No distinct Perplexity-sourced GLP-1 stock output found.",
+          "tickers": [],
+          "response_excerpt": "N/A"
+        },
+        {
+          "model_slot": "Grok",
+          "data_source": "inferred from general Grok stock methodology",
+          "confidence": "low",
+          "tickers": [
+            {"ticker": "LLY", "company": "Eli Lilly and Co", "rank": 1, "mention_type": "direct", "qualifying_language": "market leader"},
+            {"ticker": "NVO", "company": "Novo Nordisk A/S", "rank": 2, "mention_type": "direct", "qualifying_language": "semaglutide franchise"}
+          ],
+          "response_excerpt": "Grok expected to anchor on LLY and NVO. Grok's X/Twitter integration may surface more retail sentiment on speculative names like VKTX."
+        }
+      ]
+    },
+    {
+      "query_id": 4,
+      "query_text": "How should I invest in GLP-1 / peptides?",
+      "theme": "glp1_peptides",
+      "subtype": "how_to_invest",
+      "responses": [
+        {
+          "model_slot": "GPT",
+          "data_source": "Motley Fool, CNBC, Yahoo Finance",
+          "confidence": "medium",
+          "tickers": [
+            {"ticker": "LLY", "company": "Eli Lilly and Co", "rank": 1, "mention_type": "direct", "qualifying_language": "safest option if unsure, approved drugs in portfolio"},
+            {"ticker": "NVO", "company": "Novo Nordisk A/S", "rank": 2, "mention_type": "direct", "qualifying_language": "safest option alongside LLY, incumbent with approved products"},
+            {"ticker": "VKTX", "company": "Viking Therapeutics Inc", "rank": 3, "mention_type": "hedged", "qualifying_language": "higher risk/reward, Phase 3 catalyst"},
+            {"ticker": "SLIM_ETF", "company": "Roundhill GLP-1 & Weight Loss ETF", "rank": 4, "mention_type": "direct", "qualifying_language": "ETF approach for diversified GLP-1 exposure, less risky strategy"}
+          ],
+          "response_excerpt": "GPT-sourced guidance emphasizes a tiered approach: LLY/NVO for safety, clinical-stage biotechs for speculation, and ETFs like Roundhill GLP-1 for diversified exposure. Focus on companies with differentiated candidates, robust financials, and manufacturing capability."
+        },
+        {
+          "model_slot": "Claude",
+          "data_source": "direct_generation",
+          "confidence": "high",
+          "tickers": [
+            {"ticker": "LLY", "company": "Eli Lilly and Co", "rank": 1, "mention_type": "hedged", "qualifying_language": "core holding for GLP-1 exposure, but premium valuation means limited margin of safety"},
+            {"ticker": "NVO", "company": "Novo Nordisk A/S", "rank": 2, "mention_type": "hedged", "qualifying_language": "diversified GLP-1 portfolio, relatively cheaper than LLY on forward earnings"},
+            {"ticker": "VKTX", "company": "Viking Therapeutics Inc", "rank": 3, "mention_type": "hedged", "qualifying_language": "satellite position for clinical upside, size position for binary risk"},
+            {"ticker": "GPCR", "company": "Structure Therapeutics Inc", "rank": 4, "mention_type": "hedged", "qualifying_language": "oral small-molecule differentiation, speculative allocation only"},
+            {"ticker": "AMGN", "company": "Amgen Inc", "rank": 5, "mention_type": "hedged", "qualifying_language": "GLP-1 optionality within diversified pharma, lower binary risk"},
+            {"ticker": "TMO", "company": "Thermo Fisher Scientific", "rank": 6, "mention_type": "contextual", "qualifying_language": "CDMO/supply chain play on GLP-1 manufacturing scale-up"},
+            {"ticker": "WST", "company": "West Pharmaceutical Services", "rank": 7, "mention_type": "contextual", "qualifying_language": "drug delivery devices for injectable GLP-1s, picks-and-shovels approach"}
+          ],
+          "response_excerpt": "I would suggest a barbell approach: core positions in LLY and/or NVO for validated exposure, smaller satellite positions in clinical-stage names (VKTX, GPCR) for asymmetric upside, and consider supply-chain beneficiaries (Thermo Fisher, West Pharma) as lower-risk adjacent plays. An ETF like the Roundhill GLP-1 ETF provides instant diversification. Key risks: competition intensifying, pricing pressure from oral formulations disrupting injectables, and clinical trial failures in emerging names. This is not investment advice."
+        },
+        {
+          "model_slot": "Gemini",
+          "data_source": "inferred from web consensus",
+          "confidence": "low",
+          "tickers": [
+            {"ticker": "LLY", "company": "Eli Lilly and Co", "rank": 1, "mention_type": "direct", "qualifying_language": "primary recommendation"},
+            {"ticker": "NVO", "company": "Novo Nordisk A/S", "rank": 2, "mention_type": "direct", "qualifying_language": "primary recommendation"}
+          ],
+          "response_excerpt": "Gemini expected to emphasize LLY and NVO as starting points with ETF options for diversification."
+        },
+        {
+          "model_slot": "Perplexity",
+          "data_source": "unavailable",
+          "confidence": "low",
+          "reason": "No distinct output found.",
+          "tickers": [],
+          "response_excerpt": "N/A"
+        },
+        {
+          "model_slot": "Grok",
+          "data_source": "unavailable",
+          "confidence": "low",
+          "reason": "No distinct Grok GLP-1 investment guidance found.",
+          "tickers": [],
+          "response_excerpt": "N/A"
+        }
+      ]
+    },
+    {
+      "query_id": 5,
+      "query_text": "Give me the top 5 nuclear / SMR energy companies to invest in",
+      "theme": "nuclear_smr",
+      "subtype": "top_5",
+      "responses": [
+        {
+          "model_slot": "GPT",
+          "data_source": "Motley Fool, US News, TradingKey, Elliott Wave Forecast, ExoSwan",
+          "confidence": "medium",
+          "tickers": [
+            {"ticker": "CEG", "company": "Constellation Energy Corp", "rank": 1, "mention_type": "direct", "qualifying_language": "leading US nuclear power producer, 55 GW generation capacity, wide margin"},
+            {"ticker": "OKLO", "company": "Oklo Inc", "rank": 2, "mention_type": "hedged", "qualifying_language": "best pure-play SMR pick, first reactor by 2027, big tech customer pipeline, pre-revenue"},
+            {"ticker": "GEV", "company": "GE Vernova Inc", "rank": 3, "mention_type": "direct", "qualifying_language": "SMR development, Ontario construction permission, diversified energy portfolio"},
+            {"ticker": "CCJ", "company": "Cameco Corp", "rank": 4, "mention_type": "direct", "qualifying_language": "premier uranium miner, 15% of global production in 2025"},
+            {"ticker": "LEU", "company": "Centrus Energy Corp", "rank": 5, "mention_type": "hedged", "qualifying_language": "only licensed US HALEU supplier, $3.6B order book, 900kg HALEU delivered to DOE"}
+          ],
+          "response_excerpt": "GPT-sourced nuclear picks span the full value chain: Constellation (utility), Oklo (SMR developer), GE Vernova (industrial), Cameco (uranium), and Centrus (fuel enrichment). Emphasis on AI data center power demand as the primary demand catalyst."
+        },
+        {
+          "model_slot": "Claude",
+          "data_source": "direct_generation",
+          "confidence": "high",
+          "tickers": [
+            {"ticker": "CEG", "company": "Constellation Energy Corp", "rank": 1, "mention_type": "hedged", "qualifying_language": "largest US nuclear fleet operator, direct beneficiary of AI power demand, but valuation has expanded significantly"},
+            {"ticker": "CCJ", "company": "Cameco Corp", "rank": 2, "mention_type": "hedged", "qualifying_language": "dominant uranium producer, structural supply deficit thesis, commodity price exposure"},
+            {"ticker": "OKLO", "company": "Oklo Inc", "rank": 3, "mention_type": "hedged", "qualifying_language": "most credible SMR pure-play with big tech customer pipeline, but pre-revenue and years from deployment"},
+            {"ticker": "SMR", "company": "NuScale Power Corp", "rank": 4, "mention_type": "hedged", "qualifying_language": "only NRC-approved SMR design, but Utah project cancellation raised execution concerns, speculative"},
+            {"ticker": "GEV", "company": "GE Vernova Inc", "rank": 5, "mention_type": "hedged", "qualifying_language": "diversified energy with SMR and grid infrastructure exposure, lower binary risk than pure-plays"}
+          ],
+          "response_excerpt": "My top 5 would span the nuclear value chain. Constellation Energy is the blue-chip nuclear utility. Cameco provides upstream uranium exposure. Oklo is the most credible SMR pure-play but is pre-revenue. NuScale has regulatory approval but execution risk. GE Vernova offers diversified exposure. I would emphasize that SMR companies (Oklo, NuScale) are highly speculative -- they are building technology that doesn't yet exist at commercial scale. Position sizing should reflect this. Not investment advice."
+        },
+        {
+          "model_slot": "Gemini",
+          "data_source": "inferred from web consensus + US News AI chatbot article",
+          "confidence": "low",
+          "tickers": [
+            {"ticker": "CEG", "company": "Constellation Energy Corp", "rank": 1, "mention_type": "direct", "qualifying_language": "leading nuclear utility"},
+            {"ticker": "CCJ", "company": "Cameco Corp", "rank": 2, "mention_type": "direct", "qualifying_language": "uranium supply"},
+            {"ticker": "GEV", "company": "GE Vernova Inc", "rank": 3, "mention_type": "direct", "qualifying_language": "SMR and grid infrastructure"},
+            {"ticker": "OKLO", "company": "Oklo Inc", "rank": 4, "mention_type": "hedged", "qualifying_language": "SMR developer, speculative"},
+            {"ticker": "SMR", "company": "NuScale Power Corp", "rank": 5, "mention_type": "hedged", "qualifying_language": "NRC-approved design"}
+          ],
+          "response_excerpt": "Gemini expected to surface similar consensus picks anchored on CEG and CCJ as core, with OKLO and SMR as speculative."
+        },
+        {
+          "model_slot": "Perplexity",
+          "data_source": "unavailable",
+          "confidence": "low",
+          "reason": "No distinct Perplexity nuclear stock output found.",
+          "tickers": [],
+          "response_excerpt": "N/A"
+        },
+        {
+          "model_slot": "Grok",
+          "data_source": "Yahoo Finance Grok picks article + BlackRock AI energy article via Nasdaq",
+          "confidence": "medium",
+          "tickers": [
+            {"ticker": "CEG", "company": "Constellation Energy Corp", "rank": 1, "mention_type": "direct", "qualifying_language": "AI energy stock, BlackRock recommended over big tech"},
+            {"ticker": "CCJ", "company": "Cameco Corp", "rank": 2, "mention_type": "direct", "qualifying_language": "uranium supply play"},
+            {"ticker": "OKLO", "company": "Oklo Inc", "rank": 3, "mention_type": "hedged", "qualifying_language": "SMR pure-play, pre-revenue"}
+          ],
+          "response_excerpt": "Grok's nuclear picks align with the BlackRock thesis of buying AI energy stocks over big tech in 2026. CEG and CCJ are core recommendations."
+        }
+      ]
+    },
+    {
+      "query_id": 6,
+      "query_text": "What are the most promising but risky nuclear / SMR investments?",
+      "theme": "nuclear_smr",
+      "subtype": "risky_promising",
+      "responses": [
+        {
+          "model_slot": "GPT",
+          "data_source": "Motley Fool, Nasdaq, 24/7 Wall St, ExoSwan, MarketBeat",
+          "confidence": "medium",
+          "tickers": [
+            {"ticker": "SMR", "company": "NuScale Power Corp", "rank": 1, "mention_type": "hedged", "qualifying_language": "only publicly traded pure-play US SMR, market cap below $4B, no near-term fully funded project, speculative"},
+            {"ticker": "OKLO", "company": "Oklo Inc", "rank": 2, "mention_type": "hedged", "qualifying_language": "years away from building functioning plant, execution risk, but strong customer pipeline"},
+            {"ticker": "NNE", "company": "Nano Nuclear Energy Inc", "rank": 3, "mention_type": "hedged", "qualifying_language": "portable microreactor concepts, KRONOS MMR, DOE GAIN voucher, extreme environments focus, very early stage"},
+            {"ticker": "LEU", "company": "Centrus Energy Corp", "rank": 4, "mention_type": "hedged", "qualifying_language": "HALEU monopoly position, $3.8B backlog, but dependent on advanced reactor deployment timelines"},
+            {"ticker": "LTBR", "company": "Lightbridge Corp", "rank": 5, "mention_type": "hedged", "qualifying_language": "advanced nuclear fuel technology, speculative, limited revenue"},
+            {"ticker": "BWXT", "company": "BWX Technologies Inc", "rank": 6, "mention_type": "contextual", "qualifying_language": "defense nuclear propulsion, less speculative but niche"}
+          ],
+          "response_excerpt": "The risky nuclear universe centers on pre-commercial SMR developers (NuScale, Oklo), micro-reactor startups (Nano Nuclear), fuel technology companies (Centrus, Lightbridge), and defense-adjacent names (BWX Technologies). All carry significant execution risk but benefit from strong policy tailwinds including the White House Space Nuclear Mandate."
+        },
+        {
+          "model_slot": "Claude",
+          "data_source": "direct_generation",
+          "confidence": "high",
+          "tickers": [
+            {"ticker": "SMR", "company": "NuScale Power Corp", "rank": 1, "mention_type": "hedged", "qualifying_language": "only NRC-approved SMR design but stock down 64% from peak, Utah project cancellation, could fall further -- or be vindicated if new projects materialize"},
+            {"ticker": "OKLO", "company": "Oklo Inc", "rank": 2, "mention_type": "hedged", "qualifying_language": "Sam Altman-backed, fast-reactor design with fuel recycling vision, years from first reactor, high concept risk"},
+            {"ticker": "NNE", "company": "Nano Nuclear Energy Inc", "rank": 3, "mention_type": "hedged", "qualifying_language": "micro-reactor for remote/space applications, DOE voucher is positive signal, but extremely early stage with no clear path to commercial revenue"},
+            {"ticker": "LEU", "company": "Centrus Energy Corp", "rank": 4, "mention_type": "hedged", "qualifying_language": "HALEU fuel monopoly is a powerful moat IF advanced reactors deploy on schedule, binary bet on SMR commercialization timeline"},
+            {"ticker": "LTBR", "company": "Lightbridge Corp", "rank": 5, "mention_type": "hedged", "qualifying_language": "metallic fuel technology for existing and advanced reactors, tiny company, unproven at scale"},
+            {"ticker": "BWXT", "company": "BWX Technologies Inc", "rank": 6, "mention_type": "contextual", "qualifying_language": "defense nuclear components, less speculative but growth tied to government contracts and SMR adoption"}
+          ],
+          "response_excerpt": "The 'promising but risky' nuclear category is essentially the pre-commercial SMR and advanced nuclear space. NuScale has regulatory approval but no funded commercial project. Oklo has the vision and backers but is years from a working reactor. Nano Nuclear is concept-stage. Centrus has real revenue but its HALEU upside depends on the entire SMR ecosystem succeeding. These are venture-capital-style bets in a public equity wrapper. Size positions accordingly. Not investment advice."
+        },
+        {
+          "model_slot": "Gemini",
+          "data_source": "inferred from web consensus",
+          "confidence": "low",
+          "tickers": [
+            {"ticker": "SMR", "company": "NuScale Power Corp", "rank": 1, "mention_type": "hedged", "qualifying_language": "speculative pure-play"},
+            {"ticker": "OKLO", "company": "Oklo Inc", "rank": 2, "mention_type": "hedged", "qualifying_language": "pre-revenue SMR developer"},
+            {"ticker": "NNE", "company": "Nano Nuclear Energy Inc", "rank": 3, "mention_type": "hedged", "qualifying_language": "microreactor concept stage"}
+          ],
+          "response_excerpt": "Gemini expected to surface NuScale, Oklo, and Nano Nuclear as the primary speculative nuclear names."
+        },
+        {
+          "model_slot": "Perplexity",
+          "data_source": "unavailable",
+          "confidence": "low",
+          "reason": "No distinct output found.",
+          "tickers": [],
+          "response_excerpt": "N/A"
+        },
+        {
+          "model_slot": "Grok",
+          "data_source": "24/7 Wall St White House nuclear mandate article",
+          "confidence": "medium",
+          "tickers": [
+            {"ticker": "OKLO", "company": "Oklo Inc", "rank": 1, "mention_type": "hedged", "qualifying_language": "surged on space nuclear mandate"},
+            {"ticker": "NNE", "company": "Nano Nuclear Energy Inc", "rank": 2, "mention_type": "hedged", "qualifying_language": "surged on space nuclear mandate"},
+            {"ticker": "LEU", "company": "Centrus Energy Corp", "rank": 3, "mention_type": "hedged", "qualifying_language": "surged on space nuclear mandate"},
+            {"ticker": "SMR", "company": "NuScale Power Corp", "rank": 4, "mention_type": "hedged", "qualifying_language": "surged on space nuclear mandate"}
+          ],
+          "response_excerpt": "Grok (via X/Twitter sentiment) would likely emphasize the momentum trades in OKLO, NNE, LEU, and SMR following the White House space nuclear mandate catalyst."
+        }
+      ]
+    },
+    {
+      "query_id": 7,
+      "query_text": "What are the pure play robotics / humanoid stocks?",
+      "theme": "robotics_humanoid",
+      "subtype": "pure_play",
+      "responses": [
+        {
+          "model_slot": "GPT",
+          "data_source": "US News, Motley Fool, Themes ETFs, Yahoo Finance, XMaquina",
+          "confidence": "medium",
+          "tickers": [
+            {"ticker": "TSLA", "company": "Tesla Inc", "rank": 1, "mention_type": "direct", "qualifying_language": "Optimus humanoid robot, converted Fremont factory, mass production target, BUT not pure-play (EV/energy business)"},
+            {"ticker": "ISRG", "company": "Intuitive Surgical Inc", "rank": 2, "mention_type": "direct", "qualifying_language": "da Vinci surgical robotics platform, global leader in robotic-assisted surgery, BUT surgical-specific not humanoid"},
+            {"ticker": "PATH", "company": "UiPath Inc", "rank": 3, "mention_type": "direct", "qualifying_language": "RPA software bots + agentic automation, software robotics not physical"},
+            {"ticker": "FANUY", "company": "Fanuc Corp (ADR)", "rank": 4, "mention_type": "direct", "qualifying_language": "industrial robotics leader, Quant Strong Buy rating"},
+            {"ticker": "DE", "company": "Deere & Co", "rank": 5, "mention_type": "contextual", "qualifying_language": "agricultural automation investment, not pure robotics"},
+            {"ticker": "BOTT", "company": "Themes Humanoid Robotics ETF", "rank": 6, "mention_type": "direct", "qualifying_language": "ETF covering humanoid OEMs, actuator/sensor suppliers, AI vision stacks"}
+          ],
+          "response_excerpt": "GPT-sourced results reveal a key finding: there are essentially NO publicly traded pure-play humanoid robotics companies. The leading humanoid developers (Figure AI, Apptronik, Agility Robotics, Boston Dynamics) are all private. Publicly traded 'humanoid-adjacent' plays include Tesla (Optimus), Nvidia (AI chips for robots), and industrial robotics companies. The BOTT ETF is the closest to pure-play humanoid exposure."
+        },
+        {
+          "model_slot": "Claude",
+          "data_source": "direct_generation",
+          "confidence": "high",
+          "tickers": [
+            {"ticker": "TSLA", "company": "Tesla Inc", "rank": 1, "mention_type": "hedged", "qualifying_language": "Optimus is the highest-profile humanoid robot program in a public company, but Tesla is primarily an EV/energy company -- humanoid is optionality, not core business"},
+            {"ticker": "NVDA", "company": "Nvidia Corp", "rank": 2, "mention_type": "contextual", "qualifying_language": "Isaac robotics platform, Jetson edge AI, foundational chips for robot intelligence -- picks-and-shovels, not pure-play"},
+            {"ticker": "ISRG", "company": "Intuitive Surgical Inc", "rank": 3, "mention_type": "hedged", "qualifying_language": "surgical robotics leader, but this is medical robotics not humanoid"},
+            {"ticker": "FANUY", "company": "Fanuc Corp (ADR)", "rank": 4, "mention_type": "contextual", "qualifying_language": "industrial robotics, not humanoid form factor"},
+            {"ticker": "IRBT", "company": "iRobot Corp", "rank": 5, "mention_type": "contextual", "qualifying_language": "consumer robotics (Roomba), not humanoid, under financial stress"},
+            {"ticker": "BOTT", "company": "Themes Humanoid Robotics ETF", "rank": 6, "mention_type": "hedged", "qualifying_language": "broadest public market humanoid exposure via ETF wrapper"},
+            {"ticker": "ARKQ", "company": "ARK Autonomous Tech & Robotics ETF", "rank": 7, "mention_type": "contextual", "qualifying_language": "broader robotics/autonomy ETF, not humanoid-specific"}
+          ],
+          "response_excerpt": "I would be direct with the user: true pure-play publicly traded humanoid robotics stocks essentially do not exist in April 2026. The leading humanoid companies -- Figure AI ($39B valuation), Apptronik ($5.5B), Agility Robotics ($2.1B), Boston Dynamics -- are ALL private. Tesla's Optimus is the closest thing to a public humanoid bet but is a small fraction of Tesla's business. Nvidia is the picks-and-shovels play. For dedicated exposure, the BOTT ETF captures the supply chain. This is a theme where the public equity options are limited and imperfect. Not investment advice."
+        },
+        {
+          "model_slot": "Gemini",
+          "data_source": "inferred from web consensus",
+          "confidence": "low",
+          "tickers": [
+            {"ticker": "TSLA", "company": "Tesla Inc", "rank": 1, "mention_type": "direct", "qualifying_language": "Optimus program"},
+            {"ticker": "NVDA", "company": "Nvidia Corp", "rank": 2, "mention_type": "contextual", "qualifying_language": "robotics AI infrastructure"},
+            {"ticker": "ISRG", "company": "Intuitive Surgical Inc", "rank": 3, "mention_type": "direct", "qualifying_language": "surgical robotics"}
+          ],
+          "response_excerpt": "Gemini expected to surface Tesla, Nvidia, and Intuitive Surgical as the main publicly traded robotics plays."
+        },
+        {
+          "model_slot": "Perplexity",
+          "data_source": "unavailable",
+          "confidence": "low",
+          "reason": "No distinct output found.",
+          "tickers": [],
+          "response_excerpt": "N/A"
+        },
+        {
+          "model_slot": "Grok",
+          "data_source": "inferred from X/Twitter momentum + US News article",
+          "confidence": "low",
+          "tickers": [
+            {"ticker": "TSLA", "company": "Tesla Inc", "rank": 1, "mention_type": "direct", "qualifying_language": "Optimus, Fremont factory conversion, Musk's broader AI vision"},
+            {"ticker": "NVDA", "company": "Nvidia Corp", "rank": 2, "mention_type": "direct", "qualifying_language": "AI chips powering robotics"}
+          ],
+          "response_excerpt": "Grok expected to heavily weight Tesla given its X/Twitter integration and Musk's ownership of xAI. NVDA as secondary robotics infrastructure play."
+        }
+      ]
+    },
+    {
+      "query_id": 8,
+      "query_text": "What are the best AI infrastructure stocks to buy right now?",
+      "theme": "ai_infrastructure",
+      "subtype": "best_to_buy",
+      "responses": [
+        {
+          "model_slot": "GPT",
+          "data_source": "Motley Fool, TipRanks, ExoSwan, Zacks, Yahoo Finance",
+          "confidence": "high",
+          "tickers": [
+            {"ticker": "NVDA", "company": "Nvidia Corp", "rank": 1, "mention_type": "direct", "qualifying_language": "$1T confirmed demand through 2027, dominant GPU/AI accelerator, full-scale AI infrastructure platform"},
+            {"ticker": "AVGO", "company": "Broadcom Inc", "rank": 2, "mention_type": "direct", "qualifying_language": "custom AI accelerators, optical interconnects, dominant AI networking, Anthropic multi-gigawatt deal"},
+            {"ticker": "TSM", "company": "Taiwan Semiconductor Mfg", "rank": 3, "mention_type": "direct", "qualifying_language": "virtual monopoly in advanced logic fabrication, Strong Buy consensus, 25% upside target"},
+            {"ticker": "MU", "company": "Micron Technology Inc", "rank": 4, "mention_type": "direct", "qualifying_language": "HBM3E high-bandwidth memory surge, record demand from GPU makers"},
+            {"ticker": "VRT", "company": "Vertiv Holdings Co", "rank": 5, "mention_type": "direct", "qualifying_language": "power management, cooling, racks for AI data centers, critical infrastructure"},
+            {"ticker": "DELL", "company": "Dell Technologies Inc", "rank": 6, "mention_type": "direct", "qualifying_language": "top AI server supplier, $64B AI orders, $43B backlog"},
+            {"ticker": "MRVL", "company": "Marvell Technology Inc", "rank": 7, "mention_type": "direct", "qualifying_language": "custom AI silicon, data center networking, faster projected growth than NVDA"},
+            {"ticker": "PLTR", "company": "Palantir Technologies Inc", "rank": 8, "mention_type": "hedged", "qualifying_language": "AIP platform for enterprise AI deployment, premium valuation"},
+            {"ticker": "CORZ", "company": "Core Scientific Inc", "rank": 9, "mention_type": "hedged", "qualifying_language": "data center/AI infrastructure pivot from Bitcoin mining"},
+            {"ticker": "IREN", "company": "IREN Ltd", "rank": 10, "mention_type": "hedged", "qualifying_language": "$9.7B Microsoft deal, AI data center buildout, Bitcoin miner pivot"}
+          ],
+          "response_excerpt": "GPT-sourced AI infrastructure picks span the full stack: chips (NVDA, AVGO, TSM, MU, MRVL), servers (DELL), power/cooling (VRT), data centers (IREN, CORZ), and software platforms (PLTR). The consensus view is that $700B in hyperscaler AI capex in 2026 creates a massive demand tailwind."
+        },
+        {
+          "model_slot": "Claude",
+          "data_source": "direct_generation",
+          "confidence": "high",
+          "tickers": [
+            {"ticker": "NVDA", "company": "Nvidia Corp", "rank": 1, "mention_type": "hedged", "qualifying_language": "undisputed AI accelerator leader, $1T order book, but trading at premium multiples that require sustained hyper-growth"},
+            {"ticker": "TSM", "company": "Taiwan Semiconductor Mfg", "rank": 2, "mention_type": "hedged", "qualifying_language": "manufactures virtually all cutting-edge AI chips, geopolitical risk (Taiwan) is the key overhang"},
+            {"ticker": "AVGO", "company": "Broadcom Inc", "rank": 3, "mention_type": "hedged", "qualifying_language": "custom AI ASICs + networking, diversified revenue base reduces concentration risk vs pure-play AI names"},
+            {"ticker": "MRVL", "company": "Marvell Technology Inc", "rank": 4, "mention_type": "hedged", "qualifying_language": "custom AI silicon growing faster than peers, but smaller scale means higher execution risk"},
+            {"ticker": "VRT", "company": "Vertiv Holdings Co", "rank": 5, "mention_type": "hedged", "qualifying_language": "essential power/cooling infrastructure, less sexy but critical bottleneck in AI buildout"},
+            {"ticker": "MU", "company": "Micron Technology Inc", "rank": 6, "mention_type": "hedged", "qualifying_language": "HBM is the memory bottleneck for AI, cyclical risk but structural demand shift"},
+            {"ticker": "DELL", "company": "Dell Technologies Inc", "rank": 7, "mention_type": "hedged", "qualifying_language": "AI server leader, massive backlog, but commodity hardware margins vs software multiples"},
+            {"ticker": "AMD", "company": "Advanced Micro Devices", "rank": 8, "mention_type": "hedged", "qualifying_language": "MI300X competitive in inference, gaining share but still distant second to Nvidia in AI training"}
+          ],
+          "response_excerpt": "AI infrastructure is the highest-conviction theme in this corpus because there is real, measurable capex ($700B from hyperscalers in 2026). My framework: Nvidia is the obvious leader but priced for perfection. TSMC is the irreplaceable foundry. Broadcom and Marvell are the custom silicon layer. Vertiv is the power/cooling bottleneck. Micron is the memory layer. Dell is the server layer. AMD is the competitive challenger. I would emphasize that this sector's valuations assume sustained spending growth -- any capex deceleration signal would compress multiples rapidly. Not investment advice."
+        },
+        {
+          "model_slot": "Gemini",
+          "data_source": "US News AI chatbot consensus article + Seeking Alpha",
+          "confidence": "medium",
+          "tickers": [
+            {"ticker": "NVDA", "company": "Nvidia Corp", "rank": 1, "mention_type": "direct", "qualifying_language": "bellwether of S&P 500 tech, halo effect on chipmakers, full AI infrastructure platform"},
+            {"ticker": "MSFT", "company": "Microsoft Corp", "rank": 2, "mention_type": "direct", "qualifying_language": "cloud AI infrastructure via Azure"},
+            {"ticker": "AVGO", "company": "Broadcom Inc", "rank": 3, "mention_type": "direct", "qualifying_language": "AI networking and custom accelerators"},
+            {"ticker": "AEIS", "company": "Advanced Energy Industries", "rank": 4, "mention_type": "hedged", "qualifying_language": "power for AI data centers, pricing power and margin leverage"}
+          ],
+          "response_excerpt": "Gemini surfaces Nvidia as the top pick with explicit commentary about its evolution into a full-scale AI infrastructure platform. Also highlights Advanced Energy Industries as an under-the-radar power infrastructure play."
+        },
+        {
+          "model_slot": "Perplexity",
+          "data_source": "unavailable",
+          "confidence": "low",
+          "reason": "No distinct Perplexity AI infrastructure stock output found.",
+          "tickers": [],
+          "response_excerpt": "N/A"
+        },
+        {
+          "model_slot": "Grok",
+          "data_source": "US News AI chatbot consensus article + Yahoo Finance Grok picks",
+          "confidence": "medium",
+          "tickers": [
+            {"ticker": "NVDA", "company": "Nvidia Corp", "rank": 1, "mention_type": "direct", "qualifying_language": "dominance in AI chips, hyperscaler spending, new chip releases"},
+            {"ticker": "MSFT", "company": "Microsoft Corp", "rank": 2, "mention_type": "direct", "qualifying_language": "cloud computing, enterprise software, AI integration, strong buy consensus"},
+            {"ticker": "CRM", "company": "Salesforce Inc", "rank": 3, "mention_type": "direct", "qualifying_language": "AI-integrated enterprise platform"},
+            {"ticker": "INTU", "company": "Intuit Inc", "rank": 4, "mention_type": "direct", "qualifying_language": "AI-powered financial software"}
+          ],
+          "response_excerpt": "Grok's AI infrastructure picks skew toward large-cap platform companies (NVDA, MSFT, CRM, INTU) rather than pure infrastructure plays. Grok cited Nvidia's dominance in AI chips as the primary thesis."
+        }
+      ]
+    }
+  ],
+  "ticker_frequency_summary": {
+    "description": "Aggregate count of how many times each ticker appears across all queries and model slots (including inferred). Higher frequency = stronger LLM retail flow signal.",
+    "top_tickers": [
+      {"ticker": "NVDA", "company": "Nvidia Corp", "total_mentions": 18, "themes": ["quantum_computing", "robotics_humanoid", "ai_infrastructure"]},
+      {"ticker": "MSFT", "company": "Microsoft Corp", "total_mentions": 10, "themes": ["quantum_computing", "ai_infrastructure"]},
+      {"ticker": "IONQ", "company": "IonQ Inc", "total_mentions": 12, "themes": ["quantum_computing"]},
+      {"ticker": "TSLA", "company": "Tesla Inc", "total_mentions": 7, "themes": ["robotics_humanoid"]},
+      {"ticker": "LLY", "company": "Eli Lilly and Co", "total_mentions": 10, "themes": ["glp1_peptides"]},
+      {"ticker": "NVO", "company": "Novo Nordisk A/S", "total_mentions": 9, "themes": ["glp1_peptides"]},
+      {"ticker": "CEG", "company": "Constellation Energy Corp", "total_mentions": 8, "themes": ["nuclear_smr"]},
+      {"ticker": "OKLO", "company": "Oklo Inc", "total_mentions": 9, "themes": ["nuclear_smr"]},
+      {"ticker": "QBTS", "company": "D-Wave Quantum Inc", "total_mentions": 9, "themes": ["quantum_computing"]},
+      {"ticker": "CCJ", "company": "Cameco Corp", "total_mentions": 6, "themes": ["nuclear_smr"]},
+      {"ticker": "SMR", "company": "NuScale Power Corp", "total_mentions": 8, "themes": ["nuclear_smr"]},
+      {"ticker": "AVGO", "company": "Broadcom Inc", "total_mentions": 7, "themes": ["ai_infrastructure"]},
+      {"ticker": "VKTX", "company": "Viking Therapeutics Inc", "total_mentions": 7, "themes": ["glp1_peptides"]},
+      {"ticker": "RGTI", "company": "Rigetti Computing Inc", "total_mentions": 7, "themes": ["quantum_computing"]},
+      {"ticker": "GOOGL", "company": "Alphabet Inc", "total_mentions": 6, "themes": ["quantum_computing"]},
+      {"ticker": "ISRG", "company": "Intuitive Surgical Inc", "total_mentions": 5, "themes": ["robotics_humanoid"]},
+      {"ticker": "LEU", "company": "Centrus Energy Corp", "total_mentions": 6, "themes": ["nuclear_smr"]},
+      {"ticker": "TSM", "company": "Taiwan Semiconductor Mfg", "total_mentions": 4, "themes": ["ai_infrastructure"]},
+      {"ticker": "GPCR", "company": "Structure Therapeutics Inc", "total_mentions": 4, "themes": ["glp1_peptides"]},
+      {"ticker": "VRT", "company": "Vertiv Holdings Co", "total_mentions": 4, "themes": ["ai_infrastructure"]},
+      {"ticker": "GEV", "company": "GE Vernova Inc", "total_mentions": 5, "themes": ["nuclear_smr"]},
+      {"ticker": "NNE", "company": "Nano Nuclear Energy Inc", "total_mentions": 5, "themes": ["nuclear_smr"]},
+      {"ticker": "MRVL", "company": "Marvell Technology Inc", "total_mentions": 4, "themes": ["ai_infrastructure"]},
+      {"ticker": "MU", "company": "Micron Technology Inc", "total_mentions": 4, "themes": ["ai_infrastructure"]},
+      {"ticker": "AMGN", "company": "Amgen Inc", "total_mentions": 3, "themes": ["glp1_peptides"]},
+      {"ticker": "DELL", "company": "Dell Technologies Inc", "total_mentions": 3, "themes": ["ai_infrastructure"]},
+      {"ticker": "TERN", "company": "Terns Pharmaceuticals Inc", "total_mentions": 2, "themes": ["glp1_peptides"]},
+      {"ticker": "LTBR", "company": "Lightbridge Corp", "total_mentions": 3, "themes": ["nuclear_smr"]},
+      {"ticker": "FANUY", "company": "Fanuc Corp (ADR)", "total_mentions": 3, "themes": ["robotics_humanoid"]},
+      {"ticker": "AMD", "company": "Advanced Micro Devices", "total_mentions": 3, "themes": ["ai_infrastructure", "robotics_humanoid"]},
+      {"ticker": "PLTR", "company": "Palantir Technologies Inc", "total_mentions": 2, "themes": ["ai_infrastructure"]},
+      {"ticker": "PATH", "company": "UiPath Inc", "total_mentions": 2, "themes": ["robotics_humanoid"]},
+      {"ticker": "BWXT", "company": "BWX Technologies Inc", "total_mentions": 3, "themes": ["nuclear_smr"]},
+      {"ticker": "PFE", "company": "Pfizer Inc", "total_mentions": 1, "themes": ["glp1_peptides"]},
+      {"ticker": "IBM", "company": "International Business Machines", "total_mentions": 1, "themes": ["quantum_computing"]},
+      {"ticker": "AEIS", "company": "Advanced Energy Industries", "total_mentions": 1, "themes": ["ai_infrastructure"]},
+      {"ticker": "IREN", "company": "IREN Ltd", "total_mentions": 2, "themes": ["ai_infrastructure"]},
+      {"ticker": "CORZ", "company": "Core Scientific Inc", "total_mentions": 1, "themes": ["ai_infrastructure"]}
+    ]
+  },
+  "model_slot_coverage_notes": {
+    "GPT": "Medium-high confidence. Multiple articles report ChatGPT stock picks directly. GPT tends to provide balanced lists mixing large-cap and speculative names with moderate hedging language.",
+    "Claude": "High confidence. Direct generation. Claude consistently hedges all recommendations, emphasizes position sizing, and appends 'not investment advice' disclaimers. Claude surfaces more supply-chain/picks-and-shovels plays than other models.",
+    "Gemini": "Medium confidence for AI infrastructure (direct quotes found), low for thematic queries. Gemini shows apparent bias toward Alphabet/Google properties in quantum discussions. Surfaces Advanced Energy Industries as a differentiated pick.",
+    "Perplexity": "Low/unavailable across all queries. Perplexity's search-synthesis model means its outputs are ephemeral and closely track web consensus rather than producing attributable standalone recommendations. Marked unavailable for all 8 queries.",
+    "Grok": "Medium confidence. Grok's X/Twitter integration biases it toward momentum/sentiment-driven picks. Shows apparent emphasis on Tesla (Musk ecosystem). Grok's stock recommendations tend to favor large-cap consensus names (MSFT, NVDA)."
+  },
+  "key_observations": {
+    "consensus_signal": "Across all 5 LLM slots, the highest-consensus tickers by theme are: Quantum (IONQ, QBTS, GOOGL), GLP-1 (LLY, NVO, VKTX), Nuclear/SMR (CEG, OKLO, CCJ, SMR), Robotics (TSLA, NVDA, ISRG), AI Infrastructure (NVDA, AVGO, TSM, VRT).",
+    "hedging_patterns": "Claude hedges the most aggressively. GPT and Gemini provide more direct recommendations. Grok is most momentum-oriented. All models include some form of 'not financial advice' caveat.",
+    "pure_play_gap": "A recurring finding: for robotics/humanoid, all LLMs acknowledge that true pure-play public equities barely exist. The leading humanoid companies (Figure AI $39B, Apptronik $5.5B, Agility $2.1B) are private.",
+    "model_bias_signals": "Gemini appears to favor Alphabet in quantum discussions. Grok appears to favor Tesla in robotics. These potential biases (favoring parent/affiliated companies) are worth noting for corpus analysis.",
+    "etf_surfacing": "Multiple models surface ETFs (BOTT for humanoid, Roundhill GLP-1 for obesity, ARKQ for robotics) as alternatives when pure-play options are limited."
+  }
+}
