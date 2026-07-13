@@ -126,7 +126,15 @@ Please set a HF_TOKEN to enable higher rate limits and faster downloads.
 
 `grep -r 'HF_TOKEN\|HUGGING_FACE' <package>` → **zero hits.** There is no env passthrough and no Modal secret for it. Every operator's first deploy pulls ~30 GB of weights unauthenticated and rate-limited; ours stalled for ~45 minutes. `_modal_app.py` already threads env into the image — adding an optional `HF_TOKEN` is a small change with a large payoff.
 
-### 4.5 Minor
+### 4.5 Abandoned connections keep the GPU generating — and billed — for the full window
+
+Observed during the §4.1 investigation: when the client side of the inference call dies — the 60 s connection cut, a crash, a Ctrl-C — **the server keeps generating to completion anyway, on billed H100 time** (the full ~5–6 minute window; our cut-at-60 s attempts later completed server-side, which is how the proxy retrievals in §4.1 could return full results). Nothing cancels server-side work on client disconnect.
+
+Combined with §4.1 this compounds viciously: an operator behind a connection-lifetime cap **retries a call that can never succeed for them, and every retry silently burns a full generation of GPU spend**. One evening of retries can exhaust a monthly inference budget without the operator ever seeing a single result. That is a genuinely bad failure mode, and operators will hit it in exactly the network environments §4.1 shows are common.
+
+Fix: cancel server-side generation on client disconnect, or make the §5 polling mode the default (poll-for-result decouples generation from connection lifetime *and* makes disconnects harmless); either way, surface per-call GPU spend so budget burn is visible before the invoice arrives.
+
+### 4.6 Minor
 
 - First `deploy-modal` failed with `Please add a payment method to use H100 GPU functions` — worth stating up front in the prerequisites that free credits do not cover H100.
 - Weights persist in a Modal Volume across cold starts (good design) — worth documenting, since it means a stalled first deploy resumes rather than restarting.
@@ -136,11 +144,12 @@ Please set a HF_TOKEN to enable higher rate limits and faster downloads.
 ## 5. Recommended follow-ups (in priority order)
 
 1. **Surface the inference error.** Put `InferenceError`'s message into `error_details` and print it. Highest value-per-line change in the codebase.
-2. **Support long inference behind restrictive egress.** Either document `HTTPS_PROXY` as the supported escape hatch, or (better) add a polling client that submits and polls rather than holding one 6-minute connection. A `--poll` mode would make the sidecar work everywhere.
-3. **Add optional `HF_TOKEN`** passthrough to the Modal image env.
-4. **Make `warm-runtime` poll the endpoint** until it actually serves, instead of trusting the deployment record.
-5. **Split `RUNTIME_UNAVAILABLE`** into distinct categories for transport failure vs configuration error.
-6. **Docs:** state that verify-only needs no validator; add the `validator-keys.json` 640 check as a *security* step; note the H100 payment-method requirement.
+2. **Support long inference behind restrictive egress.** Either document `HTTPS_PROXY` as the supported escape hatch, or (better) add a polling client that submits and polls rather than holding one 6-minute connection. A `--poll` mode would make the sidecar work everywhere — and also neutralizes the §4.5 billing burn, since disconnects stop mattering.
+3. **Cancel server-side generation on client disconnect, and expose per-call GPU spend** (§4.5). Until then, every failed connection bills a full generation invisibly — the retry-until-broke failure mode should not survive another release.
+4. **Add optional `HF_TOKEN`** passthrough to the Modal image env.
+5. **Make `warm-runtime` poll the endpoint** until it actually serves, instead of trusting the deployment record.
+6. **Split `RUNTIME_UNAVAILABLE`** into distinct categories for transport failure vs configuration error.
+7. **Docs:** state that verify-only needs no validator; add the `validator-keys.json` 640 check as a *security* step; note the H100 payment-method requirement.
 
 ---
 
