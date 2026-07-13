@@ -1,0 +1,50 @@
+Identical request (38KB, max_tokens=16384), identical endpoint, identical credentials.
+Only the egress path varies.
+
+  EGRESS                                RESULT
+  post-fiat  (VPN, 145.79.197.96)       cut at 60.3s  RemoteProtocolError: Server disconnected without sending a response
+  clawd      (VPN, 145.79.197.96)       cut at 60.4s
+  + TCP keepalive every 20s             cut at 60.5s   (does not help)
+  + stream:true (9,963 SSE chunks recv) cut at 60.5s   (data WAS flowing -> not an idle timeout; a hard connection-lifetime cap)
+  worker-1   (TELUS, 216.232.84.20)     HTTP 303 at 150.3s -> followed -> HTTP 200 at 392.8s, 48401 bytes  [WORKS]
+  post-fiat via worker-1 CONNECT proxy  HTTP 200 at 366.9s, 48401 bytes                                    [WORKS]
+
+Root cause: a scoring pass needs ~6 min of wall clock (H100 generates 15,981 completion tokens at ~54 tok/s).
+Modal holds the connection and issues a 303 to a result-polling URL at ~150s, which the sidecar's
+InferenceClient is built to follow (follow_redirects=True). The VPN severs the connection at 60s --
+90s before that redirect can ever fire. The sidecar reports this as RUNTIME_UNAVAILABLE.
+
+--- RAW: the failure, from the sidecar's own inference client (validator host, via VPN) ---
+$ docker run --rm ... --entrypoint python <sidecar image> -c "
+    from validator_scoring_sidecar.score import load_model_request, _default_backend_factory
+    _default_backend_factory(record, timeout_seconds=900).run(load_model_request(pkg))"
+
+  request bytes: 38193
+  max_tokens: 16384 | prompt chars: 35007
+
+  >>> FAILED after 60s
+  >>> TYPE: InferenceError
+  >>> MSG : could not reach inference endpoint at
+            https://…modal.run/v1/chat/completions:
+            Server disconnected without sending a response.
+  >>> CAUSE: RemoteProtocolError Server disconnected without sending a response.
+
+(NOTE: the sidecar CLI discards this message entirely. `score --json` reports
+ error_category=RUNTIME_UNAVAILABLE with error_details: null. The above was only
+ obtainable by importing the package's internals and re-running the call by hand.)
+
+--- RAW: streaming does NOT help (data flowing, still cut) ---
+  STREAM VIA VPN: status=000 time=60.490633s
+  chunks received: 9963          <-- 9,963 SSE chunks arrived, then the socket died
+  => not an idle timeout; a hard connection-LIFETIME cap
+
+--- RAW: same request, egress outside the VPN ---
+  FROM WORKER-1: status=303 time=150.275528s          <-- Modal's documented polling redirect
+  FROM WORKER-1 (following 303): status=200 time=392.776170s size=48401
+    finish_reason: stop
+    usage: {'prompt_tokens': 10646, 'completion_tokens': 15981, 'reasoning_tokens': 10638}
+
+--- RAW: the fix — validator host, behind the VPN, via the CONNECT proxy ---
+  VIA WORKER-1 PROXY: status=200 time=366.921285s size=48401
+    finish_reason: stop
+    {"v001": {"score": 58, "consensus": 40, "reliability": 65, "software": 100, ...}}

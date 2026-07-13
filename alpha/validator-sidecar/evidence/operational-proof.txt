@@ -1,0 +1,36 @@
+### 1. VALIDATOR AND SIDECAR RUNNING TOGETHER ON THE SAME HOST
+postfiat-validator
+NAMES                       STATUS          IMAGE
+validator-scoring-sidecar   Up 4 minutes    agtipft/validator-scoring-sidecar:testnet-participate-latest
+postfiatd                   Up 9 days       agtipft/postfiatd:testnet-light-latest
+pf-postfiatd-exporter       Up 7 weeks      pf-monitor-postfiatd-exporter
+
+### 2. THE VALIDATOR IS PROPOSING (admin RPC, from inside the container)
+  build_version: 1.0.4
+  server_state: proposing
+  network_id: 2025
+  peers: 10
+  pubkey_validator: nHB6Zc7mhr7swksEgpwTE7Hw7SvZ9cz22T2MECMSXjBeMTeHXQB7
+  server_domain: pft.permanentupperclass.com
+  validated_ledger seq: 4510036
+
+### 3. SECRET FILE PERMISSIONS
+-rw-r----- 1 root postfiat 775 Apr 15 20:10 /opt/postfiatd/validator-keys.json
+-rw------- 1 root root 3734 Jul 13 23:19 /opt/validator-scoring-sidecar/.env
+-rw------- 1 root root   31 Jul 13 20:55 /opt/validator-scoring-sidecar/relay-wallet.seed
+
+### 4. PINNED RUNTIME (digest-pinned image, pinned model revision, pinned launch args)
+  image: lmsysorg/sglang:nightly-dev-cu13-20260430-e60c60ef@sha256:5d9ec71597ade6b8237d61ae6f01b976cb3d5ad2c1e3cf4e0acaf27a9ff49a65
+  gpu_class: H100
+  served_model_name: Qwen/Qwen3.6-27B-FP8
+  model_revision: e89b16ebf1988b3d6befa7de50abc2d76f26eb09
+  launch_args: --model-path Qwen/Qwen3.6-27B-FP8 --served-model-name Qwen/Qwen3.6-27B-FP8 --tp 1 --mem-fraction-static 0.75 ...
+
+### 5. INPUT PACKAGE VERIFICATION (10/10 files against the on-chain hash)
+validator-scoring-sidecar  | Round number: 13
+validator-scoring-sidecar  | Round number: 13
+validator-scoring-sidecar  | Round number: 13
+validator-scoring-sidecar  | Round number: 13
+  (from the sidecar's own state DB, sidecar_rounds:)
+  round 12: hash=d9130da17a162f9a… verified_files=10 state=INPUT_PACKAGE_VERIFIED matched=None
+  round 13: hash=13f8c335a31c3595… verified_files=10 state=SCORED matched=RAW_MATCH,PARSED_MATCH,SELECTED_UNL_MATCH
