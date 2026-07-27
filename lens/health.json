@@ -5,7 +5,7 @@
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
   "snapshot_id": "2026-07-27T21:00:00Z",
-  "calculated_at": "2026-07-27T21:01:34Z",
+  "calculated_at": "2026-07-27T21:04:52Z",
   "next_update_at": "2026-07-27T22:00:00Z",
   "refresh_cadence": "hourly",
   "health_score": 0.6123,
@@ -55,7 +55,7 @@
       "weight": 0.2,
       "contribution": 0.0,
       "sybil_accounts": 769,
-      "sybil_clusters": 7,
+      "sybil_clusters": 6,
       "raw_ratio": 0.7255,
       "formula": "max(0, min(1, 1 - sybil_ratio / sybil_ratio_max))",
       "description": "Inverse of sybil-flagged account ratio. Fewer sybils = healthier."
@@ -116,7 +116,7 @@
       "threshold": 0.4,
       "current_value": 0.6915,
       "lookback": "current_snapshot",
-      "reason": "Bot ratio=69.2% (733/1060) exceeds 40% threshold. 7 sybil cluster(s) detected."
+      "reason": "Bot ratio=69.2% (733/1060) exceeds 40% threshold. 6 sybil cluster(s) detected."
     },
     {
       "rule": "VELOCITY_DROP",
@@ -136,9 +136,9 @@
       "severity": "high",
       "operator": ">=",
       "threshold": 1,
-      "current_value": 7,
+      "current_value": 6,
       "lookback": "24h",
-      "reason": "7 cluster(s) with new detections in last 24h. New coordinated activity detected."
+      "reason": "6 cluster(s) with new detections in last 24h. New coordinated activity detected."
     },
     {
       "rule": "CONTRIBUTOR_EXODUS",
@@ -160,7 +160,7 @@
   "score_change": {
     "vs_prior_snapshot": 0.0,
     "prior_health_score": 0.6123,
-    "prior_calculated_at": "2026-07-27T16:02:39Z",
+    "prior_calculated_at": "2026-07-27T21:01:34Z",
     "largest_movers": []
   },
   "network_summary": {
@@ -172,7 +172,7 @@
     "memo_transactions": 22421,
     "total_edges": 41820,
     "bidirectional_edges": 39720,
-    "sybil_clusters": 7,
+    "sybil_clusters": 6,
     "sybil_accounts": 769
   },
   "deltas": {
@@ -180,7 +180,7 @@
     "accounts": 0,
     "memo_transactions": 0,
     "edges": 0,
-    "since": "2026-07-27T16:02:39Z"
+    "since": "2026-07-27T21:01:34Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -189,5 +189,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:c6151d816dbd26d501f28bb558871786e0e9d3543197d100f75a74124d227061"
+  "snapshot_hash": "sha256:5236298609445841b596873654ab0f3f892963540fa8d08e3cbe5de018f47d39"
 }
