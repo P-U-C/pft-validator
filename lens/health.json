@@ -4,9 +4,9 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-07-28T12:00:00Z",
-  "calculated_at": "2026-07-28T12:20:27Z",
-  "next_update_at": "2026-07-28T13:00:00Z",
+  "snapshot_id": "2026-07-28T20:00:00Z",
+  "calculated_at": "2026-07-28T20:43:04Z",
+  "next_update_at": "2026-07-28T21:00:00Z",
   "refresh_cadence": "hourly",
   "health_score": 0.6123,
   "health_score_formula": "sum(component.score * component.weight)",
@@ -55,7 +55,7 @@
       "weight": 0.2,
       "contribution": 0.0,
       "sybil_accounts": 769,
-      "sybil_clusters": 7,
+      "sybil_clusters": 6,
       "raw_ratio": 0.7255,
       "formula": "max(0, min(1, 1 - sybil_ratio / sybil_ratio_max))",
       "description": "Inverse of sybil-flagged account ratio. Fewer sybils = healthier."
@@ -116,7 +116,7 @@
       "threshold": 0.4,
       "current_value": 0.6915,
       "lookback": "current_snapshot",
-      "reason": "Bot ratio=69.2% (733/1060) exceeds 40% threshold. 7 sybil cluster(s) detected."
+      "reason": "Bot ratio=69.2% (733/1060) exceeds 40% threshold. 6 sybil cluster(s) detected."
     },
     {
       "rule": "VELOCITY_DROP",
@@ -136,9 +136,9 @@
       "severity": "high",
       "operator": ">=",
       "threshold": 1,
-      "current_value": 7,
+      "current_value": 6,
       "lookback": "24h",
-      "reason": "7 cluster(s) with new detections in last 24h. New coordinated activity detected."
+      "reason": "6 cluster(s) with new detections in last 24h. New coordinated activity detected."
     },
     {
       "rule": "CONTRIBUTOR_EXODUS",
@@ -158,17 +158,10 @@
     "clear": 3
   },
   "score_change": {
-    "vs_prior_snapshot": -0.0008,
-    "prior_health_score": 0.6131,
-    "prior_calculated_at": "2026-07-28T11:17:28Z",
-    "largest_movers": [
-      {
-        "component": "concentration",
-        "delta": -0.0008,
-        "raw_delta": -0.0039,
-        "reason": "HHI moved to 0.0517"
-      }
-    ]
+    "vs_prior_snapshot": 0.0,
+    "prior_health_score": 0.6123,
+    "prior_calculated_at": "2026-07-28T12:20:27Z",
+    "largest_movers": []
   },
   "network_summary": {
     "total_accounts": 1060,
@@ -179,15 +172,15 @@
     "memo_transactions": 22421,
     "total_edges": 41820,
     "bidirectional_edges": 39720,
-    "sybil_clusters": 7,
+    "sybil_clusters": 6,
     "sybil_accounts": 769
   },
   "deltas": {
-    "health_score": -0.0008,
+    "health_score": 0.0,
     "accounts": 0,
     "memo_transactions": 0,
     "edges": 0,
-    "since": "2026-07-28T11:17:28Z"
+    "since": "2026-07-28T12:20:27Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -196,5 +189,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:3ec98ebd76a2e3948ce3f0f03e5041dcc76161b8f1263c513fc528d39a9620e4"
+  "snapshot_hash": "sha256:2e4ebda864bf09910f862201d081a92493e1df75b385c718fd7486836f21bc77"
 }
