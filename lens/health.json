@@ -4,19 +4,19 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-07-28T11:00:00Z",
-  "calculated_at": "2026-07-28T11:17:28Z",
-  "next_update_at": "2026-07-28T12:00:00Z",
+  "snapshot_id": "2026-07-28T12:00:00Z",
+  "calculated_at": "2026-07-28T12:20:27Z",
+  "next_update_at": "2026-07-28T13:00:00Z",
   "refresh_cadence": "hourly",
-  "health_score": 0.6131,
+  "health_score": 0.6123,
   "health_score_formula": "sum(component.score * component.weight)",
   "health_grade": "B",
   "component_metrics": {
     "concentration": {
-      "score": 1.0,
+      "score": 0.9961,
       "weight": 0.2,
-      "contribution": 0.2,
-      "raw_hhi": 0.023271,
+      "contribution": 0.1992,
+      "raw_hhi": 0.051746,
       "formula": "max(0, min(1, (hhi_bad - HHI) / (hhi_bad - hhi_good)))",
       "description": "Herfindahl-Hirschman Index of memo activity distribution. Lower HHI = more distributed = healthier."
     },
@@ -103,9 +103,9 @@
       "severity": "none",
       "operator": ">",
       "threshold": 0.35,
-      "current_value": 0.0233,
+      "current_value": 0.0517,
       "lookback": "current_snapshot",
-      "reason": "HHI=0.0233 below threshold 0.35. Memo activity is reasonably distributed."
+      "reason": "HHI=0.0517 below threshold 0.35. Memo activity is reasonably distributed."
     },
     {
       "rule": "BOT_CLUSTER_GROWTH",
@@ -158,15 +158,15 @@
     "clear": 3
   },
   "score_change": {
-    "vs_prior_snapshot": 0.0008,
-    "prior_health_score": 0.6123,
-    "prior_calculated_at": "2026-07-28T08:48:02Z",
+    "vs_prior_snapshot": -0.0008,
+    "prior_health_score": 0.6131,
+    "prior_calculated_at": "2026-07-28T11:17:28Z",
     "largest_movers": [
       {
         "component": "concentration",
-        "delta": 0.0008,
-        "raw_delta": 0.0039,
-        "reason": "HHI moved to 0.0233"
+        "delta": -0.0008,
+        "raw_delta": -0.0039,
+        "reason": "HHI moved to 0.0517"
       }
     ]
   },
@@ -183,11 +183,11 @@
     "sybil_accounts": 769
   },
   "deltas": {
-    "health_score": 0.0008,
+    "health_score": -0.0008,
     "accounts": 0,
     "memo_transactions": 0,
     "edges": 0,
-    "since": "2026-07-28T08:48:02Z"
+    "since": "2026-07-28T11:17:28Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -196,5 +196,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:1219c9e0c87ec3576f382e20fa1e47be79c3e83608dee3fc0121f3f798b16336"
+  "snapshot_hash": "sha256:3ec98ebd76a2e3948ce3f0f03e5041dcc76161b8f1263c513fc528d39a9620e4"
 }
