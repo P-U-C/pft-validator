@@ -4,19 +4,19 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-08-04T11:00:00Z",
-  "calculated_at": "2026-08-04T11:22:52Z",
-  "next_update_at": "2026-08-04T12:00:00Z",
+  "snapshot_id": "2026-08-04T12:00:00Z",
+  "calculated_at": "2026-08-04T12:22:24Z",
+  "next_update_at": "2026-08-04T13:00:00Z",
   "refresh_cadence": "hourly",
-  "health_score": 0.5971,
+  "health_score": 0.6131,
   "health_score_formula": "sum(component.score * component.weight)",
-  "health_grade": "C",
+  "health_grade": "B",
   "component_metrics": {
     "concentration": {
-      "score": 0.991,
+      "score": 0.9909,
       "weight": 0.2,
       "contribution": 0.1982,
-      "raw_hhi": 0.054048,
+      "raw_hhi": 0.054073,
       "formula": "max(0, min(1, (hhi_bad - HHI) / (hhi_bad - hhi_good)))",
       "description": "Herfindahl-Hirschman Index of memo activity distribution. Lower HHI = more distributed = healthier."
     },
@@ -31,12 +31,12 @@
       "description": "Fraction of active accounts that are real contributors (not bots or infrastructure)."
     },
     "memo_velocity": {
-      "score": 0.6145,
+      "score": 0.6947,
       "weight": 0.2,
-      "contribution": 0.1229,
-      "latest_day_memos": 23,
+      "contribution": 0.1389,
+      "latest_day_memos": 26,
       "avg_7d_daily": 37.4,
-      "velocity_ratio": 0.6145,
+      "velocity_ratio": 0.6947,
       "formula": "max(0, min(1, latest_day_count / avg_7d_daily))",
       "description": "Latest day memo count vs 7-day rolling average. Detects activity drops."
     },
@@ -103,9 +103,9 @@
       "severity": "none",
       "operator": ">",
       "threshold": 0.35,
-      "current_value": 0.054,
+      "current_value": 0.0541,
       "lookback": "current_snapshot",
-      "reason": "HHI=0.054 below threshold 0.35. Memo activity is reasonably distributed."
+      "reason": "HHI=0.0541 below threshold 0.35. Memo activity is reasonably distributed."
     },
     {
       "rule": "BOT_CLUSTER_GROWTH",
@@ -125,9 +125,9 @@
       "severity": "none",
       "operator": "<",
       "threshold": 0.5,
-      "current_value": 0.6145,
+      "current_value": 0.6947,
       "lookback": "7d",
-      "reason": "Today=23 memos vs 7d avg=37.4 (ratio=0.61). Memo velocity is within normal range."
+      "reason": "Today=26 memos vs 7d avg=37.4 (ratio=0.69). Memo velocity is within normal range."
     },
     {
       "rule": "NEW_SYBIL_CLUSTER",
@@ -159,20 +159,20 @@
   },
   "score_change": {
     "vs_prior_snapshot": 0.016,
-    "prior_health_score": 0.5811,
-    "prior_calculated_at": "2026-08-04T10:22:25Z",
+    "prior_health_score": 0.5971,
+    "prior_calculated_at": "2026-08-04T11:22:52Z",
     "largest_movers": [
       {
         "component": "memo_velocity",
         "delta": 0.016,
-        "raw_delta": 0.0801,
-        "reason": "latest_day_memos=23 vs prior avg=37.4"
+        "raw_delta": 0.0802,
+        "reason": "latest_day_memos=26 vs prior avg=37.4"
       },
       {
         "component": "concentration",
         "delta": -0.0,
         "raw_delta": -0.0001,
-        "reason": "HHI moved to 0.054"
+        "reason": "HHI moved to 0.0541"
       }
     ]
   },
@@ -181,8 +181,8 @@
     "contributors": 321,
     "bots": 733,
     "infrastructure": 8,
-    "total_transactions": 386800,
-    "memo_transactions": 22725,
+    "total_transactions": 386803,
+    "memo_transactions": 22728,
     "total_edges": 41826,
     "bidirectional_edges": 39722,
     "sybil_clusters": 6,
@@ -193,7 +193,7 @@
     "accounts": 0,
     "memo_transactions": 3,
     "edges": 0,
-    "since": "2026-08-04T10:22:25Z"
+    "since": "2026-08-04T11:22:52Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -202,5 +202,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:66077acdf84e7f7f38a6e2318b265a12bc308a6463890634350e2429752c3a1b"
+  "snapshot_hash": "sha256:9c9f5597991364b6eef56176ce66972006acb42a8e206754735d23c75e48bc0a"
 }
