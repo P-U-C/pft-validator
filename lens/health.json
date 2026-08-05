@@ -4,19 +4,19 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-08-05T16:00:00Z",
-  "calculated_at": "2026-08-05T16:22:16Z",
-  "next_update_at": "2026-08-05T17:00:00Z",
+  "snapshot_id": "2026-08-05T17:00:00Z",
+  "calculated_at": "2026-08-05T17:22:50Z",
+  "next_update_at": "2026-08-05T18:00:00Z",
   "refresh_cadence": "hourly",
-  "health_score": 0.5673,
+  "health_score": 0.5766,
   "health_score_formula": "sum(component.score * component.weight)",
   "health_grade": "C",
   "component_metrics": {
     "concentration": {
-      "score": 0.9901,
+      "score": 0.99,
       "weight": 0.2,
       "contribution": 0.198,
-      "raw_hhi": 0.054465,
+      "raw_hhi": 0.054482,
       "formula": "max(0, min(1, (hhi_bad - HHI) / (hhi_bad - hhi_good)))",
       "description": "Herfindahl-Hirschman Index of memo activity distribution. Lower HHI = more distributed = healthier."
     },
@@ -31,12 +31,12 @@
       "description": "Fraction of active accounts that are real contributors (not bots or infrastructure)."
     },
     "memo_velocity": {
-      "score": 0.4667,
+      "score": 0.5133,
       "weight": 0.2,
-      "contribution": 0.0933,
-      "latest_day_memos": 20,
+      "contribution": 0.1027,
+      "latest_day_memos": 22,
       "avg_7d_daily": 42.9,
-      "velocity_ratio": 0.4667,
+      "velocity_ratio": 0.5133,
       "formula": "max(0, min(1, latest_day_count / avg_7d_daily))",
       "description": "Latest day memo count vs 7-day rolling average. Detects activity drops."
     },
@@ -121,13 +121,13 @@
     {
       "rule": "VELOCITY_DROP",
       "category": "activity",
-      "status": "triggered",
-      "severity": "medium",
+      "status": "clear",
+      "severity": "none",
       "operator": "<",
       "threshold": 0.5,
-      "current_value": 0.4667,
+      "current_value": 0.5133,
       "lookback": "7d",
-      "reason": "Today=20 memos vs 7d avg=42.9 (ratio=0.47). Activity dropped below 50% of normal."
+      "reason": "Today=22 memos vs 7d avg=42.9 (ratio=0.51). Memo velocity is within normal range."
     },
     {
       "rule": "NEW_SYBIL_CLUSTER",
@@ -154,19 +154,25 @@
   ],
   "anomaly_summary": {
     "total_rules": 5,
-    "triggered": 3,
-    "clear": 2
+    "triggered": 2,
+    "clear": 3
   },
   "score_change": {
-    "vs_prior_snapshot": 0.0047,
-    "prior_health_score": 0.5626,
-    "prior_calculated_at": "2026-08-05T15:22:48Z",
+    "vs_prior_snapshot": 0.0093,
+    "prior_health_score": 0.5673,
+    "prior_calculated_at": "2026-08-05T16:22:16Z",
     "largest_movers": [
       {
         "component": "memo_velocity",
-        "delta": 0.0047,
-        "raw_delta": 0.0234,
-        "reason": "latest_day_memos=20 vs prior avg=42.9"
+        "delta": 0.0093,
+        "raw_delta": 0.0466,
+        "reason": "latest_day_memos=22 vs prior avg=42.9"
+      },
+      {
+        "component": "concentration",
+        "delta": -0.0,
+        "raw_delta": -0.0001,
+        "reason": "HHI moved to 0.0545"
       }
     ]
   },
@@ -175,19 +181,19 @@
     "contributors": 321,
     "bots": 733,
     "infrastructure": 8,
-    "total_transactions": 386850,
-    "memo_transactions": 22775,
+    "total_transactions": 386852,
+    "memo_transactions": 22777,
     "total_edges": 41826,
     "bidirectional_edges": 39722,
     "sybil_clusters": 6,
     "sybil_accounts": 769
   },
   "deltas": {
-    "health_score": 0.0047,
+    "health_score": 0.0093,
     "accounts": 0,
-    "memo_transactions": 1,
+    "memo_transactions": 2,
     "edges": 0,
-    "since": "2026-08-05T15:22:48Z"
+    "since": "2026-08-05T16:22:16Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -196,5 +202,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:3e349265d78f3ce286c6586d4d20269ac4c7f1b1165ad9587090073fa004f8b6"
+  "snapshot_hash": "sha256:cd95939ecc68b7b740901cd387d566231f6daf270b36939ace7d5227749fe7ae"
 }
