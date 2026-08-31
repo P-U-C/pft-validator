@@ -60,6 +60,34 @@
     .metric small { display: block; color: var(--muted); font-size: 11px; margin-top: 8px; }
     .positive { color: var(--early); }
     .negative { color: var(--rug-risk); }
+    .notice {
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--rug-risk);
+      border-radius: 6px;
+      background: #131518;
+      padding: 12px 14px;
+      margin: -6px 0 18px;
+    }
+    .notice strong { display: block; font-size: 15px; margin-bottom: 4px; }
+    .notice span, .section-note { color: var(--muted); font-size: 13px; }
+    .calibration { margin-bottom: 18px; }
+    .grid, section { min-width: 0; }
+    .table-wrap {
+      max-width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .table-wrap table { min-width: 680px; }
+    .status {
+      display: inline-block;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid currentColor;
+    }
+    .candidate { color: var(--early); }
+    .bench { color: var(--dead); }
     .league-line {
       border: 1px solid var(--line);
       border-radius: 6px;
@@ -167,10 +195,14 @@
       <div class="stamp">powered by FOMO Belt</div>
     </header>
     <div class="metrics" aria-label="scoreboard totals">
-      <div class="metric"><b>585</b><span>calls stamped</span></div>
-      <div class="metric"><b>1563</b><span>plays graded</span></div>
-      <div class="metric"><b>51.8%</b><span>primary hit rate</span><small>268/517 scored calls</small></div>
-      <div class="metric"><b class="negative">-$4.4K</b><span>net Belt $</span><small>$100/call at scored horizon</small></div>
+      <div class="metric"><b>601</b><span>calls stamped</span></div>
+      <div class="metric"><b>1611</b><span>plays graded</span></div>
+      <div class="metric"><b>52.1%</b><span>primary hit rate</span><small>277/532 scored calls</small></div>
+      <div class="metric"><b class="negative">-$5.5K</b><span>net Belt $</span><small>$100/call at scored horizon</small></div>
+    </div>
+    <div class="notice" aria-label="current operating mode">
+      <strong class="negative">Research mode</strong>
+      <span>Primary horizon mapping is negative. Treat the belt as a calibration target until the next out-of-sample window turns positive.</span>
     </div>
     <div class="league-line" aria-label="league model">
       <div><span>players</span><b>wallets</b></div>
@@ -178,14 +210,371 @@
       <div><span>games</span><b>tokens</b></div>
       <div><span>referee</span><b>FOMO Belt</b></div>
     </div>
+    <section class="calibration">
+      <h2>Corbanu Calibration</h2>
+      <p class="section-note">Best tested horizon per verdict from scored receipts. Candidate rows still need out-of-sample confirmation.</p>
+      <div class="table-wrap"><table><thead><tr><th>Verdict</th><th>Status</th><th>Best horizon</th><th>Record</th><th>Hit</th><th>Belt/call</th><th>Reason</th></tr></thead><tbody><tr><td><span class="badge early">EARLY</span></td><td><span class="status candidate">CANDIDATE</span></td><td>1h</td><td>53/154</td><td>34.4%</td><td class="positive">+$48</td><td>best tested horizon is positive</td></tr><tr><td><span class="badge chase">CHASE</span></td><td><span class="status candidate">CANDIDATE</span></td><td>4h</td><td>139/172</td><td>80.8%</td><td class="positive">+$27</td><td>best tested horizon is positive</td></tr><tr><td><span class="badge distribution">DISTRIBUTION</span></td><td><span class="status bench">BENCH</span></td><td>4h</td><td>4/4</td><td>100.0%</td><td class="positive">+$56</td><td>sample 4 &lt; 20</td></tr><tr><td><span class="badge rug-risk">RUG RISK</span></td><td><span class="status candidate">CANDIDATE</span></td><td>4h</td><td>95/162</td><td>58.6%</td><td class="positive">+$18</td><td>best tested horizon is positive</td></tr><tr><td><span class="badge dead">DEAD</span></td><td><span class="status bench">BENCH</span></td><td>4h</td><td>1/1</td><td>100.0%</td><td class="positive">+$0</td><td>sample 1 &lt; 20</td></tr></tbody></table></div>
+    </section>
     <div class="grid">
       <section>
         <h2>Season Scoreboard</h2>
-        <table><thead><tr><th>Verdict</th><th>Horizon</th><th>Record</th><th>Hit</th><th>Avg return</th><th>Belt $</th></tr></thead><tbody><tr><td><span class="badge chase">CHASE</span></td><td>15m</td><td>143/220</td><td>65.0%</td><td>-6.1%</td><td class="positive">+$1.3K</td></tr><tr><td><span class="badge chase">CHASE</span></td><td>1h</td><td>133/208</td><td>63.9%</td><td>+5.2%</td><td class="negative">-$1.1K</td></tr><tr><td><span class="badge chase">CHASE</span></td><td>4h</td><td>131/164</td><td>79.9%</td><td>-24.7%</td><td class="positive">+$4.1K</td></tr><tr><td><span class="badge dead">DEAD</span></td><td>15m</td><td>1/1</td><td>100.0%</td><td>+0.0%</td><td class="positive">+$0</td></tr><tr><td><span class="badge dead">DEAD</span></td><td>1h</td><td>1/1</td><td>100.0%</td><td>+0.0%</td><td class="positive">+$0</td></tr><tr><td><span class="badge dead">DEAD</span></td><td>4h</td><td>1/1</td><td>100.0%</td><td>+0.0%</td><td class="positive">+$0</td></tr><tr><td><span class="badge distribution">DISTRIBUTION</span></td><td>15m</td><td>2/4</td><td>50.0%</td><td>-17.2%</td><td class="positive">+$69</td></tr><tr><td><span class="badge distribution">DISTRIBUTION</span></td><td>1h</td><td>1/4</td><td>25.0%</td><td>-6.2%</td><td class="positive">+$25</td></tr><tr><td><span class="badge distribution">DISTRIBUTION</span></td><td>4h</td><td>4/4</td><td>100.0%</td><td>-56.4%</td><td class="positive">+$226</td></tr><tr><td><span class="badge early">EARLY</span></td><td>15m</td><td>45/155</td><td>29.0%</td><td>+0.5%</td><td class="positive">+$80</td></tr><tr><td><span class="badge early">EARLY</span></td><td>1h</td><td>52/149</td><td>34.9%</td><td>+51.4%</td><td class="positive">+$7.7K</td></tr><tr><td><span class="badge early">EARLY</span></td><td>4h</td><td>27/122</td><td>22.1%</td><td>-19.4%</td><td class="negative">-$2.4K</td></tr><tr><td><span class="badge rug-risk">RUG RISK</span></td><td>15m</td><td>95/189</td><td>50.3%</td><td>-4.8%</td><td class="positive">+$910</td></tr><tr><td><span class="badge rug-risk">RUG RISK</span></td><td>1h</td><td>104/183</td><td>56.8%</td><td>+6.2%</td><td class="negative">-$1.1K</td></tr><tr><td><span class="badge rug-risk">RUG RISK</span></td><td>4h</td><td>93/158</td><td>58.9%</td><td>-17.2%</td><td class="positive">+$2.7K</td></tr></tbody></table>
+        <div class="table-wrap"><table><thead><tr><th>Verdict</th><th>Horizon</th><th>Record</th><th>Hit</th><th>Avg return</th><th>Belt $</th></tr></thead><tbody><tr><td><span class="badge chase">CHASE</span></td><td>15m</td><td>145/224</td><td>64.7%</td><td>-6.4%</td><td class="positive">+$1.4K</td></tr><tr><td><span class="badge chase">CHASE</span></td><td>1h</td><td>140/217</td><td>64.5%</td><td>+9.8%</td><td class="negative">-$2.1K</td></tr><tr><td><span class="badge chase">CHASE</span></td><td>4h</td><td>139/172</td><td>80.8%</td><td>-26.9%</td><td class="positive">+$4.6K</td></tr><tr><td><span class="badge dead">DEAD</span></td><td>15m</td><td>1/1</td><td>100.0%</td><td>+0.0%</td><td class="positive">+$0</td></tr><tr><td><span class="badge dead">DEAD</span></td><td>1h</td><td>1/1</td><td>100.0%</td><td>+0.0%</td><td class="positive">+$0</td></tr><tr><td><span class="badge dead">DEAD</span></td><td>4h</td><td>1/1</td><td>100.0%</td><td>+0.0%</td><td class="positive">+$0</td></tr><tr><td><span class="badge distribution">DISTRIBUTION</span></td><td>15m</td><td>2/4</td><td>50.0%</td><td>-17.2%</td><td class="positive">+$69</td></tr><tr><td><span class="badge distribution">DISTRIBUTION</span></td><td>1h</td><td>1/4</td><td>25.0%</td><td>-6.2%</td><td class="positive">+$25</td></tr><tr><td><span class="badge distribution">DISTRIBUTION</span></td><td>4h</td><td>4/4</td><td>100.0%</td><td>-56.4%</td><td class="positive">+$226</td></tr><tr><td><span class="badge early">EARLY</span></td><td>15m</td><td>46/160</td><td>28.7%</td><td>-1.1%</td><td class="negative">-$171</td></tr><tr><td><span class="badge early">EARLY</span></td><td>1h</td><td>53/154</td><td>34.4%</td><td>+47.9%</td><td class="positive">+$7.4K</td></tr><tr><td><span class="badge early">EARLY</span></td><td>4h</td><td>29/126</td><td>23.0%</td><td>-19.5%</td><td class="negative">-$2.5K</td></tr><tr><td><span class="badge rug-risk">RUG RISK</span></td><td>15m</td><td>101/196</td><td>51.5%</td><td>-6.4%</td><td class="positive">+$1.3K</td></tr><tr><td><span class="badge rug-risk">RUG RISK</span></td><td>1h</td><td>104/185</td><td>56.2%</td><td>+6.1%</td><td class="negative">-$1.1K</td></tr><tr><td><span class="badge rug-risk">RUG RISK</span></td><td>4h</td><td>95/162</td><td>58.6%</td><td>-17.7%</td><td class="positive">+$2.9K</td></tr></tbody></table></div>
       </section>
       <section>
         <h2>Latest Call Cards</h2>
         
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/robinhood/0xcaa361f2fb1a9fe05f42702ea3d444715ad4a041">ABE/WETH</a></div>
+          <div class="addr">0x92Eb4E3dF132A47924fD2743a55Fe17Cb05De35B</div>
+        </div>
+        <span class="badge chase">CHASE</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>confidence</span><b>90</b></div>
+        <div class="kv"><span>price</span><b>$2.03e-05</b></div>
+        <div class="kv"><span>liquidity</span><b>$14.3K</b></div>
+        <div class="kv"><span>max sane size</span><b>$26</b></div>
+      </div>
+      <div class="lists">
+        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li><li>H1 price momentum is positive.</li></ul></div>
+        <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li><li>Move is extended enough to invite chase risk.</li></ul></div>
+      </div>
+      <div class="outcomes">call card sb_686b110197f94cfd | 2026-08-31T21:30:04Z | waiting for horizons</div>
+    </article>
+    
+
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/robinhood/0x7f7f7688c218486c8177c2f3e63250ff000ac4d784452d5d75b13acfb372de3e">XBT/cbBTC</a></div>
+          <div class="addr">0x19Ba1dBeE379f77135853DFe7C1878f1d4AC76cF</div>
+        </div>
+        <span class="badge early">EARLY</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>confidence</span><b>94</b></div>
+        <div class="kv"><span>price</span><b>$2.565e-05</b></div>
+        <div class="kv"><span>liquidity</span><b>$14.8K</b></div>
+        <div class="kv"><span>max sane size</span><b>$177</b></div>
+      </div>
+      <div class="lists">
+        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 price momentum is positive.</li></ul></div>
+        <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li><li>Recent tape has flipped sell-heavy.</li><li>M5 price action is dumping.</li></ul></div>
+      </div>
+      <div class="outcomes">call card sb_1933b14dada44c3c | 2026-08-31T21:30:04Z | waiting for horizons</div>
+    </article>
+    
+
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/solana/9elrn1depcbhadcgsjwcgxjfuyr9edxgaortbln74zmb">RICE/SOL</a></div>
+          <div class="addr">9zgcyrfSEZMdwqLvbZxtC5T1XGbpvJbkotZgeatMpump</div>
+        </div>
+        <span class="badge rug-risk">RUG RISK</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>confidence</span><b>90</b></div>
+        <div class="kv"><span>price</span><b>$3.567e-06</b></div>
+        <div class="kv"><span>liquidity</span><b>$3.3K</b></div>
+        <div class="kv"><span>max sane size</span><b>$0</b></div>
+      </div>
+      <div class="lists">
+        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
+        <div><strong>Risk</strong><ul><li>Liquidity is extremely thin.</li><li>Recent tape has flipped sell-heavy.</li><li>H1 price action is breaking down.</li></ul></div>
+      </div>
+      <div class="outcomes">call card sb_549152b2419c424d | 2026-08-31T21:30:04Z | waiting for horizons</div>
+    </article>
+    
+
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/robinhood/0x367b278dc0f49650d7ee23ab9a9419770b3f044094ac060f63c637994c404348">TOGGLE/ETH</a></div>
+          <div class="addr">0x2c9bd473e4582C7209671b22f5078a75409366dc</div>
+        </div>
+        <span class="badge chase">CHASE</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>confidence</span><b>94</b></div>
+        <div class="kv"><span>price</span><b>$0.0001054</b></div>
+        <div class="kv"><span>liquidity</span><b>$29.9K</b></div>
+        <div class="kv"><span>max sane size</span><b>$120</b></div>
+      </div>
+      <div class="lists">
+        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li><li>H1 price momentum is positive.</li></ul></div>
+        <div><strong>Risk</strong><ul><li>Move is extended enough to invite chase risk.</li></ul></div>
+      </div>
+      <div class="outcomes">call card sb_9f5e574abfa24ee1 | 2026-08-31T21:30:04Z | waiting for horizons</div>
+    </article>
+    
+
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/robinhood/0x106bab9cbf4627cf8e2fbe3ab7cde9093b7b9a74f5189fea5b3ed122e9abce95">SNATCHED/HIMS</a></div>
+          <div class="addr">0x262DADa63D6E7876E4ffD648018E1Dd00bed1e18</div>
+        </div>
+        <span class="badge chase">CHASE</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>confidence</span><b>84</b></div>
+        <div class="kv"><span>price</span><b>$2.442e-05</b></div>
+        <div class="kv"><span>liquidity</span><b>$24.3K</b></div>
+        <div class="kv"><span>max sane size</span><b>$35</b></div>
+      </div>
+      <div class="lists">
+        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li></ul></div>
+        <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li></ul></div>
+      </div>
+      <div class="outcomes">call card sb_235447011c214698 | 2026-08-31T21:30:04Z | waiting for horizons</div>
+    </article>
+    
+
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/robinhood/0x7c5e018674151fc1c12fa391ac01c4d2eafcad4b">GPRO/WETH</a></div>
+          <div class="addr">0x960a8eB609257485e868766514118BDCE06b6b02</div>
+        </div>
+        <span class="badge chase">CHASE</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>confidence</span><b>94</b></div>
+        <div class="kv"><span>price</span><b>$0.00088</b></div>
+        <div class="kv"><span>liquidity</span><b>$95.5K</b></div>
+        <div class="kv"><span>max sane size</span><b>$382</b></div>
+      </div>
+      <div class="lists">
+        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 tape is buyer-dominant.</li><li>Recent tape is still bidding.</li></ul></div>
+        <div><strong>Risk</strong><ul><li>Move is extended enough to invite chase risk.</li></ul></div>
+      </div>
+      <div class="outcomes">call card sb_bc478bf4ef584e83 | 2026-08-31T21:30:04Z | waiting for horizons</div>
+    </article>
+    
+
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/arbitrum/0xbc3e04908ec7e4326de93a33587a44bd8a4309e3">NYAN/WETH</a></div>
+          <div class="addr">0x4974E700F1DEb8A6825a9BD87347a53D46378304</div>
+        </div>
+        <span class="badge chase">CHASE</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>confidence</span><b>88</b></div>
+        <div class="kv"><span>price</span><b>$0.0001914</b></div>
+        <div class="kv"><span>liquidity</span><b>$52.1K</b></div>
+        <div class="kv"><span>max sane size</span><b>$208</b></div>
+      </div>
+      <div class="lists">
+        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li></ul></div>
+        <div><strong>Risk</strong><ul><li>H1 price action is breaking down.</li><li>Move is extended enough to invite chase risk.</li></ul></div>
+      </div>
+      <div class="outcomes">call card sb_2636a77deb484938 | 2026-08-31T21:30:04Z | waiting for horizons</div>
+    </article>
+    
+
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/robinhood/0x25f8a1e22b2c93352402a220bf4d1ef7ddcccf4e4990eae839e6ff768951ea71">BIT/COIN</a></div>
+          <div class="addr">0x65f92631E10e158ee2E93A37c69be15eD8CdCe36</div>
+        </div>
+        <span class="badge early">EARLY</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>confidence</span><b>94</b></div>
+        <div class="kv"><span>price</span><b>$3.631e-05</b></div>
+        <div class="kv"><span>liquidity</span><b>$17.0K</b></div>
+        <div class="kv"><span>max sane size</span><b>$204</b></div>
+      </div>
+      <div class="lists">
+        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>Recent tape is still bidding.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
+        <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li><li>H1 price action is breaking down.</li></ul></div>
+      </div>
+      <div class="outcomes">call card sb_c01b7f7adf7c44d6 | 2026-08-31T21:30:04Z | waiting for horizons</div>
+    </article>
+    
+
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/robinhood/0xbc0f8debd439d5116463b4f8d8b28d4c80a6b82957b2268e26cc7c2e13dafee3">HOUSE/ETH</a></div>
+          <div class="addr">0x957a0CEd88191a2E8085884259DDaA6c55DcC33d</div>
+        </div>
+        <span class="badge early">EARLY</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>confidence</span><b>94</b></div>
+        <div class="kv"><span>price</span><b>$6.22e-05</b></div>
+        <div class="kv"><span>liquidity</span><b>$23.0K</b></div>
+        <div class="kv"><span>max sane size</span><b>$216</b></div>
+      </div>
+      <div class="lists">
+        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li><li>M5 activity is expanding versus H1 pace.</li></ul></div>
+        <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li></ul></div>
+      </div>
+      <div class="outcomes">call card sb_3d3172dc2b874ead | 2026-08-31T21:15:04Z | waiting for horizons</div>
+    </article>
+    
+
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/robinhood/0x00ffb0ada6ea5e7b34928516cdfa59c9dd40ac51cfc9f854941a2d5bdd77d435">CAT/USDG</a></div>
+          <div class="addr">0xEf98988A0b67cb75C811e7D57Fd1463A94d11450</div>
+        </div>
+        <span class="badge distribution">DISTRIBUTION</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>confidence</span><b>94</b></div>
+        <div class="kv"><span>price</span><b>$2.597e-05</b></div>
+        <div class="kv"><span>liquidity</span><b>$13.1K</b></div>
+        <div class="kv"><span>max sane size</span><b>$26</b></div>
+      </div>
+      <div class="lists">
+        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li></ul></div>
+        <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li><li>Recent tape has flipped sell-heavy.</li><li>H1 price action is breaking down.</li><li>M5 price action is dumping.</li></ul></div>
+      </div>
+      <div class="outcomes">call card sb_3a75e6bd4cdd46fd | 2026-08-31T21:15:04Z | waiting for horizons</div>
+    </article>
+    
+
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/robinhood/0x0b623c34b64c2e588c3e08a31d9bcf11a255836e8ad6da261ee533f78cfa410f">SHAFT/USAR</a></div>
+          <div class="addr">0xcbFFac12A32eBd391B008AE04f356066f2231e18</div>
+        </div>
+        <span class="badge early">EARLY</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>confidence</span><b>94</b></div>
+        <div class="kv"><span>price</span><b>$2.961e-05</b></div>
+        <div class="kv"><span>liquidity</span><b>$29.0K</b></div>
+        <div class="kv"><span>max sane size</span><b>$218</b></div>
+      </div>
+      <div class="lists">
+        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>Recent tape is still bidding.</li><li>M5 activity is expanding versus H1 pace.</li></ul></div>
+        <div><strong>Risk</strong><ul><li>Wallet concentration and social-identity data are not wired yet.</li></ul></div>
+      </div>
+      <div class="outcomes">call card sb_7cd1443b20244163 | 2026-08-31T21:15:04Z | waiting for horizons</div>
+    </article>
+    
+
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/solana/ad3nfqeck6xphnaafvbyfarsztqewkgrxst5bju24nxl">LUCKLAY/SOL</a></div>
+          <div class="addr">7rWzV3T1Sge8xEQW45aYCeoJVS8aUABiyMThkafBqqwG</div>
+        </div>
+        <span class="badge rug-risk">RUG RISK</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>confidence</span><b>91</b></div>
+        <div class="kv"><span>price</span><b>$5.563e-06</b></div>
+        <div class="kv"><span>liquidity</span><b>$4.6K</b></div>
+        <div class="kv"><span>max sane size</span><b>$0</b></div>
+      </div>
+      <div class="lists">
+        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
+        <div><strong>Risk</strong><ul><li>Liquidity is extremely thin.</li><li>H1 price action is breaking down.</li><li>M5 price action is dumping.</li></ul></div>
+      </div>
+      <div class="outcomes">call card sb_cfc66fd8132341c5 | 2026-08-31T21:15:04Z | waiting for horizons</div>
+    </article>
+    
+
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/robinhood/0xcaa361f2fb1a9fe05f42702ea3d444715ad4a041">ABE/WETH</a></div>
+          <div class="addr">0x92Eb4E3dF132A47924fD2743a55Fe17Cb05De35B</div>
+        </div>
+        <span class="badge chase">CHASE</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>confidence</span><b>94</b></div>
+        <div class="kv"><span>price</span><b>$1.785e-05</b></div>
+        <div class="kv"><span>liquidity</span><b>$13.4K</b></div>
+        <div class="kv"><span>max sane size</span><b>$21</b></div>
+      </div>
+      <div class="lists">
+        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 tape is buyer-dominant.</li><li>Recent tape is still bidding.</li></ul></div>
+        <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li><li>Move is extended enough to invite chase risk.</li></ul></div>
+      </div>
+      <div class="outcomes">call card sb_67812a78dec14e56 | 2026-08-31T21:15:04Z | waiting for horizons</div>
+    </article>
+    
+
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/robinhood/0x7f7f7688c218486c8177c2f3e63250ff000ac4d784452d5d75b13acfb372de3e">XBT/cbBTC</a></div>
+          <div class="addr">0x19Ba1dBeE379f77135853DFe7C1878f1d4AC76cF</div>
+        </div>
+        <span class="badge chase">CHASE</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>confidence</span><b>94</b></div>
+        <div class="kv"><span>price</span><b>$4.266e-05</b></div>
+        <div class="kv"><span>liquidity</span><b>$19.0K</b></div>
+        <div class="kv"><span>max sane size</span><b>$76</b></div>
+      </div>
+      <div class="lists">
+        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 tape is buyer-dominant.</li><li>Recent tape is still bidding.</li></ul></div>
+        <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li><li>Move is extended enough to invite chase risk.</li></ul></div>
+      </div>
+      <div class="outcomes">call card sb_9500103e089940b7 | 2026-08-31T21:15:04Z | waiting for horizons</div>
+    </article>
+    
+
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/solana/9elrn1depcbhadcgsjwcgxjfuyr9edxgaortbln74zmb">RICE/SOL</a></div>
+          <div class="addr">9zgcyrfSEZMdwqLvbZxtC5T1XGbpvJbkotZgeatMpump</div>
+        </div>
+        <span class="badge early">EARLY</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>confidence</span><b>94</b></div>
+        <div class="kv"><span>price</span><b>$4.054e-05</b></div>
+        <div class="kv"><span>liquidity</span><b>$15.4K</b></div>
+        <div class="kv"><span>max sane size</span><b>$27</b></div>
+      </div>
+      <div class="lists">
+        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li><li>M5 activity is expanding versus H1 pace.</li></ul></div>
+        <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li></ul></div>
+      </div>
+      <div class="outcomes">call card sb_0aa919cc3180438c | 2026-08-31T21:15:04Z | waiting for horizons</div>
+    </article>
+    
+
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/robinhood/0x367b278dc0f49650d7ee23ab9a9419770b3f044094ac060f63c637994c404348">TOGGLE/ETH</a></div>
+          <div class="addr">0x2c9bd473e4582C7209671b22f5078a75409366dc</div>
+        </div>
+        <span class="badge early">EARLY</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>confidence</span><b>94</b></div>
+        <div class="kv"><span>price</span><b>$6.409e-05</b></div>
+        <div class="kv"><span>liquidity</span><b>$23.3K</b></div>
+        <div class="kv"><span>max sane size</span><b>$266</b></div>
+      </div>
+      <div class="lists">
+        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li><li>H1 price momentum is positive.</li></ul></div>
+        <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li></ul></div>
+      </div>
+      <div class="outcomes">call card sb_1835dfa892334fc3 | 2026-08-31T21:15:04Z | waiting for horizons</div>
+    </article>
+    
+
     <article class="receipt">
       <div class="receipt-head">
         <div>
@@ -204,7 +593,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 tape is buyer-dominant.</li><li>Recent tape is still bidding.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li><li>H1 price action is breaking down.</li><li>M5 price action is dumping.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_46e199078e074f5d | 2026-08-31T21:00:05Z | waiting for horizons</div>
+      <div class="outcomes">call card sb_46e199078e074f5d | 2026-08-31T21:00:05Z | <span class="win">15m -83.7% / +$84</span></div>
     </article>
     
 
@@ -226,7 +615,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li><li>H1 price action is breaking down.</li><li>M5 price action is dumping.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_19c7db0d3a3e4e0a | 2026-08-31T21:00:05Z | waiting for horizons</div>
+      <div class="outcomes">call card sb_19c7db0d3a3e4e0a | 2026-08-31T21:00:05Z | <span class="win">15m -36.6% / +$37</span></div>
     </article>
     
 
@@ -248,7 +637,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li><li>H1 price action is breaking down.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_bad57d7b5d9c437f | 2026-08-31T21:00:05Z | waiting for horizons</div>
+      <div class="outcomes">call card sb_bad57d7b5d9c437f | 2026-08-31T21:00:05Z | <span class="win">15m -55.0% / +$55</span></div>
     </article>
     
 
@@ -270,7 +659,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 tape is buyer-dominant.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li><li>M5 price action is dumping.</li><li>Move is extended enough to invite chase risk.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_1703400bb1f94e97 | 2026-08-31T21:00:05Z | waiting for horizons</div>
+      <div class="outcomes">call card sb_1703400bb1f94e97 | 2026-08-31T21:00:05Z | <span class="loss">15m +53.4% / -$53</span></div>
     </article>
     
 
@@ -292,7 +681,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li><li>H1 price action is breaking down.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_9aac84fbd8c04924 | 2026-08-31T21:00:05Z | waiting for horizons</div>
+      <div class="outcomes">call card sb_9aac84fbd8c04924 | 2026-08-31T21:00:05Z | <span class="loss">15m -40.1% / -$40</span></div>
     </article>
     
 
@@ -314,7 +703,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li><li>H1 price momentum is positive.</li></ul></div>
         <div><strong>Risk</strong><ul><li>M5 price action is dumping.</li><li>Move is extended enough to invite chase risk.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_1766566b455d4c70 | 2026-08-31T21:00:05Z | waiting for horizons</div>
+      <div class="outcomes">call card sb_1766566b455d4c70 | 2026-08-31T21:00:05Z | <span class="win">15m -62.3% / +$62</span></div>
     </article>
     
 
@@ -336,7 +725,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_838cae3211044365 | 2026-08-31T21:00:04Z | waiting for horizons</div>
+      <div class="outcomes">call card sb_838cae3211044365 | 2026-08-31T21:00:04Z | <span class="loss">15m -78.5% / -$78</span></div>
     </article>
     
 
@@ -358,7 +747,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li><li>M5 activity is expanding versus H1 pace.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Move is extended enough to invite chase risk.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_606c0615cfb24942 | 2026-08-31T21:00:04Z | waiting for horizons</div>
+      <div class="outcomes">call card sb_606c0615cfb24942 | 2026-08-31T21:00:04Z | <span class="win">15m -63.7% / +$64</span></div>
     </article>
     
 
@@ -380,7 +769,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li><li>H1 price momentum is positive.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li><li>Move is extended enough to invite chase risk.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_fc9b5af87e00428e | 2026-08-31T20:45:04Z | waiting for horizons</div>
+      <div class="outcomes">call card sb_fc9b5af87e00428e | 2026-08-31T20:45:04Z | <span class="loss">15m +22.3% / -$22</span></div>
     </article>
     
 
@@ -402,7 +791,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li><li>H1 price action is breaking down.</li><li>M5 price action is dumping.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_8440194c2f2b4a1d | 2026-08-31T20:45:04Z | waiting for horizons</div>
+      <div class="outcomes">call card sb_8440194c2f2b4a1d | 2026-08-31T20:45:04Z | <span class="win">15m -66.2% / +$66</span></div>
     </article>
     
 
@@ -424,7 +813,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 tape is buyer-dominant.</li><li>Recent tape is still bidding.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Move is extended enough to invite chase risk.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_a47bbdb9a5674a48 | 2026-08-31T20:45:04Z | waiting for horizons</div>
+      <div class="outcomes">call card sb_a47bbdb9a5674a48 | 2026-08-31T20:45:04Z | <span class="win">15m -97.8% / +$98</span></div>
     </article>
     
 
@@ -446,7 +835,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li><li>M5 activity is expanding versus H1 pace.</li></ul></div>
         <div><strong>Risk</strong><ul><li>M5 price action is dumping.</li><li>Move is extended enough to invite chase risk.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_ed02b952ec8444c5 | 2026-08-31T20:45:04Z | waiting for horizons</div>
+      <div class="outcomes">call card sb_ed02b952ec8444c5 | 2026-08-31T20:45:04Z | <span class="win">15m -94.7% / +$95</span></div>
     </article>
     
 
@@ -468,7 +857,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li><li>M5 activity is expanding versus H1 pace.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_d676d575d02f4df9 | 2026-08-31T20:45:04Z | waiting for horizons</div>
+      <div class="outcomes">call card sb_d676d575d02f4df9 | 2026-08-31T20:45:04Z | <span class="loss">15m -90.4% / -$90</span></div>
     </article>
     
 
@@ -490,7 +879,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>Recent tape is still bidding.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li><li>Move is extended enough to invite chase risk.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_3ce8fb6fb54d4b9e | 2026-08-31T20:45:04Z | waiting for horizons</div>
+      <div class="outcomes">call card sb_3ce8fb6fb54d4b9e | 2026-08-31T20:45:04Z | <span class="loss">15m +45.1% / -$45</span></div>
     </article>
     
 
@@ -512,7 +901,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>Recent tape is still bidding.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_a7146dcf1efb41ad | 2026-08-31T20:45:04Z | waiting for horizons</div>
+      <div class="outcomes">call card sb_a7146dcf1efb41ad | 2026-08-31T20:45:04Z | <span class="loss">15m -57.2% / -$57</span></div>
     </article>
     
 
@@ -534,7 +923,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 tape is buyer-dominant.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_e8fcf43d369f4b2b | 2026-08-31T20:45:04Z | waiting for horizons</div>
+      <div class="outcomes">call card sb_e8fcf43d369f4b2b | 2026-08-31T20:45:04Z | <span class="win">15m +15.7% / +$16</span></div>
     </article>
     
 
@@ -732,7 +1121,7 @@
         <div><strong>Why</strong><ul><li>Liquidity can absorb a modest trade.</li><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Move is extended enough to invite chase risk.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_161c2b5ff68f4b22 | 2026-08-31T20:15:05Z | <span class="win">15m -35.9% / +$36</span></div>
+      <div class="outcomes">call card sb_161c2b5ff68f4b22 | 2026-08-31T20:15:05Z | <span class="win">15m -35.9% / +$36</span> | <span class="win">1h -40.0% / +$40</span></div>
     </article>
     
 
@@ -754,7 +1143,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li><li>H1 price momentum is positive.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Recent tape has flipped sell-heavy.</li><li>Move is extended enough to invite chase risk.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_5097c00bb0a64fe2 | 2026-08-31T20:15:05Z | <span class="win">15m -36.3% / +$36</span></div>
+      <div class="outcomes">call card sb_5097c00bb0a64fe2 | 2026-08-31T20:15:05Z | <span class="win">15m -36.3% / +$36</span> | <span class="win">1h -42.2% / +$42</span></div>
     </article>
     
 
@@ -776,7 +1165,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>Recent tape is still bidding.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_debe6eba192d4540 | 2026-08-31T20:15:05Z | <span class="win">15m +49.4% / +$49</span></div>
+      <div class="outcomes">call card sb_debe6eba192d4540 | 2026-08-31T20:15:05Z | <span class="win">15m +49.4% / +$49</span> | <span class="loss">1h -79.8% / -$80</span></div>
     </article>
     
 
@@ -798,7 +1187,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Liquidity is extremely thin.</li><li>Recent tape has flipped sell-heavy.</li><li>H1 price action is breaking down.</li><li>M5 price action is dumping.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_c930bda9b1d34737 | 2026-08-31T20:15:04Z | <span class="loss">15m +0.7% / -$1</span></div>
+      <div class="outcomes">call card sb_c930bda9b1d34737 | 2026-08-31T20:15:04Z | <span class="loss">15m +0.7% / -$1</span> | <span class="loss">1h +3.2% / -$3</span></div>
     </article>
     
 
@@ -820,7 +1209,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>Recent tape is still bidding.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Move is extended enough to invite chase risk.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_64ca8670f41d41d2 | 2026-08-31T20:15:04Z | <span class="win">15m -25.2% / +$25</span></div>
+      <div class="outcomes">call card sb_64ca8670f41d41d2 | 2026-08-31T20:15:04Z | <span class="win">15m -25.2% / +$25</span> | <span class="win">1h -51.4% / +$51</span></div>
     </article>
     
 
@@ -842,7 +1231,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 tape is buyer-dominant.</li><li>Recent tape is still bidding.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li><li>Move is extended enough to invite chase risk.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_46880a2176254a54 | 2026-08-31T20:15:04Z | <span class="loss">15m +139.4% / -$139</span></div>
+      <div class="outcomes">call card sb_46880a2176254a54 | 2026-08-31T20:15:04Z | <span class="loss">15m +139.4% / -$139</span> | <span class="loss">1h +375.8% / -$376</span></div>
     </article>
     
 
@@ -864,7 +1253,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li><li>H1 price momentum is positive.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li><li>Move is extended enough to invite chase risk.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_a76dd28ffc81461c | 2026-08-31T20:15:04Z | <span class="win">15m -6.9% / +$7</span></div>
+      <div class="outcomes">call card sb_a76dd28ffc81461c | 2026-08-31T20:15:04Z | <span class="win">15m -6.9% / +$7</span> | <span class="win">1h -74.1% / +$74</span></div>
     </article>
     
 
@@ -886,7 +1275,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li><li>M5 activity is expanding versus H1 pace.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_c53c95a5c9f64388 | 2026-08-31T20:15:04Z | <span class="loss">15m -80.8% / -$81</span></div>
+      <div class="outcomes">call card sb_c53c95a5c9f64388 | 2026-08-31T20:15:04Z | <span class="loss">15m -80.8% / -$81</span> | <span class="loss">1h -85.0% / -$85</span></div>
     </article>
     
 
@@ -908,7 +1297,7 @@
         <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li><li>H1 price action is breaking down.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_5df8ebdd905744c2 | 2026-08-31T20:00:04Z | <span class="win">15m +13.7% / +$14</span></div>
+      <div class="outcomes">call card sb_5df8ebdd905744c2 | 2026-08-31T20:00:04Z | <span class="win">15m +13.7% / +$14</span> | <span class="loss">1h -36.2% / -$36</span></div>
     </article>
     
 
@@ -930,359 +1319,7 @@
         <div><strong>Why</strong><ul><li>Liquidity can absorb a modest trade.</li><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
         <div><strong>Risk</strong><ul><li>Move is extended enough to invite chase risk.</li></ul></div>
       </div>
-      <div class="outcomes">call card sb_2c16f78ae5d84c6e | 2026-08-31T20:00:04Z | <span class="loss">15m +86.1% / -$86</span></div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/robinhood/0xaf68e7fe1f374221e29c51b186678538f5e2cecdb17565cbd1e8985708eb56e3">SUPERCYCLE/ETH</a></div>
-          <div class="addr">0x81DfC566240310f20D6FDB91B34eD312d2453250</div>
-        </div>
-        <span class="badge rug-risk">RUG RISK</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>confidence</span><b>94</b></div>
-        <div class="kv"><span>price</span><b>$8.276e-05</b></div>
-        <div class="kv"><span>liquidity</span><b>$26.5K</b></div>
-        <div class="kv"><span>max sane size</span><b>$0</b></div>
-      </div>
-      <div class="lists">
-        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li><li>M5 activity is expanding versus H1 pace.</li></ul></div>
-        <div><strong>Risk</strong><ul><li>M5 price action is dumping.</li></ul></div>
-      </div>
-      <div class="outcomes">call card sb_901cfb710ce74cec | 2026-08-31T20:00:04Z | <span class="win">15m -10.6% / +$11</span></div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/robinhood/0xf89f35ce54d4ada45f3609009de05f6b1c3debf15e3e18cb6a8a5089f1b4090d">BROKER/SPY</a></div>
-          <div class="addr">0xe0786473Be4Dba3f96bc4D5f9d251D081f8d0161</div>
-        </div>
-        <span class="badge early">EARLY</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>confidence</span><b>94</b></div>
-        <div class="kv"><span>price</span><b>$2.576e-05</b></div>
-        <div class="kv"><span>liquidity</span><b>$13.1K</b></div>
-        <div class="kv"><span>max sane size</span><b>$44</b></div>
-      </div>
-      <div class="lists">
-        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
-        <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li><li>H1 price action is breaking down.</li></ul></div>
-      </div>
-      <div class="outcomes">call card sb_658dc51dc80b4c48 | 2026-08-31T20:00:04Z | <span class="loss">15m -5.9% / -$6</span></div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/solana/glsehp6ckxcvmas4yvuodkjzaics1cmxmape5oevcw1g">GPRO/SOL</a></div>
-          <div class="addr">7TqH1d4Vf9QG587vB99Q7ewFQPoxSYqBDxSAzBpBpump</div>
-        </div>
-        <span class="badge early">EARLY</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>confidence</span><b>94</b></div>
-        <div class="kv"><span>price</span><b>$0.0001188</b></div>
-        <div class="kv"><span>liquidity</span><b>$27.9K</b></div>
-        <div class="kv"><span>max sane size</span><b>$334</b></div>
-      </div>
-      <div class="lists">
-        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 tape is buyer-dominant.</li><li>Recent tape is still bidding.</li></ul></div>
-        <div><strong>Risk</strong><ul><li>Wallet concentration and social-identity data are not wired yet.</li></ul></div>
-      </div>
-      <div class="outcomes">call card sb_3219c71c1acf4142 | 2026-08-31T20:00:04Z | <span class="loss">15m -98.3% / -$98</span></div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/robinhood/0x1684d2d3fd510dfbf60a3899fa948da695b481ab4796ae28176df2f675a3e269">WYFI/Rabbit</a></div>
-          <div class="addr">0x9e7ABD3C9139D14E4c86DcE0e455AAB7A0C2FB3E</div>
-        </div>
-        <span class="badge chase">CHASE</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>confidence</span><b>94</b></div>
-        <div class="kv"><span>price</span><b>$488.01</b></div>
-        <div class="kv"><span>liquidity</span><b>$881.4K</b></div>
-        <div class="kv"><span>max sane size</span><b>$1.5K</b></div>
-      </div>
-      <div class="lists">
-        <div><strong>Why</strong><ul><li>Liquidity can absorb a modest trade.</li><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
-        <div><strong>Risk</strong><ul><li>Move is extended enough to invite chase risk.</li></ul></div>
-      </div>
-      <div class="outcomes">call card sb_d342f4c39b8b46ee | 2026-08-31T20:00:04Z | <span class="win">15m -92.2% / +$92</span></div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/robinhood/0x2f71a0c969ed55abfb7ff1e26072e2122d5cc9a9f84386021f0530b34038ea2f">RH4/ETH</a></div>
-          <div class="addr">0xe76a12bcd2f0E6d3db9F9012321642198E6cBd1B</div>
-        </div>
-        <span class="badge chase">CHASE</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>confidence</span><b>94</b></div>
-        <div class="kv"><span>price</span><b>$0.0002157</b></div>
-        <div class="kv"><span>liquidity</span><b>$42.8K</b></div>
-        <div class="kv"><span>max sane size</span><b>$171</b></div>
-      </div>
-      <div class="lists">
-        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>Recent tape is still bidding.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
-        <div><strong>Risk</strong><ul><li>Move is extended enough to invite chase risk.</li></ul></div>
-      </div>
-      <div class="outcomes">call card sb_d07b71434b0641bd | 2026-08-31T20:00:04Z | <span class="loss">15m +36.8% / -$37</span></div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/hyperevm/0x108e75a1f4181dc3ae41d8b860eb4d537c4ad86a">TERMINAL/WHYPE</a></div>
-          <div class="addr">0x67760a8b6410726B4975efb88A201A21ae33d55F</div>
-        </div>
-        <span class="badge chase">CHASE</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>confidence</span><b>94</b></div>
-        <div class="kv"><span>price</span><b>$1.861e-05</b></div>
-        <div class="kv"><span>liquidity</span><b>$12.6K</b></div>
-        <div class="kv"><span>max sane size</span><b>$33</b></div>
-      </div>
-      <div class="lists">
-        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 tape is buyer-dominant.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
-        <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li><li>Move is extended enough to invite chase risk.</li></ul></div>
-      </div>
-      <div class="outcomes">call card sb_2ad82bce36344b5b | 2026-08-31T20:00:04Z | <span class="loss">15m +159.0% / -$159</span></div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/robinhood/0xed178f4e4cdb106e0beb2357062d108f60a02d162197a76490879aea37579aeb">FLIP/ETH</a></div>
-          <div class="addr">0x32cEe73F35b2395DD6F833Fc51313691149FFead</div>
-        </div>
-        <span class="badge rug-risk">RUG RISK</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>confidence</span><b>82</b></div>
-        <div class="kv"><span>price</span><b>$3.641e-06</b></div>
-        <div class="kv"><span>liquidity</span><b>$5.6K</b></div>
-        <div class="kv"><span>max sane size</span><b>$0</b></div>
-      </div>
-      <div class="lists">
-        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
-        <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li><li>H1 price action is breaking down.</li></ul></div>
-      </div>
-      <div class="outcomes">call card sb_ea20aeb4da79483b | 2026-08-31T19:45:04Z | <span class="win">15m -10.8% / +$11</span> | <span class="win">1h -11.9% / +$12</span></div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/solana/fqffa52ibx2ht54sxswzy6ere1vh8bgflylsrwvhxxci">APES/SOL</a></div>
-          <div class="addr">EdVa9bXZrkqrjzej5hVb2fK6SR6NhdruWDyMFhVTpump</div>
-        </div>
-        <span class="badge early">EARLY</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>confidence</span><b>94</b></div>
-        <div class="kv"><span>price</span><b>$9.46e-05</b></div>
-        <div class="kv"><span>liquidity</span><b>$24.5K</b></div>
-        <div class="kv"><span>max sane size</span><b>$108</b></div>
-      </div>
-      <div class="lists">
-        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 tape is buyer-dominant.</li><li>Recent tape is still bidding.</li></ul></div>
-        <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li></ul></div>
-      </div>
-      <div class="outcomes">call card sb_1bff1e0641f64729 | 2026-08-31T19:45:04Z | <span class="loss">15m -97.6% / -$98</span> | <span class="loss">1h -97.6% / -$98</span></div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/solana/96kpgyuwe2dugbwgzed2qid6ee52k2uqhvssprydjucw">$CRACK/SOL</a></div>
-          <div class="addr">7R9jy4cWTt65qT6Qwzkg8bJoYfFZT29Kp88uF2Pppump</div>
-        </div>
-        <span class="badge early">EARLY</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>confidence</span><b>94</b></div>
-        <div class="kv"><span>price</span><b>$4.996e-05</b></div>
-        <div class="kv"><span>liquidity</span><b>$17.7K</b></div>
-        <div class="kv"><span>max sane size</span><b>$213</b></div>
-      </div>
-      <div class="lists">
-        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 tape is buyer-dominant.</li><li>Recent tape is still bidding.</li></ul></div>
-        <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li><li>M5 price action is dumping.</li></ul></div>
-      </div>
-      <div class="outcomes">call card sb_50e8409713984598 | 2026-08-31T19:45:04Z | <span class="loss">15m -95.4% / -$95</span> | <span class="loss">1h -95.5% / -$96</span></div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/robinhood/0xf2237262463ebc0e48cb4e2373709a5cdf7e568de6ee9ce3d41098d52c0c6cf0">MHARD/MSFT</a></div>
-          <div class="addr">0x4c1B7948b49A064Aed793CE82f392d86c2c31e18</div>
-        </div>
-        <span class="badge rug-risk">RUG RISK</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>confidence</span><b>89</b></div>
-        <div class="kv"><span>price</span><b>$3.77e-05</b></div>
-        <div class="kv"><span>liquidity</span><b>$35.8K</b></div>
-        <div class="kv"><span>max sane size</span><b>$0</b></div>
-      </div>
-      <div class="lists">
-        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li><li>H1 price momentum is positive.</li></ul></div>
-        <div><strong>Risk</strong><ul><li>M5 price action is dumping.</li><li>Price is up while the H1 tape is no longer supporting it.</li></ul></div>
-      </div>
-      <div class="outcomes">call card sb_5345661ad83047f3 | 2026-08-31T19:45:04Z | <span class="win">15m -36.3% / +$36</span> | <span class="win">1h -41.6% / +$42</span></div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/robinhood/0xf93f7e3b483a563b9f9f94937b7ad405ad68c6cc5c2fc0d240e0015c0dc3fa8a">MONS/ETH</a></div>
-          <div class="addr">0x866C71fBA955dA85e9dB757860139c85F8337093</div>
-        </div>
-        <span class="badge rug-risk">RUG RISK</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>confidence</span><b>85</b></div>
-        <div class="kv"><span>price</span><b>$1.999e-05</b></div>
-        <div class="kv"><span>liquidity</span><b>$13.1K</b></div>
-        <div class="kv"><span>max sane size</span><b>$0</b></div>
-      </div>
-      <div class="lists">
-        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
-        <div><strong>Risk</strong><ul><li>Liquidity is thin enough for poor exits.</li><li>H1 price action is breaking down.</li><li>M5 price action is dumping.</li></ul></div>
-      </div>
-      <div class="outcomes">call card sb_f02fbf4dd586431f | 2026-08-31T19:45:04Z | <span class="loss">15m +32.4% / -$32</span> | <span class="loss">1h +9.3% / -$9</span></div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/robinhood/0x616781a9cb90618976fa3856a52987501b2025eee1a640bfc0166554e2ebc648">LMEOW/ETH</a></div>
-          <div class="addr">0xb3c5C78593296CD05472e0b77E10f6057BC3A5D9</div>
-        </div>
-        <span class="badge chase">CHASE</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>confidence</span><b>94</b></div>
-        <div class="kv"><span>price</span><b>$0.0008169</b></div>
-        <div class="kv"><span>liquidity</span><b>$83.4K</b></div>
-        <div class="kv"><span>max sane size</span><b>$334</b></div>
-      </div>
-      <div class="lists">
-        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li></ul></div>
-        <div><strong>Risk</strong><ul><li>Move is extended enough to invite chase risk.</li></ul></div>
-      </div>
-      <div class="outcomes">call card sb_3e0a388648894939 | 2026-08-31T19:45:03Z | <span class="win">15m -56.3% / +$56</span> | <span class="win">1h -62.5% / +$63</span></div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/robinhood/0xcedfb1a20f20b3c1d274c9e83fdbf626f50f358adefe2e7a8c0a47e46023168a">KATANA/ETH</a></div>
-          <div class="addr">0x48760f0658160161c2A1816bA3C3a3e4dF0FE152</div>
-        </div>
-        <span class="badge chase">CHASE</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>confidence</span><b>94</b></div>
-        <div class="kv"><span>price</span><b>$0.0001992</b></div>
-        <div class="kv"><span>liquidity</span><b>$41.2K</b></div>
-        <div class="kv"><span>max sane size</span><b>$50</b></div>
-      </div>
-      <div class="lists">
-        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li><li>M5 activity is expanding versus H1 pace.</li></ul></div>
-        <div><strong>Risk</strong><ul><li>Move is extended enough to invite chase risk.</li></ul></div>
-      </div>
-      <div class="outcomes">call card sb_4b7f2d6ca9ea44c2 | 2026-08-31T19:45:03Z | <span class="win">15m -17.1% / +$17</span> | <span class="loss">1h +118.6% / -$119</span></div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/solana/dndkdgf5sceu6buozegfettvj7pk7gfgcvxjfofpkxch">UNKNOWN/SOL</a></div>
-          <div class="addr">Crgaipo96DSH4UVHBYqvksVkXox7fSCtQd8ZXw1Gpump</div>
-        </div>
-        <span class="badge chase">CHASE</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>confidence</span><b>94</b></div>
-        <div class="kv"><span>price</span><b>$0.0002557</b></div>
-        <div class="kv"><span>liquidity</span><b>$42.3K</b></div>
-        <div class="kv"><span>max sane size</span><b>$169</b></div>
-      </div>
-      <div class="lists">
-        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li><li>M5 activity is expanding versus H1 pace.</li></ul></div>
-        <div><strong>Risk</strong><ul><li>M5 price action is dumping.</li><li>Move is extended enough to invite chase risk.</li></ul></div>
-      </div>
-      <div class="outcomes">call card sb_9b396ffa934540b6 | 2026-08-31T19:45:03Z | <span class="win">15m -98.5% / +$98</span> | <span class="win">1h -98.8% / +$99</span></div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/robinhood/0xbadb566271d67d9c31a2763d5e174a997c5c25ce6c2154e50f8f57ae7ab152a0">ARCADS/ETH</a></div>
-          <div class="addr">0x8eC575649f729b570181213E5f0290789C5cd275</div>
-        </div>
-        <span class="badge chase">CHASE</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>confidence</span><b>90</b></div>
-        <div class="kv"><span>price</span><b>$0.0003599</b></div>
-        <div class="kv"><span>liquidity</span><b>$55.4K</b></div>
-        <div class="kv"><span>max sane size</span><b>$222</b></div>
-      </div>
-      <div class="lists">
-        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li><li>M5 activity is expanding versus H1 pace.</li></ul></div>
-        <div><strong>Risk</strong><ul><li>Move is extended enough to invite chase risk.</li><li>Price is up while the H1 tape is no longer supporting it.</li></ul></div>
-      </div>
-      <div class="outcomes">call card sb_b275f042421c4561 | 2026-08-31T19:30:05Z | <span class="win">15m -72.0% / +$72</span> | <span class="win">1h -51.4% / +$51</span></div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/robinhood/0x681d58ebaaf47dcd549d0448291669aec4f621fcf793ef0ecaa10c77b9a97003">PONZED/ETH</a></div>
-          <div class="addr">0xB36F11dB0736C8eacE05DA10979afb030ad093Bf</div>
-        </div>
-        <span class="badge early">EARLY</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>confidence</span><b>94</b></div>
-        <div class="kv"><span>price</span><b>$9.645e-05</b></div>
-        <div class="kv"><span>liquidity</span><b>$28.7K</b></div>
-        <div class="kv"><span>max sane size</span><b>$344</b></div>
-      </div>
-      <div class="lists">
-        <div><strong>Why</strong><ul><li>Liquidity depth is healthy for the quoted market cap.</li><li>Pair is still early.</li><li>H1 volume is accelerating versus the 24h baseline.</li><li>H1 price momentum is positive.</li></ul></div>
-        <div><strong>Risk</strong><ul><li>M5 price action is dumping.</li></ul></div>
-      </div>
-      <div class="outcomes">call card sb_b6bbba8a3ff3430a | 2026-08-31T19:30:05Z | <span class="loss">15m -50.6% / -$51</span> | <span class="loss">1h -38.4% / -$38</span></div>
+      <div class="outcomes">call card sb_2c16f78ae5d84c6e | 2026-08-31T20:00:04Z | <span class="loss">15m +86.1% / -$86</span> | <span class="win">1h -27.8% / +$28</span></div>
     </article>
     
       </section>
