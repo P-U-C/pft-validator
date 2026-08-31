@@ -22,7 +22,7 @@
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      background: radial-gradient(circle at top left, rgba(89, 215, 245, 0.09), transparent 34%), var(--bg);
+      background: var(--bg);
       color: var(--text);
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
       line-height: 1.42;
@@ -133,31 +133,31 @@
     <header>
       <div>
         <h1>Memesters Daily Tape</h1>
-        <p class="sub">Daily FOMO-style wins, player PnL, and live meme-market calls. The scoreboard follows realized event data first and treats token scans as secondary market telemetry.</p>
+        <p class="sub">Daily FOMO-style wins, player PnL, and live meme-market calls. The scoreboard uses the latest FOMO 24h leaderboard when available, then event-level PnL rows, with token scans only as secondary market telemetry.</p>
       </div>
       <div class="stamp"><b>2026-08-31 UTC</b>latest event: none today</div>
     </header>
 
     <div class="metrics" aria-label="daily scoreboard totals">
-      <div class="metric"><b class="positive">+$0</b><span>daily net PnL</span><small>from FOMO event rows</small></div>
+      <div class="metric"><b class="neutral">$0</b><span>daily net PnL</span><small>pending FOMO source</small></div>
       <div class="metric"><b>0/0</b><span>daily record</span><small>0 scored events</small></div>
       <div class="metric"><b>-</b><span>win rate</span><small>realized PnL only</small></div>
       <div class="metric"><b>0</b><span>players</span><small>0 tokens touched</small></div>
       <div class="metric"><b>$0</b><span>tracked volume</span><small>0 FOMO events today</small></div>
-      <div class="metric"><b class="pending">pending</b><span>source</span><small>set FOMO_API_TOKEN and FOMO_API_TRADES_PATH</small></div>
+      <div class="metric"><b class="pending">pending</b><span>source</span><small>set FOMO_API_TOKEN for leaderboard sync</small></div>
     </div>
 
     <div class="rail" aria-label="live operating loop">
-      <div><span>daily loop</span><b>FOMO events -> player PnL -> public board</b></div>
-      <div><span>live calls 24h</span><b>41</b></div>
-      <div><span>scanner receipts</span><b>642</b></div>
+      <div><span>daily loop</span><b>FOMO 24h board -> player PnL -> public page</b></div>
+      <div><span>live calls 24h</span><b>49</b></div>
+      <div><span>scanner receipts</span><b>650</b></div>
       <div><span>publish cadence</span><b>hourly public page</b></div>
     </div>
 
     <div class="grid">
       <section>
         <h2>Daily Winners</h2>
-        <div class="empty">No FOMO PnL events for this UTC date. Connect the authenticated FOMO event endpoint or import a FOMO JSON/CSV export.</div>
+        <div class="empty">No FOMO leaderboard snapshot or PnL events yet. Connect the authenticated FOMO API or import a FOMO JSON/CSV export.</div>
       </section>
       <section>
         <h2>Fast Feed</h2>
@@ -168,6 +168,174 @@
     <section style="margin-top: 18px;">
       <h2>Live Call Telemetry</h2>
       
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/robinhood/0x99bee9609d4e678d55b835561b9700dd7e6c33594453f92836046b98c0b81835">GREEN/ETH</a></div>
+          <div class="addr">0x244088DD04c7875449F90762A4617ad290FeBe4d</div>
+          <div class="addr policy-line">
+            <span class="badge chase">CHASE</span>
+            <span>AVOID / 4h / policy-approved live mapping; verify edge against daily FOMO events</span>
+          </div>
+        </div>
+        <span class="badge chase">LIVE</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>price</span><b>$0.0002091</b></div>
+        <div class="kv"><span>liquidity</span><b>$42.2K</b></div>
+        <div class="kv"><span>max live size</span><b>$0</b></div>
+      </div>
+      <div class="outcomes">call sb_c6ebe16087414369 | 2026-08-31T22:15:05Z | waiting for market horizon</div>
+    </article>
+    
+
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/robinhood/0x6888d967c7d13066e55a28f054f3c3bc45762d81ed048ef561dffc42384df3d2">CACHE/ETH</a></div>
+          <div class="addr">0xce09140499936f0d3811E27119ECedE913441292</div>
+          <div class="addr policy-line">
+            <span class="badge chase">CHASE</span>
+            <span>AVOID / 4h / policy-approved live mapping; verify edge against daily FOMO events</span>
+          </div>
+        </div>
+        <span class="badge chase">LIVE</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>price</span><b>$0.001178</b></div>
+        <div class="kv"><span>liquidity</span><b>$43.3K</b></div>
+        <div class="kv"><span>max live size</span><b>$0</b></div>
+      </div>
+      <div class="outcomes">call sb_2a6b62260eeb457e | 2026-08-31T22:15:05Z | waiting for market horizon</div>
+    </article>
+    
+
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/solana/4nzgcqlahwm4wqwbucczatt9oudem5bk2qttnf7sac9v">ZCANINE/ZEC</a></div>
+          <div class="addr">ARCgUGPo7sfURhLdtuvGju61DLi8DYAyy4v1TCBu5C8G</div>
+          <div class="addr policy-line">
+            <span class="badge early">EARLY</span>
+            <span>BUY / 1h / policy-approved live mapping; verify edge against daily FOMO events</span>
+          </div>
+        </div>
+        <span class="badge early">LIVE</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>price</span><b>$5.487e-06</b></div>
+        <div class="kv"><span>liquidity</span><b>$5.4K</b></div>
+        <div class="kv"><span>max live size</span><b>$25</b></div>
+      </div>
+      <div class="outcomes">call sb_0a93d01c08b34b61 | 2026-08-31T22:15:05Z | waiting for market horizon</div>
+    </article>
+    
+
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/robinhood/0xd7796f0ebff56767aea38a6af9e6a316be9bf9ea0162ff234cee51b4a2c73780">GPS/ASTS</a></div>
+          <div class="addr">0xD9B39Dc4af8EDFC736Df6A44Eaecb4c15aC91Db9</div>
+          <div class="addr policy-line">
+            <span class="badge chase">CHASE</span>
+            <span>AVOID / 4h / policy-approved live mapping; verify edge against daily FOMO events</span>
+          </div>
+        </div>
+        <span class="badge chase">LIVE</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>price</span><b>$0.0002153</b></div>
+        <div class="kv"><span>liquidity</span><b>$106.1K</b></div>
+        <div class="kv"><span>max live size</span><b>$0</b></div>
+      </div>
+      <div class="outcomes">call sb_f71685dea548467b | 2026-08-31T22:15:05Z | waiting for market horizon</div>
+    </article>
+    
+
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/robinhood/0x58b2a1c5955e048c378e957799a415ec404248c5341c91df3e4e7b2c089d5fad">COUPONS/ETH</a></div>
+          <div class="addr">0xb041bddFBA01cbd257c450C84c4c347962d08f97</div>
+          <div class="addr policy-line">
+            <span class="badge early">EARLY</span>
+            <span>BUY / 1h / policy-approved live mapping; verify edge against daily FOMO events</span>
+          </div>
+        </div>
+        <span class="badge early">LIVE</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>price</span><b>$3.112e-05</b></div>
+        <div class="kv"><span>liquidity</span><b>$16.3K</b></div>
+        <div class="kv"><span>max live size</span><b>$134</b></div>
+      </div>
+      <div class="outcomes">call sb_f3c66dd679c440b8 | 2026-08-31T22:15:05Z | waiting for market horizon</div>
+    </article>
+    
+
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/solana/46s4arwk84vob72971nrgndquih2d5jcedwdxqqubwzn">Lab/SOL</a></div>
+          <div class="addr">BQ35D3VGZ64Hu2myfhY4aNRoJuTV8m6vMQQkZJXTpump</div>
+          <div class="addr policy-line">
+            <span class="badge rug-risk">RUG RISK</span>
+            <span>AVOID / 4h / policy-approved live mapping; verify edge against daily FOMO events</span>
+          </div>
+        </div>
+        <span class="badge rug-risk">LIVE</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>price</span><b>$3.381e-06</b></div>
+        <div class="kv"><span>liquidity</span><b>$3.1K</b></div>
+        <div class="kv"><span>max live size</span><b>$0</b></div>
+      </div>
+      <div class="outcomes">call sb_a0466cd9a5534a4e | 2026-08-31T22:15:05Z | waiting for market horizon</div>
+    </article>
+    
+
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/robinhood/0x851957a8dce486ac45b1434a8568b4e3764fcfcbab18dbca1a0f2ee1731463b2">HUBRIS/ETH</a></div>
+          <div class="addr">0xb27339261475ef2724095F166B46E34223B13489</div>
+          <div class="addr policy-line">
+            <span class="badge chase">CHASE</span>
+            <span>AVOID / 4h / policy-approved live mapping; verify edge against daily FOMO events</span>
+          </div>
+        </div>
+        <span class="badge chase">LIVE</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>price</span><b>$0.0001159</b></div>
+        <div class="kv"><span>liquidity</span><b>$31.4K</b></div>
+        <div class="kv"><span>max live size</span><b>$0</b></div>
+      </div>
+      <div class="outcomes">call sb_479093fa1cfd4632 | 2026-08-31T22:15:05Z | waiting for market horizon</div>
+    </article>
+    
+
+    <article class="receipt">
+      <div class="receipt-head">
+        <div>
+          <div class="pair"><a href="https://dexscreener.com/pulsechain/0xc8564d9b338a0011e6eb1d090f423de030267419">KISHKA/WPLS</a></div>
+          <div class="addr">0xA0AD1c79EdDDa5a9022a0A6976bEFC7300Bd6f72</div>
+          <div class="addr policy-line">
+            <span class="badge early">EARLY</span>
+            <span>BUY / 1h / policy-approved live mapping; verify edge against daily FOMO events</span>
+          </div>
+        </div>
+        <span class="badge early">LIVE</span>
+      </div>
+      <div class="receipt-grid">
+        <div class="kv"><span>price</span><b>$2.139e-05</b></div>
+        <div class="kv"><span>liquidity</span><b>$6.4K</b></div>
+        <div class="kv"><span>max live size</span><b>$76</b></div>
+      </div>
+      <div class="outcomes">call sb_cf2b1ed9bfae4872 | 2026-08-31T22:15:05Z | waiting for market horizon</div>
+    </article>
+    
+
     <article class="receipt">
       <div class="receipt-head">
         <div>
@@ -207,174 +375,6 @@
         <div class="kv"><span>max live size</span><b>$68</b></div>
       </div>
       <div class="outcomes">call sb_ee28022f79ef4078 | 2026-08-31T22:00:07Z | waiting for market horizon</div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/robinhood/0x6888d967c7d13066e55a28f054f3c3bc45762d81ed048ef561dffc42384df3d2">CACHE/ETH</a></div>
-          <div class="addr">0xce09140499936f0d3811E27119ECedE913441292</div>
-          <div class="addr policy-line">
-            <span class="badge early">EARLY</span>
-            <span>BUY / 1h / policy-approved live mapping; verify edge against daily FOMO events</span>
-          </div>
-        </div>
-        <span class="badge early">LIVE</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>price</span><b>$0.0009288</b></div>
-        <div class="kv"><span>liquidity</span><b>$39.3K</b></div>
-        <div class="kv"><span>max live size</span><b>$211</b></div>
-      </div>
-      <div class="outcomes">call sb_827f4d8600e74a75 | 2026-08-31T22:00:06Z | waiting for market horizon</div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/solana/4nzgcqlahwm4wqwbucczatt9oudem5bk2qttnf7sac9v">ZCANINE/ZEC</a></div>
-          <div class="addr">ARCgUGPo7sfURhLdtuvGju61DLi8DYAyy4v1TCBu5C8G</div>
-          <div class="addr policy-line">
-            <span class="badge early">EARLY</span>
-            <span>BUY / 1h / policy-approved live mapping; verify edge against daily FOMO events</span>
-          </div>
-        </div>
-        <span class="badge early">LIVE</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>price</span><b>$6.273e-06</b></div>
-        <div class="kv"><span>liquidity</span><b>$6.2K</b></div>
-        <div class="kv"><span>max live size</span><b>$25</b></div>
-      </div>
-      <div class="outcomes">call sb_8aa9df7e9e8d4276 | 2026-08-31T22:00:06Z | waiting for market horizon</div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/robinhood/0xd7796f0ebff56767aea38a6af9e6a316be9bf9ea0162ff234cee51b4a2c73780">GPS/ASTS</a></div>
-          <div class="addr">0xD9B39Dc4af8EDFC736Df6A44Eaecb4c15aC91Db9</div>
-          <div class="addr policy-line">
-            <span class="badge chase">CHASE</span>
-            <span>AVOID / 4h / policy-approved live mapping; verify edge against daily FOMO events</span>
-          </div>
-        </div>
-        <span class="badge chase">LIVE</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>price</span><b>$4.205e-05</b></div>
-        <div class="kv"><span>liquidity</span><b>$31.3K</b></div>
-        <div class="kv"><span>max live size</span><b>$0</b></div>
-      </div>
-      <div class="outcomes">call sb_5a3b5a4bce71409e | 2026-08-31T22:00:06Z | waiting for market horizon</div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/robinhood/0x58b2a1c5955e048c378e957799a415ec404248c5341c91df3e4e7b2c089d5fad">COUPONS/ETH</a></div>
-          <div class="addr">0xb041bddFBA01cbd257c450C84c4c347962d08f97</div>
-          <div class="addr policy-line">
-            <span class="badge early">EARLY</span>
-            <span>BUY / 1h / policy-approved live mapping; verify edge against daily FOMO events</span>
-          </div>
-        </div>
-        <span class="badge early">LIVE</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>price</span><b>$3.632e-05</b></div>
-        <div class="kv"><span>liquidity</span><b>$17.6K</b></div>
-        <div class="kv"><span>max live size</span><b>$99</b></div>
-      </div>
-      <div class="outcomes">call sb_eb3c06667bac4328 | 2026-08-31T22:00:06Z | waiting for market horizon</div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/solana/46s4arwk84vob72971nrgndquih2d5jcedwdxqqubwzn">Lab/SOL</a></div>
-          <div class="addr">BQ35D3VGZ64Hu2myfhY4aNRoJuTV8m6vMQQkZJXTpump</div>
-          <div class="addr policy-line">
-            <span class="badge rug-risk">RUG RISK</span>
-            <span>AVOID / 4h / policy-approved live mapping; verify edge against daily FOMO events</span>
-          </div>
-        </div>
-        <span class="badge rug-risk">LIVE</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>price</span><b>$1.78e-05</b></div>
-        <div class="kv"><span>liquidity</span><b>$9.6K</b></div>
-        <div class="kv"><span>max live size</span><b>$0</b></div>
-      </div>
-      <div class="outcomes">call sb_6962d678d1824f8c | 2026-08-31T22:00:06Z | waiting for market horizon</div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/robinhood/0x851957a8dce486ac45b1434a8568b4e3764fcfcbab18dbca1a0f2ee1731463b2">HUBRIS/ETH</a></div>
-          <div class="addr">0xb27339261475ef2724095F166B46E34223B13489</div>
-          <div class="addr policy-line">
-            <span class="badge rug-risk">RUG RISK</span>
-            <span>AVOID / 4h / policy-approved live mapping; verify edge against daily FOMO events</span>
-          </div>
-        </div>
-        <span class="badge rug-risk">LIVE</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>price</span><b>$2.609e-05</b></div>
-        <div class="kv"><span>liquidity</span><b>$14.9K</b></div>
-        <div class="kv"><span>max live size</span><b>$0</b></div>
-      </div>
-      <div class="outcomes">call sb_a57fbcad743d4892 | 2026-08-31T22:00:06Z | waiting for market horizon</div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/arbitrum/0xbc3e04908ec7e4326de93a33587a44bd8a4309e3">NYAN/WETH</a></div>
-          <div class="addr">0x4974E700F1DEb8A6825a9BD87347a53D46378304</div>
-          <div class="addr policy-line">
-            <span class="badge chase">CHASE</span>
-            <span>AVOID / 4h / policy-approved live mapping; verify edge against daily FOMO events</span>
-          </div>
-        </div>
-        <span class="badge chase">LIVE</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>price</span><b>$0.0001818</b></div>
-        <div class="kv"><span>liquidity</span><b>$50.7K</b></div>
-        <div class="kv"><span>max live size</span><b>$0</b></div>
-      </div>
-      <div class="outcomes">call sb_a3a75916bfdc47e1 | 2026-08-31T21:45:04Z | waiting for market horizon</div>
-    </article>
-    
-
-    <article class="receipt">
-      <div class="receipt-head">
-        <div>
-          <div class="pair"><a href="https://dexscreener.com/robinhood/0x25f8a1e22b2c93352402a220bf4d1ef7ddcccf4e4990eae839e6ff768951ea71">BIT/COIN</a></div>
-          <div class="addr">0x65f92631E10e158ee2E93A37c69be15eD8CdCe36</div>
-          <div class="addr policy-line">
-            <span class="badge rug-risk">RUG RISK</span>
-            <span>AVOID / 4h / policy-approved live mapping; verify edge against daily FOMO events</span>
-          </div>
-        </div>
-        <span class="badge rug-risk">LIVE</span>
-      </div>
-      <div class="receipt-grid">
-        <div class="kv"><span>price</span><b>$2.865e-05</b></div>
-        <div class="kv"><span>liquidity</span><b>$15.1K</b></div>
-        <div class="kv"><span>max live size</span><b>$0</b></div>
-      </div>
-      <div class="outcomes">call sb_5a96b4bd750a46e6 | 2026-08-31T21:45:04Z | waiting for market horizon</div>
     </article>
     
     </section>
