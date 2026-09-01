@@ -4,20 +4,20 @@
   "edition_id": "herald-2026-09-01",
   "edition_date": "2026-09-01",
   "edition_number": 141,
-  "generated_at": "2026-09-01T00:23:21Z",
+  "generated_at": "2026-09-01T01:23:52Z",
   "title": "The Hive Herald",
   "tagline": "Dispatches from the Post Fiat colony \u2014 on-chain intelligence, daily",
   "lead": {
-    "headline": "Network held steady at 18 memos today.",
-    "why_it_matters": "No major deviation from baseline. A quiet edition \u2014 a good time to audit your own submission quality.",
+    "headline": "Memo velocity dropped to 13 vs a 19 seven-day average.",
+    "why_it_matters": "Lower throughput in the task economy tends to precede either a maintenance window or a rebound. Watch the next 24h for direction.",
     "derived_from": [
       "sections.PULSE",
       "sections.WATCH"
     ]
   },
   "data_window": {
-    "start": "2026-08-31T00:23:21Z",
-    "end": "2026-09-01T00:23:21Z",
+    "start": "2026-08-31T01:23:52Z",
+    "end": "2026-09-01T01:23:52Z",
     "duration": "24h",
     "timezone": "UTC"
   },
@@ -54,27 +54,27 @@
       "tier": "free",
       "name": "Pulse",
       "tagline": "Network vital signs",
-      "as_of": "2026-09-01T00:23:21Z",
+      "as_of": "2026-09-01T01:23:52Z",
       "lookback_window": "24h",
       "methodology_version": "1.1.0",
       "freshness_status": "fresh",
       "methodology_note": "Health score copied from the hourly health.json surface. Wallet counts and memo velocity derived from the chain-index snapshot taken at as_of.",
       "metrics": {
-        "health_score": 0.6654,
+        "health_score": 0.6129,
         "health_grade": "B",
         "total_wallets": 1067,
         "contributors": 326,
         "bots": 733,
         "infrastructure": 8,
-        "memos_today": 18,
+        "memos_today": 13,
         "memos_yesterday": 18,
-        "memo_7d_daily_avg": 18.7,
-        "velocity_direction": "steady",
-        "total_transactions": 387463,
-        "total_memos": 23387,
+        "memo_7d_daily_avg": 18.6,
+        "velocity_direction": "dropping",
+        "total_transactions": 387476,
+        "total_memos": 23400,
         "sybil_clusters": 6
       },
-      "narrative": "Health: 0.6654 (B). 1067 wallets, 326 contributors. 18 memos yesterday vs 19 avg. Velocity steady.",
+      "narrative": "Health: 0.6129 (B). 1067 wallets, 326 contributors. 13 memos today vs 19 avg. Velocity dropping.",
       "access": {
         "tier": "free",
         "subscription_required": false,
@@ -85,22 +85,22 @@
       "tier": "premium",
       "name": "Flow of Capital",
       "tagline": "Where PFT moved in the last 24 hours",
-      "as_of": "2026-09-01T00:23:21Z",
+      "as_of": "2026-09-01T01:23:52Z",
       "lookback_window": "24h",
       "methodology_version": "1.1.0",
       "freshness_status": "fresh",
       "methodology_note": "Reward payments counted from distribution/airdrop/task-node wallets to any non-bot, non-infrastructure address within a 24h rolling window. Top earner selected by aggregate PFT received in the window.",
       "metrics": {
-        "reward_payments_24h": 18,
-        "total_pft_distributed_24h": 361,
+        "reward_payments_24h": 31,
+        "total_pft_distributed_24h": 976,
         "unique_recipients_24h": 12,
-        "top_earner_address": "rKjozZiA9Yi97eHefiKZppxCcX3wEDkf4u",
-        "top_earner_pft": 100,
-        "largest_single_payment_pft": 100
+        "top_earner_address": "r4RPpeS2kUE8BjY9LvKbptW8PQVHhVWghS",
+        "top_earner_pft": 475,
+        "largest_single_payment_pft": 400
       },
-      "narrative": "18 reward payments, 361 PFT distributed to 12 contributors. Top earner: rKjozZ...kf4u (100 PFT).",
+      "narrative": "31 reward payments, 976 PFT distributed to 12 contributors. Top earner: r4RPpe...WghS (475 PFT).",
       "preview": {
-        "headline": "18 reward payments distributed 361 PFT in the last 24h",
+        "headline": "31 reward payments distributed 976 PFT in the last 24h",
         "locked": true
       },
       "access": {
@@ -114,7 +114,7 @@
       "tier": "premium",
       "name": "Who Stirs the Hive",
       "tagline": "Rising contributors, new arrivals, gone-quiet alerts",
-      "as_of": "2026-09-01T00:23:21Z",
+      "as_of": "2026-09-01T01:23:52Z",
       "lookback_window": "168h",
       "methodology_version": "1.1.0",
       "freshness_status": "fresh",
@@ -194,7 +194,7 @@
       "tier": "premium",
       "name": "Sybil Watch",
       "tagline": "Anomaly alerts and enforcement state",
-      "as_of": "2026-09-01T00:23:21Z",
+      "as_of": "2026-09-01T01:23:52Z",
       "lookback_window": "24h",
       "methodology_version": "1.1.0",
       "freshness_status": "fresh",
@@ -224,7 +224,7 @@
       "tier": "premium",
       "name": "From the Archive Vault",
       "tagline": "Full-history exclusive insights only we can produce",
-      "as_of": "2026-09-01T00:23:21Z",
+      "as_of": "2026-09-01T01:23:52Z",
       "lookback_window": "24h",
       "methodology_version": "1.1.0",
       "freshness_status": "fresh",
@@ -290,15 +290,15 @@
     "positioning": "The canonical public edition contract for a subscription-native intelligence product: machine-readable, archiveable, tier-aware, downstream-stable, and auditable against live indexed network data."
   },
   "integrity": {
-    "payload_sha256": "sha256:dbcd2007163ff2064e1eab80418b0dc3cd52694f4443261af2ad2059f2166a40",
+    "payload_sha256": "sha256:d5124cdb98074a525be46dad0f00d49feb780a6412b88c951aa95794fca446b0",
     "generated_from": [
       "chain-index.db",
       "health.json",
       "auth.json"
     ],
     "source_snapshot_hashes": {
-      "health": "sha256:b2eae6f5bf046f79b0d78210350265abf0ddc1bb193226e8f082d9120ad45dc7",
-      "auth": "sha256:d6b8b5190e09687ad2ecc1bf468700d90834bdaa998f757deeacb2ee91a8a0f5"
+      "health": "sha256:ab4fca456c02a97fdd2a44c5ba45a8f83cb1e43fcef52533bd9f3d6f00cefcf1",
+      "auth": "sha256:1eb02e39950d21e2a6390615d5026704ad0c245986ec8c4a88c67bee32b0e142"
     },
     "determinism_note": "Edition generated from indexed public data and published analytics surfaces without manual overrides. Same chain index + same hourly crawl produces the same payload.",
     "canonical_serialization": "json_sort_keys",
