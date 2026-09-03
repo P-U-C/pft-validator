@@ -4,20 +4,20 @@
   "edition_id": "herald-2026-09-03",
   "edition_date": "2026-09-03",
   "edition_number": 143,
-  "generated_at": "2026-09-03T00:23:15Z",
+  "generated_at": "2026-09-03T01:23:48Z",
   "title": "The Hive Herald",
   "tagline": "Dispatches from the Post Fiat colony \u2014 on-chain intelligence, daily",
   "lead": {
-    "headline": "Memo velocity climbed to 23 (vs 17 avg).",
-    "why_it_matters": "Rising memo throughput signals task activity picking up. Contributors may find more reward opportunities in the next window.",
+    "headline": "Memo velocity dropped to 9 vs a 17 seven-day average.",
+    "why_it_matters": "Lower throughput in the task economy tends to precede either a maintenance window or a rebound. Watch the next 24h for direction.",
     "derived_from": [
       "sections.PULSE",
       "sections.WATCH"
     ]
   },
   "data_window": {
-    "start": "2026-09-02T00:23:15Z",
-    "end": "2026-09-03T00:23:15Z",
+    "start": "2026-09-02T01:23:48Z",
+    "end": "2026-09-03T01:23:48Z",
     "duration": "24h",
     "timezone": "UTC"
   },
@@ -54,27 +54,27 @@
       "tier": "free",
       "name": "Pulse",
       "tagline": "Network vital signs",
-      "as_of": "2026-09-03T00:23:15Z",
+      "as_of": "2026-09-03T01:23:48Z",
       "lookback_window": "24h",
       "methodology_version": "1.1.0",
       "freshness_status": "fresh",
       "methodology_note": "Health score copied from the hourly health.json surface. Wallet counts and memo velocity derived from the chain-index snapshot taken at as_of.",
       "metrics": {
-        "health_score": 0.6728,
-        "health_grade": "B",
+        "health_score": 0.5796,
+        "health_grade": "C",
         "total_wallets": 1067,
         "contributors": 326,
         "bots": 733,
         "infrastructure": 8,
-        "memos_today": 23,
+        "memos_today": 9,
         "memos_yesterday": 23,
         "memo_7d_daily_avg": 16.9,
-        "velocity_direction": "rising",
-        "total_transactions": 387504,
-        "total_memos": 23428,
+        "velocity_direction": "dropping",
+        "total_transactions": 387513,
+        "total_memos": 23437,
         "sybil_clusters": 6
       },
-      "narrative": "Health: 0.6728 (B). 1067 wallets, 326 contributors. 23 memos yesterday vs 17 avg. Velocity rising.",
+      "narrative": "Health: 0.5796 (C). 1067 wallets, 326 contributors. 9 memos today vs 17 avg. Velocity dropping.",
       "access": {
         "tier": "free",
         "subscription_required": false,
@@ -85,22 +85,22 @@
       "tier": "premium",
       "name": "Flow of Capital",
       "tagline": "Where PFT moved in the last 24 hours",
-      "as_of": "2026-09-03T00:23:15Z",
+      "as_of": "2026-09-03T01:23:48Z",
       "lookback_window": "24h",
       "methodology_version": "1.1.0",
       "freshness_status": "fresh",
       "methodology_note": "Reward payments counted from distribution/airdrop/task-node wallets to any non-bot, non-infrastructure address within a 24h rolling window. Top earner selected by aggregate PFT received in the window.",
       "metrics": {
-        "reward_payments_24h": 23,
-        "total_pft_distributed_24h": 1690,
+        "reward_payments_24h": 32,
+        "total_pft_distributed_24h": 2098,
         "unique_recipients_24h": 12,
         "top_earner_address": "rKjozZiA9Yi97eHefiKZppxCcX3wEDkf4u",
-        "top_earner_pft": 900,
+        "top_earner_pft": 1100,
         "largest_single_payment_pft": 800
       },
-      "narrative": "23 reward payments, 1690 PFT distributed to 12 contributors. Top earner: rKjozZ...kf4u (900 PFT).",
+      "narrative": "32 reward payments, 2098 PFT distributed to 12 contributors. Top earner: rKjozZ...kf4u (1100 PFT).",
       "preview": {
-        "headline": "23 reward payments distributed 1,690 PFT in the last 24h",
+        "headline": "32 reward payments distributed 2,098 PFT in the last 24h",
         "locked": true
       },
       "access": {
@@ -114,7 +114,7 @@
       "tier": "premium",
       "name": "Who Stirs the Hive",
       "tagline": "Rising contributors, new arrivals, gone-quiet alerts",
-      "as_of": "2026-09-03T00:23:15Z",
+      "as_of": "2026-09-03T01:23:48Z",
       "lookback_window": "168h",
       "methodology_version": "1.1.0",
       "freshness_status": "fresh",
@@ -177,7 +177,7 @@
       "tier": "premium",
       "name": "Sybil Watch",
       "tagline": "Anomaly alerts and enforcement state",
-      "as_of": "2026-09-03T00:23:15Z",
+      "as_of": "2026-09-03T01:23:48Z",
       "lookback_window": "24h",
       "methodology_version": "1.1.0",
       "freshness_status": "fresh",
@@ -207,7 +207,7 @@
       "tier": "premium",
       "name": "From the Archive Vault",
       "tagline": "Full-history exclusive insights only we can produce",
-      "as_of": "2026-09-03T00:23:15Z",
+      "as_of": "2026-09-03T01:23:48Z",
       "lookback_window": "24h",
       "methodology_version": "1.1.0",
       "freshness_status": "fresh",
@@ -273,15 +273,15 @@
     "positioning": "The canonical public edition contract for a subscription-native intelligence product: machine-readable, archiveable, tier-aware, downstream-stable, and auditable against live indexed network data."
   },
   "integrity": {
-    "payload_sha256": "sha256:c28c97dcb679a417249df01aaa9e63a343580662b6a37ba39e3e9cabf008b910",
+    "payload_sha256": "sha256:353f6e39160b11e87b4cdb2b8827869653df033866b8d44382ed27fb0bc99b16",
     "generated_from": [
       "chain-index.db",
       "health.json",
       "auth.json"
     ],
     "source_snapshot_hashes": {
-      "health": "sha256:0e01711f1570a4c0ce63e445f8b4bde6d306148ca0e2a4d3bf21b2cfa58a4ddd",
-      "auth": "sha256:15f70f320b01c8decdc277077db35a384d9adb7a4c4f0bbf0eb37b2ffe18c740"
+      "health": "sha256:df770101276b4499e1dce56724f6ab0bfefe8ec97b48d1ed2782db5641a635ea",
+      "auth": "sha256:e4ffe791dfb62db82f7e219d3455cec9b15cc2f62f98e8f4f815a167291b096e"
     },
     "determinism_note": "Edition generated from indexed public data and published analytics surfaces without manual overrides. Same chain index + same hourly crawl produces the same payload.",
     "canonical_serialization": "json_sort_keys",
