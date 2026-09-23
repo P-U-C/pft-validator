@@ -4,9 +4,9 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-09-23T22:00:00Z",
-  "calculated_at": "2026-09-23T22:27:30Z",
-  "next_update_at": "2026-09-23T23:00:00Z",
+  "snapshot_id": "2026-09-23T23:00:00Z",
+  "calculated_at": "2026-09-23T23:28:00Z",
+  "next_update_at": "2026-09-24T00:00:00Z",
   "refresh_cadence": "hourly",
   "health_score": 0.6737,
   "health_score_formula": "sum(component.score * component.weight)",
@@ -16,7 +16,7 @@
       "score": 0.9661,
       "weight": 0.2,
       "contribution": 0.1932,
-      "raw_hhi": 0.065236,
+      "raw_hhi": 0.065257,
       "formula": "max(0, min(1, (hhi_bad - HHI) / (hhi_bad - hhi_good)))",
       "description": "Herfindahl-Hirschman Index of memo activity distribution. Lower HHI = more distributed = healthier."
     },
@@ -34,9 +34,9 @@
       "score": 1.0,
       "weight": 0.2,
       "contribution": 0.2,
-      "latest_day_memos": 47,
+      "latest_day_memos": 49,
       "avg_7d_daily": 30.3,
-      "velocity_ratio": 1.5519,
+      "velocity_ratio": 1.6179,
       "formula": "max(0, min(1, latest_day_count / avg_7d_daily))",
       "description": "Latest day memo count vs 7-day rolling average. Detects activity drops."
     },
@@ -103,9 +103,9 @@
       "severity": "none",
       "operator": ">",
       "threshold": 0.35,
-      "current_value": 0.0652,
+      "current_value": 0.0653,
       "lookback": "current_snapshot",
-      "reason": "HHI=0.0652 below threshold 0.35. Memo activity is reasonably distributed."
+      "reason": "HHI=0.0653 below threshold 0.35. Memo activity is reasonably distributed."
     },
     {
       "rule": "BOT_CLUSTER_GROWTH",
@@ -125,9 +125,9 @@
       "severity": "none",
       "operator": "<",
       "threshold": 0.5,
-      "current_value": 1.5519,
+      "current_value": 1.6179,
       "lookback": "7d",
-      "reason": "Today=47 memos vs 7d avg=30.3 (ratio=1.55). Memo velocity is within normal range."
+      "reason": "Today=49 memos vs 7d avg=30.3 (ratio=1.62). Memo velocity is within normal range."
     },
     {
       "rule": "NEW_SYBIL_CLUSTER",
@@ -158,36 +158,29 @@
     "clear": 3
   },
   "score_change": {
-    "vs_prior_snapshot": -0.0001,
-    "prior_health_score": 0.6738,
-    "prior_calculated_at": "2026-09-23T21:27:57Z",
-    "largest_movers": [
-      {
-        "component": "concentration",
-        "delta": -0.0,
-        "raw_delta": -0.0001,
-        "reason": "HHI moved to 0.0652"
-      }
-    ]
+    "vs_prior_snapshot": 0.0,
+    "prior_health_score": 0.6737,
+    "prior_calculated_at": "2026-09-23T22:27:30Z",
+    "largest_movers": []
   },
   "network_summary": {
     "total_accounts": 1079,
     "contributors": 338,
     "bots": 733,
     "infrastructure": 8,
-    "total_transactions": 388553,
-    "memo_transactions": 24456,
+    "total_transactions": 388555,
+    "memo_transactions": 24458,
     "total_edges": 41856,
     "bidirectional_edges": 39726,
     "sybil_clusters": 6,
     "sybil_accounts": 769
   },
   "deltas": {
-    "health_score": -0.0001,
+    "health_score": 0.0,
     "accounts": 0,
-    "memo_transactions": 1,
+    "memo_transactions": 2,
     "edges": 0,
-    "since": "2026-09-23T21:27:57Z"
+    "since": "2026-09-23T22:27:30Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -196,5 +189,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:5fcdc5851ddcaa15714611073342ace99d801661db7c6faaf1ee9cc700269327"
+  "snapshot_hash": "sha256:5e1e5365eba3c0d96284161af0478c8bba767b452e978ad3922dd546f64011af"
 }
