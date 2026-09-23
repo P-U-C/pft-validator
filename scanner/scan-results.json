@@ -124,7 +124,7 @@
    }
   },
   "convergence_refreshed_at": "2026-09-22T13:55:06Z",
-  "relative_edge_refreshed_at": "2026-09-23T20:50:50Z"
+  "relative_edge_refreshed_at": "2026-09-23T21:10:14Z"
  },
  "results": [
   {
@@ -12221,7 +12221,7 @@
   }
  },
  "relative_edge": {
-  "generated_at": "2026-09-23T20:50:50Z",
+  "generated_at": "2026-09-23T21:10:14Z",
   "source": "Yahoo Finance adjusted close via yfinance",
   "price_start": "2021-01-01",
   "price_end": null,
@@ -12229,7 +12229,10 @@
   "rules": {
    "basket_construction": "equal-weight adjusted-close baskets; corpus themes use top 12 tickers by score",
    "history_note": "first_trigger_date and first_active_date are retrospective for the published basket membership; corpus availability must be audited separately",
+   "phase_note": "trade timing comes from current state plus signal age; old first-active dates are not fresh entries",
    "min_priced_tickers": 3,
+   "fresh_trigger_max_trading_days": 63,
+   "early_active_max_trading_days": 126,
    "active": {
     "excess_63d_gte": 0.15,
     "excess_126d_gte": 0.25,
@@ -12250,7 +12253,15 @@
    "baskets": 18,
    "active": 0,
    "trigger": 4,
-   "watch": 14
+   "watch": 14,
+   "entry_window": 0,
+   "research_queue": 4,
+   "no_trade": 14,
+   "phase_counts": {
+    "fading_watch": 12,
+    "re_accelerating": 4,
+    "reset_watch": 2
+   }
   },
   "baskets": [
    {
@@ -12288,6 +12299,18 @@
     ],
     "priced_count": 8,
     "state": "trigger",
+    "phase": "re_accelerating",
+    "phase_label": "Re-accelerating",
+    "action": "Second-impulse candidate; wait for 126d confirmation or a pullback that preserves breadth.",
+    "action_priority": 2,
+    "timing": {
+     "first_trigger_date": "2023-04-11",
+     "first_active_date": "2023-06-07",
+     "trading_days_since_first_trigger": 865,
+     "trading_days_since_first_active": 825,
+     "first_trigger_age": "3.4y",
+     "first_active_age": "3.3y"
+    },
     "metrics": {
      "21d": {
       "basket_return": 0.1648,
@@ -12378,6 +12401,18 @@
     ],
     "priced_count": 10,
     "state": "trigger",
+    "phase": "re_accelerating",
+    "phase_label": "Re-accelerating",
+    "action": "Second-impulse candidate; wait for 126d confirmation or a pullback that preserves breadth.",
+    "action_priority": 2,
+    "timing": {
+     "first_trigger_date": "2023-11-14",
+     "first_active_date": null,
+     "trading_days_since_first_trigger": 714,
+     "trading_days_since_first_active": null,
+     "first_trigger_age": "2.8y",
+     "first_active_age": null
+    },
     "metrics": {
      "21d": {
       "basket_return": -0.0381,
@@ -12457,6 +12492,18 @@
     "missing_tickers": [],
     "priced_count": 7,
     "state": "trigger",
+    "phase": "re_accelerating",
+    "phase_label": "Re-accelerating",
+    "action": "Second-impulse candidate; wait for 126d confirmation or a pullback that preserves breadth.",
+    "action_priority": 2,
+    "timing": {
+     "first_trigger_date": "2021-07-06",
+     "first_active_date": "2023-04-18",
+     "trading_days_since_first_trigger": 1310,
+     "trading_days_since_first_active": 861,
+     "first_trigger_age": "5.2y",
+     "first_active_age": "3.4y"
+    },
     "metrics": {
      "21d": {
       "basket_return": 0.1138,
@@ -12546,6 +12593,18 @@
     "missing_tickers": [],
     "priced_count": 12,
     "state": "trigger",
+    "phase": "re_accelerating",
+    "phase_label": "Re-accelerating",
+    "action": "Second-impulse candidate; wait for 126d confirmation or a pullback that preserves breadth.",
+    "action_priority": 2,
+    "timing": {
+     "first_trigger_date": "2024-10-24",
+     "first_active_date": null,
+     "trading_days_since_first_trigger": 477,
+     "trading_days_since_first_active": null,
+     "first_trigger_age": "1.9y",
+     "first_active_age": null
+    },
     "metrics": {
      "21d": {
       "basket_return": -0.0534,
@@ -12598,6 +12657,207 @@
     "as_of_date": "2026-09-23"
    },
    {
+    "basket_id": "theme-robotics-humanoid",
+    "theme": "Robotics / Humanoid",
+    "theme_id": "robotics-humanoid",
+    "kind": "corpus_theme",
+    "benchmark": "BOTZ",
+    "benchmark_requested": "BOTZ",
+    "tickers": [
+     "ABB",
+     "BOTZ",
+     "FANUY",
+     "ISRG",
+     "NVDA",
+     "ROBO",
+     "ROK",
+     "SERV",
+     "SYM",
+     "TER",
+     "TSLA"
+    ],
+    "priced_tickers": [
+     "BOTZ",
+     "FANUY",
+     "ISRG",
+     "NVDA",
+     "ROBO",
+     "ROK",
+     "SERV",
+     "SYM",
+     "TER",
+     "TSLA"
+    ],
+    "missing_tickers": [
+     "ABB"
+    ],
+    "priced_count": 10,
+    "state": "watch",
+    "phase": "reset_watch",
+    "phase_label": "Reset watch",
+    "action": "No new trade yet; watch for renewed trigger/active status after the reset.",
+    "action_priority": 4,
+    "timing": {
+     "first_trigger_date": "2021-11-19",
+     "first_active_date": "2023-08-11",
+     "trading_days_since_first_trigger": 1212,
+     "trading_days_since_first_active": 780,
+     "first_trigger_age": "4.8y",
+     "first_active_age": "3.1y"
+    },
+    "metrics": {
+     "21d": {
+      "basket_return": 0.0678,
+      "benchmark_return": -0.0208,
+      "excess_return": 0.0886,
+      "breadth": 0.8
+     },
+     "63d": {
+      "basket_return": 0.0543,
+      "benchmark_return": -0.0364,
+      "excess_return": 0.0906,
+      "breadth": 0.5
+     },
+     "126d": {
+      "basket_return": 0.1232,
+      "benchmark_return": 0.0312,
+      "excess_return": 0.092,
+      "breadth": 0.4
+     }
+    },
+    "first_trigger_date": "2021-11-19",
+    "first_active_date": "2023-08-11",
+    "leaders": [
+     {
+      "ticker": "NVDA",
+      "return_63d": 0.1345,
+      "excess_63d": 0.1708
+     },
+     {
+      "ticker": "SYM",
+      "return_63d": 0.1327,
+      "excess_63d": 0.1691
+     },
+     {
+      "ticker": "TSLA",
+      "return_63d": 0.0122,
+      "excess_63d": 0.0486
+     },
+     {
+      "ticker": "ISRG",
+      "return_63d": -0.0121,
+      "excess_63d": 0.0243
+     },
+     {
+      "ticker": "ROBO",
+      "return_63d": -0.0313,
+      "excess_63d": 0.0051
+     }
+    ],
+    "as_of_date": "2026-09-23"
+   },
+   {
+    "basket_id": "theme-ai-infrastructure",
+    "theme": "AI Infrastructure",
+    "theme_id": "ai-infrastructure",
+    "kind": "corpus_theme",
+    "benchmark": "SMH",
+    "benchmark_requested": "SMH",
+    "tickers": [
+     "ALAB",
+     "AMD",
+     "ANET",
+     "AVGO",
+     "DELL",
+     "DLR",
+     "ETN",
+     "MRVL",
+     "MU",
+     "NVDA",
+     "TSM",
+     "VRT"
+    ],
+    "priced_tickers": [
+     "ALAB",
+     "AMD",
+     "ANET",
+     "AVGO",
+     "DELL",
+     "DLR",
+     "ETN",
+     "MRVL",
+     "MU",
+     "NVDA",
+     "TSM",
+     "VRT"
+    ],
+    "missing_tickers": [],
+    "priced_count": 12,
+    "state": "watch",
+    "phase": "reset_watch",
+    "phase_label": "Reset watch",
+    "action": "No new trade yet; watch for renewed trigger/active status after the reset.",
+    "action_priority": 4,
+    "timing": {
+     "first_trigger_date": "2021-07-08",
+     "first_active_date": "2023-09-07",
+     "trading_days_since_first_trigger": 1308,
+     "trading_days_since_first_active": 763,
+     "first_trigger_age": "5.2y",
+     "first_active_age": "3.0y"
+    },
+    "metrics": {
+     "21d": {
+      "basket_return": 0.1192,
+      "benchmark_return": 0.0999,
+      "excess_return": 0.0193,
+      "breadth": 0.4167
+     },
+     "63d": {
+      "basket_return": 0.0393,
+      "benchmark_return": -0.0283,
+      "excess_return": 0.0676,
+      "breadth": 0.5833
+     },
+     "126d": {
+      "basket_return": 0.6088,
+      "benchmark_return": 0.5241,
+      "excess_return": 0.0847,
+      "breadth": 0.4167
+     }
+    },
+    "first_trigger_date": "2021-07-08",
+    "first_active_date": "2023-09-07",
+    "leaders": [
+     {
+      "ticker": "DELL",
+      "return_63d": 0.2688,
+      "excess_63d": 0.2971
+     },
+     {
+      "ticker": "ANET",
+      "return_63d": 0.2544,
+      "excess_63d": 0.2827
+     },
+     {
+      "ticker": "AMD",
+      "return_63d": 0.1825,
+      "excess_63d": 0.2108
+     },
+     {
+      "ticker": "NVDA",
+      "return_63d": 0.1345,
+      "excess_63d": 0.1628
+     },
+     {
+      "ticker": "ETN",
+      "return_63d": 0.0853,
+      "excess_63d": 0.1136
+     }
+    ],
+    "as_of_date": "2026-09-23"
+   },
+   {
     "basket_id": "memory-bandwidth",
     "theme": "Memory / Bandwidth",
     "theme_id": null,
@@ -12621,6 +12881,18 @@
     "missing_tickers": [],
     "priced_count": 5,
     "state": "watch",
+    "phase": "fading_watch",
+    "phase_label": "Fading watch",
+    "action": "No new trade; prior edge is stale or losing benchmark-relative breadth.",
+    "action_priority": 5,
+    "timing": {
+     "first_trigger_date": "2022-01-13",
+     "first_active_date": "2025-06-25",
+     "trading_days_since_first_trigger": 1176,
+     "trading_days_since_first_active": 313,
+     "first_trigger_age": "4.7y",
+     "first_active_age": "14.9mo"
+    },
     "metrics": {
      "21d": {
       "basket_return": 0.1071,
@@ -12711,6 +12983,18 @@
     ],
     "priced_count": 11,
     "state": "watch",
+    "phase": "fading_watch",
+    "phase_label": "Fading watch",
+    "action": "No new trade; prior edge is stale or losing benchmark-relative breadth.",
+    "action_priority": 5,
+    "timing": {
+     "first_trigger_date": "2024-07-25",
+     "first_active_date": "2024-07-15",
+     "trading_days_since_first_trigger": 542,
+     "trading_days_since_first_active": 550,
+     "first_trigger_age": "2.2y",
+     "first_active_age": "2.2y"
+    },
     "metrics": {
      "21d": {
       "basket_return": 0.1681,
@@ -12763,183 +13047,6 @@
     "as_of_date": "2026-09-23"
    },
    {
-    "basket_id": "theme-robotics-humanoid",
-    "theme": "Robotics / Humanoid",
-    "theme_id": "robotics-humanoid",
-    "kind": "corpus_theme",
-    "benchmark": "BOTZ",
-    "benchmark_requested": "BOTZ",
-    "tickers": [
-     "ABB",
-     "BOTZ",
-     "FANUY",
-     "ISRG",
-     "NVDA",
-     "ROBO",
-     "ROK",
-     "SERV",
-     "SYM",
-     "TER",
-     "TSLA"
-    ],
-    "priced_tickers": [
-     "BOTZ",
-     "FANUY",
-     "ISRG",
-     "NVDA",
-     "ROBO",
-     "ROK",
-     "SERV",
-     "SYM",
-     "TER",
-     "TSLA"
-    ],
-    "missing_tickers": [
-     "ABB"
-    ],
-    "priced_count": 10,
-    "state": "watch",
-    "metrics": {
-     "21d": {
-      "basket_return": 0.0678,
-      "benchmark_return": -0.0208,
-      "excess_return": 0.0886,
-      "breadth": 0.8
-     },
-     "63d": {
-      "basket_return": 0.0543,
-      "benchmark_return": -0.0364,
-      "excess_return": 0.0906,
-      "breadth": 0.5
-     },
-     "126d": {
-      "basket_return": 0.1232,
-      "benchmark_return": 0.0312,
-      "excess_return": 0.092,
-      "breadth": 0.4
-     }
-    },
-    "first_trigger_date": "2021-11-19",
-    "first_active_date": "2023-08-11",
-    "leaders": [
-     {
-      "ticker": "NVDA",
-      "return_63d": 0.1345,
-      "excess_63d": 0.1708
-     },
-     {
-      "ticker": "SYM",
-      "return_63d": 0.1327,
-      "excess_63d": 0.1691
-     },
-     {
-      "ticker": "TSLA",
-      "return_63d": 0.0122,
-      "excess_63d": 0.0486
-     },
-     {
-      "ticker": "ISRG",
-      "return_63d": -0.0121,
-      "excess_63d": 0.0243
-     },
-     {
-      "ticker": "ROBO",
-      "return_63d": -0.0313,
-      "excess_63d": 0.0051
-     }
-    ],
-    "as_of_date": "2026-09-23"
-   },
-   {
-    "basket_id": "theme-ai-infrastructure",
-    "theme": "AI Infrastructure",
-    "theme_id": "ai-infrastructure",
-    "kind": "corpus_theme",
-    "benchmark": "SMH",
-    "benchmark_requested": "SMH",
-    "tickers": [
-     "ALAB",
-     "AMD",
-     "ANET",
-     "AVGO",
-     "DELL",
-     "DLR",
-     "ETN",
-     "MRVL",
-     "MU",
-     "NVDA",
-     "TSM",
-     "VRT"
-    ],
-    "priced_tickers": [
-     "ALAB",
-     "AMD",
-     "ANET",
-     "AVGO",
-     "DELL",
-     "DLR",
-     "ETN",
-     "MRVL",
-     "MU",
-     "NVDA",
-     "TSM",
-     "VRT"
-    ],
-    "missing_tickers": [],
-    "priced_count": 12,
-    "state": "watch",
-    "metrics": {
-     "21d": {
-      "basket_return": 0.1192,
-      "benchmark_return": 0.0999,
-      "excess_return": 0.0193,
-      "breadth": 0.4167
-     },
-     "63d": {
-      "basket_return": 0.0393,
-      "benchmark_return": -0.0283,
-      "excess_return": 0.0676,
-      "breadth": 0.5833
-     },
-     "126d": {
-      "basket_return": 0.6088,
-      "benchmark_return": 0.5241,
-      "excess_return": 0.0847,
-      "breadth": 0.4167
-     }
-    },
-    "first_trigger_date": "2021-07-08",
-    "first_active_date": "2023-09-07",
-    "leaders": [
-     {
-      "ticker": "DELL",
-      "return_63d": 0.2688,
-      "excess_63d": 0.2971
-     },
-     {
-      "ticker": "ANET",
-      "return_63d": 0.2544,
-      "excess_63d": 0.2827
-     },
-     {
-      "ticker": "AMD",
-      "return_63d": 0.1825,
-      "excess_63d": 0.2108
-     },
-     {
-      "ticker": "NVDA",
-      "return_63d": 0.1345,
-      "excess_63d": 0.1628
-     },
-     {
-      "ticker": "ETN",
-      "return_63d": 0.0853,
-      "excess_63d": 0.1136
-     }
-    ],
-    "as_of_date": "2026-09-23"
-   },
-   {
     "basket_id": "theme-synthetic-biology",
     "theme": "Synthetic Biology",
     "theme_id": "synthetic-biology",
@@ -12977,6 +13084,18 @@
     "missing_tickers": [],
     "priced_count": 12,
     "state": "watch",
+    "phase": "fading_watch",
+    "phase_label": "Fading watch",
+    "action": "No new trade; prior edge is stale or losing benchmark-relative breadth.",
+    "action_priority": 5,
+    "timing": {
+     "first_trigger_date": "2021-07-07",
+     "first_active_date": "2021-07-06",
+     "trading_days_since_first_trigger": 1308,
+     "trading_days_since_first_active": 1309,
+     "first_trigger_age": "5.2y",
+     "first_active_age": "5.2y"
+    },
     "metrics": {
      "21d": {
       "basket_return": -0.0429,
@@ -13062,6 +13181,18 @@
     "missing_tickers": [],
     "priced_count": 10,
     "state": "watch",
+    "phase": "fading_watch",
+    "phase_label": "Fading watch",
+    "action": "No new trade; prior edge is stale or losing benchmark-relative breadth.",
+    "action_priority": 5,
+    "timing": {
+     "first_trigger_date": "2021-10-05",
+     "first_active_date": "2021-10-12",
+     "trading_days_since_first_trigger": 1245,
+     "trading_days_since_first_active": 1240,
+     "first_trigger_age": "4.9y",
+     "first_active_age": "4.9y"
+    },
     "metrics": {
      "21d": {
       "basket_return": -0.0557,
@@ -13144,6 +13275,18 @@
     ],
     "priced_count": 6,
     "state": "watch",
+    "phase": "fading_watch",
+    "phase_label": "Fading watch",
+    "action": "No new trade; prior edge is stale or losing benchmark-relative breadth.",
+    "action_priority": 5,
+    "timing": {
+     "first_trigger_date": "2021-07-09",
+     "first_active_date": "2021-07-06",
+     "trading_days_since_first_trigger": 1306,
+     "trading_days_since_first_active": 1309,
+     "first_trigger_age": "5.2y",
+     "first_active_age": "5.2y"
+    },
     "metrics": {
      "21d": {
       "basket_return": -0.0031,
@@ -13234,6 +13377,18 @@
     ],
     "priced_count": 11,
     "state": "watch",
+    "phase": "fading_watch",
+    "phase_label": "Fading watch",
+    "action": "No new trade; prior edge is stale or losing benchmark-relative breadth.",
+    "action_priority": 5,
+    "timing": {
+     "first_trigger_date": "2021-10-11",
+     "first_active_date": "2022-08-26",
+     "trading_days_since_first_trigger": 1241,
+     "trading_days_since_first_active": 1020,
+     "first_trigger_age": "4.9y",
+     "first_active_age": "4.0y"
+    },
     "metrics": {
      "21d": {
       "basket_return": -0.027,
@@ -13320,6 +13475,18 @@
     ],
     "priced_count": 7,
     "state": "watch",
+    "phase": "fading_watch",
+    "phase_label": "Fading watch",
+    "action": "No new trade; prior edge is stale or losing benchmark-relative breadth.",
+    "action_priority": 5,
+    "timing": {
+     "first_trigger_date": "2021-07-09",
+     "first_active_date": "2021-07-06",
+     "trading_days_since_first_trigger": 1306,
+     "trading_days_since_first_active": 1309,
+     "first_trigger_age": "5.2y",
+     "first_active_age": "5.2y"
+    },
     "metrics": {
      "21d": {
       "basket_return": -0.0381,
@@ -13409,6 +13576,18 @@
     "missing_tickers": [],
     "priced_count": 12,
     "state": "watch",
+    "phase": "fading_watch",
+    "phase_label": "Fading watch",
+    "action": "No new trade; prior edge is stale or losing benchmark-relative breadth.",
+    "action_priority": 5,
+    "timing": {
+     "first_trigger_date": "2021-09-01",
+     "first_active_date": "2021-11-04",
+     "trading_days_since_first_trigger": 1269,
+     "trading_days_since_first_active": 1224,
+     "first_trigger_age": "5.0y",
+     "first_active_age": "4.9y"
+    },
     "metrics": {
      "21d": {
       "basket_return": 0.1116,
@@ -13494,6 +13673,18 @@
     "missing_tickers": [],
     "priced_count": 10,
     "state": "watch",
+    "phase": "fading_watch",
+    "phase_label": "Fading watch",
+    "action": "No new trade; prior edge is stale or losing benchmark-relative breadth.",
+    "action_priority": 5,
+    "timing": {
+     "first_trigger_date": "2021-09-24",
+     "first_active_date": "2024-11-21",
+     "trading_days_since_first_trigger": 1253,
+     "trading_days_since_first_active": 458,
+     "first_trigger_age": "5.0y",
+     "first_active_age": "1.8y"
+    },
     "metrics": {
      "21d": {
       "basket_return": -0.0063,
@@ -13571,6 +13762,18 @@
     "missing_tickers": [],
     "priced_count": 6,
     "state": "watch",
+    "phase": "fading_watch",
+    "phase_label": "Fading watch",
+    "action": "No new trade; prior edge is stale or losing benchmark-relative breadth.",
+    "action_priority": 5,
+    "timing": {
+     "first_trigger_date": "2022-04-20",
+     "first_active_date": "2022-09-14",
+     "trading_days_since_first_trigger": 1110,
+     "trading_days_since_first_active": 1009,
+     "first_trigger_age": "4.4y",
+     "first_active_age": "4.0y"
+    },
     "metrics": {
      "21d": {
       "basket_return": 0.0041,
@@ -13660,6 +13863,18 @@
     "missing_tickers": [],
     "priced_count": 12,
     "state": "watch",
+    "phase": "fading_watch",
+    "phase_label": "Fading watch",
+    "action": "No new trade; prior edge is stale or losing benchmark-relative breadth.",
+    "action_priority": 5,
+    "timing": {
+     "first_trigger_date": "2022-04-26",
+     "first_active_date": "2024-10-16",
+     "trading_days_since_first_trigger": 1106,
+     "trading_days_since_first_active": 484,
+     "first_trigger_age": "4.4y",
+     "first_active_age": "1.9y"
+    },
     "metrics": {
      "21d": {
       "basket_return": 0.0449,
@@ -13746,6 +13961,18 @@
     ],
     "priced_count": 9,
     "state": "watch",
+    "phase": "fading_watch",
+    "phase_label": "Fading watch",
+    "action": "No new trade; prior edge is stale or losing benchmark-relative breadth.",
+    "action_priority": 5,
+    "timing": {
+     "first_trigger_date": "2022-03-10",
+     "first_active_date": "2023-11-28",
+     "trading_days_since_first_trigger": 1137,
+     "trading_days_since_first_active": 705,
+     "first_trigger_age": "4.5y",
+     "first_active_age": "2.8y"
+    },
     "metrics": {
      "21d": {
       "basket_return": -0.6942,

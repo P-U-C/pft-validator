@@ -39,11 +39,21 @@
   .state-chip.active { color:var(--green); border-color:rgba(16,185,129,0.45); background:rgba(16,185,129,0.08); }
   .state-chip.trigger { color:var(--amber); border-color:rgba(245,158,11,0.45); background:rgba(245,158,11,0.08); }
   .state-chip.watch { color:var(--blue); border-color:rgba(96,165,250,0.35); background:rgba(96,165,250,0.06); }
+  .phase-chip { display:inline-flex; align-items:center; border-radius:4px; border:1px solid var(--border); padding:3px 6px; margin-top:5px; font-size:0.56rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:var(--text); background:rgba(255,255,255,0.03); }
+  .phase-chip.early_active { color:var(--green); border-color:rgba(16,185,129,0.45); }
+  .phase-chip.fresh_trigger, .phase-chip.re_accelerating { color:var(--amber); border-color:rgba(245,158,11,0.45); }
+  .phase-chip.mature_active { color:var(--blue); border-color:rgba(96,165,250,0.35); }
+  .phase-chip.reset_watch { color:var(--blue); border-color:rgba(96,165,250,0.35); opacity:0.9; }
+  .phase-chip.fading_watch, .phase-chip.insufficient_data { color:var(--dim); border-color:var(--border); }
+  .signal-stack { display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-width:94px; }
+  .signal-age { color:var(--dim); font-size:0.58rem; line-height:1.25; margin-top:2px; }
+  .action-text { color:var(--text); font-size:0.66rem; line-height:1.35; max-width:260px; }
   .pos { color:var(--green); }
   .neg { color:var(--red); }
   .leader-list { color:var(--dim); font-size:0.64rem; line-height:1.35; }
   .leader-list b { color:var(--text); font-weight:700; }
   .mobile-edge-metrics { display:none; }
+  .mobile-action { display:none; }
 
   h2 { font-size:1rem; color:var(--accent); margin:20px 0 12px; text-transform:uppercase; letter-spacing:1px; }
 
@@ -93,7 +103,10 @@
     .themes { grid-template-columns:1fr 1fr; gap:8px; }
     .edge-summary { grid-template-columns:1fr 1fr; }
     .edge-note { flex-basis:100%; }
+    .table-wrap table.edge-table { min-width:100%; }
+    .edge-table th:nth-child(n+3), .edge-table td:nth-child(n+3) { display:none; }
     .mobile-edge-metrics { display:block; color:var(--text); font-size:0.62rem; margin-top:4px; line-height:1.35; }
+    .mobile-action { display:block; color:var(--text); font-size:0.62rem; margin-top:4px; line-height:1.35; max-width:100%; }
   }
 </style>
 </head>
@@ -116,18 +129,17 @@
     <table class="edge-table">
       <thead>
         <tr>
-          <th>State</th>
+          <th>Signal</th>
           <th>Basket</th>
-          <th>Benchmark</th>
+          <th>Action</th>
           <th>63d Excess</th>
           <th>126d Excess</th>
           <th>Breadth</th>
-          <th>First Active</th>
           <th>Leaders</th>
         </tr>
       </thead>
       <tbody id="edgeBody">
-        <tr><td colspan="8" style="text-align:center;color:var(--dim);">Loading...</td></tr>
+        <tr><td colspan="7" style="text-align:center;color:var(--dim);">Loading...</td></tr>
       </tbody>
     </table>
   </div>
@@ -244,6 +256,22 @@ fetch('/scanner/scan-results.json')
       return '<span class="state-chip ' + esc(s) + '">' + esc(s) + '</span>';
     }
 
+    function phaseChip(phase, label) {
+      var p = phase || 'insufficient_data';
+      return '<span class="phase-chip ' + esc(p) + '">' + esc(label || p.replace('_', ' ')) + '</span>';
+    }
+
+    function timingLine(row) {
+      var t = row.timing || {};
+      if (t.first_active_date) {
+        return 'active ' + esc(t.first_active_date) + (t.first_active_age ? ' · ' + esc(t.first_active_age) : '');
+      }
+      if (t.first_trigger_date) {
+        return 'trigger ' + esc(t.first_trigger_date) + (t.first_trigger_age ? ' · ' + esc(t.first_trigger_age) : '');
+      }
+      return 'no timing';
+    }
+
     function edgeClass(v) {
       if (v == null || isNaN(Number(v))) return '';
       if (Number(v) > 0.01) return 'pos';
@@ -258,25 +286,29 @@ fetch('/scanner/scan-results.json')
       if (!edge || !Array.isArray(edge.baskets)) {
         summary.innerHTML = '';
         source.textContent = 'No relative-edge data published yet.';
-        body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--dim);">Relative-edge data unavailable.</td></tr>';
+        body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--dim);">Relative-edge data unavailable.</td></tr>';
         return;
       }
 
       var s = edge.summary || {};
       summary.innerHTML =
-        '<div class="edge-stat"><span class="l">Active edge</span><span class="v active">' + (s.active || 0) + '</span></div>' +
-        '<div class="edge-stat"><span class="l">Trigger queue</span><span class="v trigger">' + (s.trigger || 0) + '</span></div>' +
-        '<div class="edge-stat"><span class="l">Watch only</span><span class="v watch">' + (s.watch || 0) + '</span></div>' +
+        '<div class="edge-stat"><span class="l">Entry window</span><span class="v active">' + (s.entry_window || 0) + '</span></div>' +
+        '<div class="edge-stat"><span class="l">Research queue</span><span class="v trigger">' + (s.research_queue || 0) + '</span></div>' +
+        '<div class="edge-stat"><span class="l">No-trade watch</span><span class="v watch">' + (s.no_trade || 0) + '</span></div>' +
         '<div class="edge-stat"><span class="l">Baskets tested</span><span class="v">' + (s.baskets || edge.baskets.length) + '</span></div>';
 
       var rule = edge.rules && edge.rules.active
         ? 'Active = +' + Math.round(edge.rules.active.excess_63d_gte * 100) + '% 63d and +' + Math.round(edge.rules.active.excess_126d_gte * 100) + '% 126d excess, with ' + Math.round(edge.rules.active.breadth_63d_gte * 100) + '% breadth.'
         : 'Active baskets must beat their benchmark across multiple windows.';
       var historyNote = edge.rules && edge.rules.history_note ? ' &middot; first-active dates are retrospective basket tests.' : '';
-      source.innerHTML = 'Data as of ' + esc(edge.as_of_date || 'n/a') + ' &middot; ' + esc(edge.source || 'price data') + ' &middot; ' + rule + historyNote;
+      var phaseNote = edge.rules && edge.rules.phase_note ? ' &middot; phase/action reflects current timing.' : '';
+      source.innerHTML = 'Data as of ' + esc(edge.as_of_date || 'n/a') + ' &middot; ' + esc(edge.source || 'price data') + ' &middot; ' + rule + historyNote + phaseNote;
 
       var order = {active:0, trigger:1, watch:2};
       var rows = edge.baskets.slice().sort(function(a, b) {
+        var pa = a.action_priority == null ? 9 : a.action_priority;
+        var pb = b.action_priority == null ? 9 : b.action_priority;
+        if (pa !== pb) return pa - pb;
         var oa = order[a.state] == null ? 3 : order[a.state];
         var ob = order[b.state] == null ? 3 : order[b.state];
         if (oa !== ob) return oa - ob;
@@ -288,18 +320,17 @@ fetch('/scanner/scan-results.json')
         var excess63 = metric(row, '63d', 'excess_return');
         var excess126 = metric(row, '126d', 'excess_return');
         return '<tr>' +
-          '<td>' + stateChip(row.state) + '</td>' +
-          '<td><span class="ticker">' + esc(row.theme) + '</span><br><span style="font-size:0.6rem;color:var(--dim);">' + esc(row.kind) + ' · ' + esc((row.priced_tickers || []).join(', ')) + '</span><span class="mobile-edge-metrics">63d ' + fmtSignedPct(excess63) + ' &middot; 126d ' + fmtSignedPct(excess126) + ' &middot; breadth ' + fmtBreadth(metric(row, '63d', 'breadth')) + '</span></td>' +
-          '<td>' + esc(row.benchmark) + '</td>' +
+          '<td><div class="signal-stack">' + stateChip(row.state) + phaseChip(row.phase, row.phase_label) + '<span class="signal-age">' + timingLine(row) + '</span></div></td>' +
+          '<td><span class="ticker">' + esc(row.theme) + '</span><br><span style="font-size:0.6rem;color:var(--dim);">' + esc(row.kind) + ' · ' + esc(row.benchmark) + ' · ' + esc((row.priced_tickers || []).join(', ')) + '</span><span class="mobile-edge-metrics">63d ' + fmtSignedPct(excess63) + ' &middot; 126d ' + fmtSignedPct(excess126) + ' &middot; breadth ' + fmtBreadth(metric(row, '63d', 'breadth')) + '</span><span class="mobile-action">' + esc(row.action || '') + '</span></td>' +
+          '<td class="action-text">' + esc(row.action || '--') + '</td>' +
           '<td class="' + edgeClass(excess63) + '" style="font-weight:800;">' + fmtSignedPct(excess63) + '</td>' +
           '<td class="' + edgeClass(excess126) + '" style="font-weight:800;">' + fmtSignedPct(excess126) + '</td>' +
           '<td>' + fmtBreadth(metric(row, '63d', 'breadth')) + '</td>' +
-          '<td>' + esc(row.first_active_date || '--') + '</td>' +
           '<td class="leader-list">' + (leaders || '--') + '</td>' +
           '</tr>';
       }).join('');
 
-      body.innerHTML = rows || '<tr><td colspan="8" style="text-align:center;color:var(--dim);">No baskets tested.</td></tr>';
+      body.innerHTML = rows || '<tr><td colspan="7" style="text-align:center;color:var(--dim);">No baskets tested.</td></tr>';
     }
 
     // Meta bar. The live options scan (scan_meta/results) is parked while
