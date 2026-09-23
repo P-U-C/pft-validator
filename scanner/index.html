@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LLM Convergence Scanner</title>
 <style>
-  :root { --bg:#0a0a0f; --card:#12121a; --accent:#c8a96e; --green:#10b981; --red:#ef4444; --blue:#60a5fa; --text:#e0e0e0; --dim:#666; --border:#1e1e2e; }
+  :root { --bg:#0a0a0f; --card:#12121a; --card2:#151922; --accent:#c8a96e; --green:#10b981; --amber:#f59e0b; --red:#ef4444; --blue:#60a5fa; --text:#e0e0e0; --dim:#666; --border:#1e1e2e; }
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); padding:20px; max-width:1100px; margin:0 auto; }
+  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); padding:20px; max-width:1180px; margin:0 auto; }
   h1 { font-size:1.6rem; color:var(--accent); text-align:center; letter-spacing:2px; text-transform:uppercase; margin-bottom:4px; }
   .sub { text-align:center; color:var(--dim); font-size:0.75rem; margin-bottom:24px; }
   .meta { display:flex; justify-content:center; gap:24px; font-size:0.7rem; color:var(--dim); margin-bottom:20px; flex-wrap:wrap; }
@@ -22,6 +22,28 @@
   .theme-card .status.emerging { color:var(--blue); }
   .theme-card .count { font-size:1.4rem; font-weight:700; color:var(--text); margin-top:6px; }
   .theme-card .label { font-size:0.6rem; color:var(--dim); }
+
+  .edge-section { margin:24px 0 26px; }
+  .edge-note { color:var(--dim); font-size:0.68rem; max-width:640px; line-height:1.45; }
+  .edge-summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(132px,1fr)); gap:8px; margin:0 0 12px; }
+  .edge-stat { background:var(--card2); border:1px solid var(--border); border-radius:6px; padding:10px 12px; min-height:68px; }
+  .edge-stat .l { color:var(--dim); font-size:0.62rem; text-transform:uppercase; letter-spacing:0.5px; }
+  .edge-stat .v { display:block; color:var(--accent); font-weight:800; font-size:1.25rem; line-height:1.3; margin-top:3px; }
+  .edge-stat .v.active { color:var(--green); }
+  .edge-stat .v.trigger { color:var(--amber); }
+  .edge-stat .v.watch { color:var(--blue); }
+  .table-wrap { width:100%; overflow-x:auto; border:1px solid var(--border); border-radius:8px; background:rgba(18,18,26,0.45); }
+  .table-wrap table { min-width:860px; }
+  .edge-table th { top:0; }
+  .state-chip { display:inline-flex; align-items:center; min-width:66px; justify-content:center; border-radius:999px; border:1px solid var(--border); padding:3px 8px; font-size:0.58rem; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; }
+  .state-chip.active { color:var(--green); border-color:rgba(16,185,129,0.45); background:rgba(16,185,129,0.08); }
+  .state-chip.trigger { color:var(--amber); border-color:rgba(245,158,11,0.45); background:rgba(245,158,11,0.08); }
+  .state-chip.watch { color:var(--blue); border-color:rgba(96,165,250,0.35); background:rgba(96,165,250,0.06); }
+  .pos { color:var(--green); }
+  .neg { color:var(--red); }
+  .leader-list { color:var(--dim); font-size:0.64rem; line-height:1.35; }
+  .leader-list b { color:var(--text); font-weight:700; }
+  .mobile-edge-metrics { display:none; }
 
   h2 { font-size:1rem; color:var(--accent); margin:20px 0 12px; text-transform:uppercase; letter-spacing:1px; }
 
@@ -64,18 +86,54 @@
   details summary { cursor:pointer; color:var(--dim); padding:8px 0; font-size:0.72rem; text-transform:uppercase; letter-spacing:1px; }
   details summary:hover { color:var(--accent); }
 
-  @media(max-width:600px) { table { font-size:0.65rem; } th,td { padding:6px 4px; } .themes { grid-template-columns:1fr 1fr; } }
+  @media(max-width:600px) {
+    body { padding:14px; }
+    table { font-size:0.65rem; }
+    th,td { padding:6px 4px; }
+    .themes { grid-template-columns:1fr 1fr; gap:8px; }
+    .edge-summary { grid-template-columns:1fr 1fr; }
+    .edge-note { flex-basis:100%; }
+    .mobile-edge-metrics { display:block; color:var(--text); font-size:0.62rem; margin-top:4px; line-height:1.35; }
+  }
 </style>
 </head>
 <body>
 
 <h1>LLM Convergence Scanner</h1>
-<p class="sub">Asymmetric options ranked by convergence score x IV-inverse x liquidity</p>
+<p class="sub">Benchmark-relative theme baskets with paper-book tracking</p>
 
 <div class="meta" id="scanMeta">
   <span>Loading scan data...</span>
 </div>
 
+<section class="edge-section" aria-labelledby="relativeEdgeTitle">
+  <div class="book-head">
+    <h2 id="relativeEdgeTitle" style="margin:0;">Relative Edge</h2>
+    <div class="edge-note" id="edgeSource">Loading benchmark-relative baskets...</div>
+  </div>
+  <div class="edge-summary" id="edgeSummary"></div>
+  <div class="table-wrap">
+    <table class="edge-table">
+      <thead>
+        <tr>
+          <th>State</th>
+          <th>Basket</th>
+          <th>Benchmark</th>
+          <th>63d Excess</th>
+          <th>126d Excess</th>
+          <th>Breadth</th>
+          <th>First Active</th>
+          <th>Leaders</th>
+        </tr>
+      </thead>
+      <tbody id="edgeBody">
+        <tr><td colspan="8" style="text-align:center;color:var(--dim);">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<h2>Corpus Coverage</h2>
 <div class="themes" id="themeCards"></div>
 
 <div class="book-head">
@@ -160,6 +218,90 @@ fetch('/scanner/scan-results.json')
   .then(function(d) {
     if (!d) return;
 
+    function esc(v) {
+      return String(v == null ? '' : v).replace(/[&<>"']/g, function(ch) {
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]);
+      });
+    }
+
+    function fmtSignedPct(v) {
+      if (v == null || isNaN(Number(v))) return '--';
+      var n = Number(v) * 100;
+      return (n > 0 ? '+' : '') + n.toFixed(1) + '%';
+    }
+
+    function fmtBreadth(v) {
+      if (v == null || isNaN(Number(v))) return '--';
+      return Math.round(Number(v) * 100) + '%';
+    }
+
+    function metric(row, window, key) {
+      return row && row.metrics && row.metrics[window] ? row.metrics[window][key] : null;
+    }
+
+    function stateChip(state) {
+      var s = state || 'watch';
+      return '<span class="state-chip ' + esc(s) + '">' + esc(s) + '</span>';
+    }
+
+    function edgeClass(v) {
+      if (v == null || isNaN(Number(v))) return '';
+      if (Number(v) > 0.01) return 'pos';
+      if (Number(v) < -0.01) return 'neg';
+      return '';
+    }
+
+    function renderRelativeEdge(edge) {
+      var body = document.getElementById('edgeBody');
+      var summary = document.getElementById('edgeSummary');
+      var source = document.getElementById('edgeSource');
+      if (!edge || !Array.isArray(edge.baskets)) {
+        summary.innerHTML = '';
+        source.textContent = 'No relative-edge data published yet.';
+        body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--dim);">Relative-edge data unavailable.</td></tr>';
+        return;
+      }
+
+      var s = edge.summary || {};
+      summary.innerHTML =
+        '<div class="edge-stat"><span class="l">Active edge</span><span class="v active">' + (s.active || 0) + '</span></div>' +
+        '<div class="edge-stat"><span class="l">Trigger queue</span><span class="v trigger">' + (s.trigger || 0) + '</span></div>' +
+        '<div class="edge-stat"><span class="l">Watch only</span><span class="v watch">' + (s.watch || 0) + '</span></div>' +
+        '<div class="edge-stat"><span class="l">Baskets tested</span><span class="v">' + (s.baskets || edge.baskets.length) + '</span></div>';
+
+      var rule = edge.rules && edge.rules.active
+        ? 'Active = +' + Math.round(edge.rules.active.excess_63d_gte * 100) + '% 63d and +' + Math.round(edge.rules.active.excess_126d_gte * 100) + '% 126d excess, with ' + Math.round(edge.rules.active.breadth_63d_gte * 100) + '% breadth.'
+        : 'Active baskets must beat their benchmark across multiple windows.';
+      var historyNote = edge.rules && edge.rules.history_note ? ' &middot; first-active dates are retrospective basket tests.' : '';
+      source.innerHTML = 'Data as of ' + esc(edge.as_of_date || 'n/a') + ' &middot; ' + esc(edge.source || 'price data') + ' &middot; ' + rule + historyNote;
+
+      var order = {active:0, trigger:1, watch:2};
+      var rows = edge.baskets.slice().sort(function(a, b) {
+        var oa = order[a.state] == null ? 3 : order[a.state];
+        var ob = order[b.state] == null ? 3 : order[b.state];
+        if (oa !== ob) return oa - ob;
+        return (metric(b, '126d', 'excess_return') || -999) - (metric(a, '126d', 'excess_return') || -999);
+      }).slice(0, 16).map(function(row) {
+        var leaders = (row.leaders || []).slice(0, 3).map(function(leader) {
+          return '<b>' + esc(leader.ticker) + '</b> ' + fmtSignedPct(leader.excess_63d);
+        }).join('<br>');
+        var excess63 = metric(row, '63d', 'excess_return');
+        var excess126 = metric(row, '126d', 'excess_return');
+        return '<tr>' +
+          '<td>' + stateChip(row.state) + '</td>' +
+          '<td><span class="ticker">' + esc(row.theme) + '</span><br><span style="font-size:0.6rem;color:var(--dim);">' + esc(row.kind) + ' · ' + esc((row.priced_tickers || []).join(', ')) + '</span><span class="mobile-edge-metrics">63d ' + fmtSignedPct(excess63) + ' &middot; 126d ' + fmtSignedPct(excess126) + ' &middot; breadth ' + fmtBreadth(metric(row, '63d', 'breadth')) + '</span></td>' +
+          '<td>' + esc(row.benchmark) + '</td>' +
+          '<td class="' + edgeClass(excess63) + '" style="font-weight:800;">' + fmtSignedPct(excess63) + '</td>' +
+          '<td class="' + edgeClass(excess126) + '" style="font-weight:800;">' + fmtSignedPct(excess126) + '</td>' +
+          '<td>' + fmtBreadth(metric(row, '63d', 'breadth')) + '</td>' +
+          '<td>' + esc(row.first_active_date || '--') + '</td>' +
+          '<td class="leader-list">' + (leaders || '--') + '</td>' +
+          '</tr>';
+      }).join('');
+
+      body.innerHTML = rows || '<tr><td colspan="8" style="text-align:center;color:var(--dim);">No baskets tested.</td></tr>';
+    }
+
     // Meta bar. The live options scan (scan_meta/results) is parked while
     // market-data access is pending, so it can read months old. The paper
     // book is the live content -- lead with its freshness and clearly mark
@@ -182,7 +324,6 @@ fetch('/scanner/scan-results.json')
         '<span>Passed: ' + m.contracts_passed + '</span>';
 
     // Theme cards
-    var themes = d.scan_meta.themes || {};
     var convMap = {};
     (d.convergence || []).forEach(function(c) {
       if (!convMap[c.theme]) convMap[c.theme] = { tickers: [], status: c.status, total_score: 0 };
@@ -193,17 +334,17 @@ fetch('/scanner/scan-results.json')
     var cardsHtml = '';
     Object.keys(convMap).forEach(function(theme) {
       var info = convMap[theme];
-      var contracts = themes[theme] ? themes[theme].contracts : 0;
       var statusClass = (info.status || '').replace(' ', '_');
       cardsHtml += '<div class="theme-card">' +
         '<div class="name">' + theme + '</div>' +
         '<div class="status ' + statusClass + '">' + (info.status || '') + '</div>' +
-        '<div class="count">' + contracts + '</div>' +
-        '<div class="label">contracts passed</div>' +
+        '<div class="count">' + info.tickers.length + '</div>' +
+        '<div class="label">corpus tickers</div>' +
         '<div style="font-size:0.6rem;color:var(--dim);margin-top:4px;">' + info.tickers.join(', ') + '</div>' +
         '</div>';
     });
     document.getElementById('themeCards').innerHTML = cardsHtml;
+    renderRelativeEdge(d.relative_edge);
 
     // Results table — suppress the stale month-old option rows while parked.
     var results = scanStale ? [] : (d.results || []);
