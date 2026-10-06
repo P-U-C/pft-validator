@@ -4,19 +4,19 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-10-06T10:00:00Z",
-  "calculated_at": "2026-10-06T10:28:01Z",
-  "next_update_at": "2026-10-06T11:00:00Z",
+  "snapshot_id": "2026-10-06T11:00:00Z",
+  "calculated_at": "2026-10-06T11:28:21Z",
+  "next_update_at": "2026-10-06T12:00:00Z",
   "refresh_cadence": "hourly",
-  "health_score": 0.5943,
+  "health_score": 0.6217,
   "health_score_formula": "sum(component.score * component.weight)",
-  "health_grade": "C",
+  "health_grade": "B",
   "component_metrics": {
     "concentration": {
-      "score": 0.9535,
+      "score": 0.9534,
       "weight": 0.2,
       "contribution": 0.1907,
-      "raw_hhi": 0.070906,
+      "raw_hhi": 0.070973,
       "formula": "max(0, min(1, (hhi_bad - HHI) / (hhi_bad - hhi_good)))",
       "description": "Herfindahl-Hirschman Index of memo activity distribution. Lower HHI = more distributed = healthier."
     },
@@ -31,12 +31,12 @@
       "description": "Fraction of active accounts that are real contributors (not bots or infrastructure)."
     },
     "memo_velocity": {
-      "score": 0.6156,
+      "score": 0.7524,
       "weight": 0.2,
-      "contribution": 0.1231,
-      "latest_day_memos": 27,
+      "contribution": 0.1505,
+      "latest_day_memos": 33,
       "avg_7d_daily": 43.9,
-      "velocity_ratio": 0.6156,
+      "velocity_ratio": 0.7524,
       "formula": "max(0, min(1, latest_day_count / avg_7d_daily))",
       "description": "Latest day memo count vs 7-day rolling average. Detects activity drops."
     },
@@ -103,9 +103,9 @@
       "severity": "none",
       "operator": ">",
       "threshold": 0.35,
-      "current_value": 0.0709,
+      "current_value": 0.071,
       "lookback": "current_snapshot",
-      "reason": "HHI=0.0709 below threshold 0.35. Memo activity is reasonably distributed."
+      "reason": "HHI=0.071 below threshold 0.35. Memo activity is reasonably distributed."
     },
     {
       "rule": "BOT_CLUSTER_GROWTH",
@@ -125,9 +125,9 @@
       "severity": "none",
       "operator": "<",
       "threshold": 0.5,
-      "current_value": 0.6156,
+      "current_value": 0.7524,
       "lookback": "7d",
-      "reason": "Today=27 memos vs 7d avg=43.9 (ratio=0.62). Memo velocity is within normal range."
+      "reason": "Today=33 memos vs 7d avg=43.9 (ratio=0.75). Memo velocity is within normal range."
     },
     {
       "rule": "NEW_SYBIL_CLUSTER",
@@ -158,21 +158,21 @@
     "clear": 3
   },
   "score_change": {
-    "vs_prior_snapshot": 0.0091,
-    "prior_health_score": 0.5852,
-    "prior_calculated_at": "2026-10-06T09:28:21Z",
+    "vs_prior_snapshot": 0.0274,
+    "prior_health_score": 0.5943,
+    "prior_calculated_at": "2026-10-06T10:28:01Z",
     "largest_movers": [
       {
         "component": "memo_velocity",
-        "delta": 0.0091,
-        "raw_delta": 0.0456,
-        "reason": "latest_day_memos=27 vs prior avg=43.9"
+        "delta": 0.0274,
+        "raw_delta": 0.1368,
+        "reason": "latest_day_memos=33 vs prior avg=43.9"
       },
       {
         "component": "concentration",
         "delta": -0.0,
         "raw_delta": -0.0001,
-        "reason": "HHI moved to 0.0709"
+        "reason": "HHI moved to 0.071"
       }
     ]
   },
@@ -181,19 +181,19 @@
     "contributors": 338,
     "bots": 733,
     "infrastructure": 8,
-    "total_transactions": 389120,
-    "memo_transactions": 25010,
+    "total_transactions": 389126,
+    "memo_transactions": 25016,
     "total_edges": 41859,
     "bidirectional_edges": 39726,
     "sybil_clusters": 6,
     "sybil_accounts": 769
   },
   "deltas": {
-    "health_score": 0.0091,
+    "health_score": 0.0274,
     "accounts": 0,
-    "memo_transactions": 2,
+    "memo_transactions": 6,
     "edges": 0,
-    "since": "2026-10-06T09:28:21Z"
+    "since": "2026-10-06T10:28:01Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -202,5 +202,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:6d45850bb90d7f15e232aa1131e72c721a53ab92bfa5e9701aab1b5edac23ecc"
+  "snapshot_hash": "sha256:4c50035ce2aceb028569fe49fbed5773d33e99369ccd7ce6a39c07b7e184be3c"
 }
