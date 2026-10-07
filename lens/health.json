@@ -4,19 +4,19 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-10-07T04:00:00Z",
-  "calculated_at": "2026-10-07T04:28:27Z",
-  "next_update_at": "2026-10-07T05:00:00Z",
+  "snapshot_id": "2026-10-07T05:00:00Z",
+  "calculated_at": "2026-10-07T05:28:17Z",
+  "next_update_at": "2026-10-07T06:00:00Z",
   "refresh_cadence": "hourly",
-  "health_score": 0.5662,
+  "health_score": 0.5745,
   "health_score_formula": "sum(component.score * component.weight)",
   "health_grade": "C",
   "component_metrics": {
     "concentration": {
-      "score": 0.9521,
+      "score": 0.952,
       "weight": 0.2,
       "contribution": 0.1904,
-      "raw_hhi": 0.071566,
+      "raw_hhi": 0.071588,
       "formula": "max(0, min(1, (hhi_bad - HHI) / (hhi_bad - hhi_good)))",
       "description": "Herfindahl-Hirschman Index of memo activity distribution. Lower HHI = more distributed = healthier."
     },
@@ -31,12 +31,12 @@
       "description": "Fraction of active accounts that are real contributors (not bots or infrastructure)."
     },
     "memo_velocity": {
-      "score": 0.4763,
+      "score": 0.5178,
       "weight": 0.2,
-      "contribution": 0.0953,
-      "latest_day_memos": 23,
+      "contribution": 0.1036,
+      "latest_day_memos": 25,
       "avg_7d_daily": 48.3,
-      "velocity_ratio": 0.4763,
+      "velocity_ratio": 0.5178,
       "formula": "max(0, min(1, latest_day_count / avg_7d_daily))",
       "description": "Latest day memo count vs 7-day rolling average. Detects activity drops."
     },
@@ -121,13 +121,13 @@
     {
       "rule": "VELOCITY_DROP",
       "category": "activity",
-      "status": "triggered",
-      "severity": "medium",
+      "status": "clear",
+      "severity": "none",
       "operator": "<",
       "threshold": 0.5,
-      "current_value": 0.4763,
+      "current_value": 0.5178,
       "lookback": "7d",
-      "reason": "Today=23 memos vs 7d avg=48.3 (ratio=0.48). Activity dropped below 50% of normal."
+      "reason": "Today=25 memos vs 7d avg=48.3 (ratio=0.52). Memo velocity is within normal range."
     },
     {
       "rule": "NEW_SYBIL_CLUSTER",
@@ -154,19 +154,25 @@
   ],
   "anomaly_summary": {
     "total_rules": 5,
-    "triggered": 3,
-    "clear": 2
+    "triggered": 2,
+    "clear": 3
   },
   "score_change": {
-    "vs_prior_snapshot": 0.0041,
-    "prior_health_score": 0.5621,
-    "prior_calculated_at": "2026-10-07T03:28:08Z",
+    "vs_prior_snapshot": 0.0083,
+    "prior_health_score": 0.5662,
+    "prior_calculated_at": "2026-10-07T04:28:27Z",
     "largest_movers": [
       {
         "component": "memo_velocity",
-        "delta": 0.0041,
-        "raw_delta": 0.0207,
-        "reason": "latest_day_memos=23 vs prior avg=48.3"
+        "delta": 0.0083,
+        "raw_delta": 0.0415,
+        "reason": "latest_day_memos=25 vs prior avg=48.3"
+      },
+      {
+        "component": "concentration",
+        "delta": -0.0,
+        "raw_delta": -0.0001,
+        "reason": "HHI moved to 0.0716"
       }
     ]
   },
@@ -175,19 +181,19 @@
     "contributors": 338,
     "bots": 733,
     "infrastructure": 8,
-    "total_transactions": 389180,
-    "memo_transactions": 25069,
+    "total_transactions": 389182,
+    "memo_transactions": 25071,
     "total_edges": 41859,
     "bidirectional_edges": 39726,
     "sybil_clusters": 6,
     "sybil_accounts": 769
   },
   "deltas": {
-    "health_score": 0.0041,
+    "health_score": 0.0083,
     "accounts": 0,
-    "memo_transactions": 1,
+    "memo_transactions": 2,
     "edges": 0,
-    "since": "2026-10-07T03:28:08Z"
+    "since": "2026-10-07T04:28:27Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -196,5 +202,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:a50ceeeb1f58dc61be0a0c584e5112fbfa1f3e493e90af13f53dce3d50f49da5"
+  "snapshot_hash": "sha256:381f4ceb75130be39bcbf560d161a60c94b809d94f305e6a83ee54ba8c2903e4"
 }
