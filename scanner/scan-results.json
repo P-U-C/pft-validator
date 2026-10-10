@@ -123,8 +123,8 @@
     "contracts": 0
    }
   },
-  "convergence_refreshed_at": "2026-10-09T13:55:07Z",
-  "relative_edge_refreshed_at": "2026-10-09T21:18:26Z"
+  "convergence_refreshed_at": "2026-10-10T13:55:07Z",
+  "relative_edge_refreshed_at": "2026-10-10T21:18:07Z"
  },
  "results": [
   {
@@ -2582,7 +2582,7 @@
   }
  ],
  "book": {
-  "generated_at": "2026-10-09T21:17:23.000550+00:00",
+  "generated_at": "2026-10-10T21:17:03.909409+00:00",
   "live_unlocked": false,
   "go_live_gate": {
    "required_closed_trades": 30,
@@ -12235,7 +12235,7 @@
   }
  },
  "relative_edge": {
-  "generated_at": "2026-10-09T21:18:26Z",
+  "generated_at": "2026-10-10T21:18:07Z",
   "source": "Yahoo Finance adjusted close via yfinance",
   "price_start": "2021-01-01",
   "price_end": null,
@@ -12265,16 +12265,15 @@
   },
   "summary": {
    "baskets": 18,
-   "active": 1,
-   "trigger": 3,
+   "active": 0,
+   "trigger": 4,
    "watch": 14,
    "entry_window": 0,
-   "research_queue": 3,
+   "research_queue": 4,
    "no_trade": 14,
    "phase_counts": {
     "fading_watch": 10,
-    "mature_active": 1,
-    "re_accelerating": 3,
+    "re_accelerating": 4,
     "reset_watch": 4
    }
   },
@@ -12371,8 +12370,8 @@
      },
      {
       "ticker": "SES",
-      "return_63d": 0.1124,
-      "excess_63d": 0.1197
+      "return_63d": 0.1127,
+      "excess_63d": 0.12
      }
     ],
     "as_of_date": "2026-10-09"
@@ -12480,6 +12479,104 @@
     "as_of_date": "2026-10-09"
    },
    {
+    "basket_id": "theme-bci-neurotech",
+    "theme": "BCI / Neurotech",
+    "theme_id": "bci-neurotech",
+    "kind": "corpus_theme",
+    "benchmark": "IHI",
+    "benchmark_requested": "IHI",
+    "tickers": [
+     "ABT",
+     "AXNX",
+     "BFLY",
+     "BSX",
+     "LIVN",
+     "MDT",
+     "NVDA",
+     "ONWD",
+     "ONWRY",
+     "QSI"
+    ],
+    "priced_tickers": [
+     "ABT",
+     "BFLY",
+     "BSX",
+     "LIVN",
+     "MDT",
+     "NVDA",
+     "ONWRY",
+     "QSI"
+    ],
+    "missing_tickers": [
+     "AXNX",
+     "ONWD"
+    ],
+    "priced_count": 8,
+    "state": "trigger",
+    "phase": "re_accelerating",
+    "phase_label": "Re-accelerating",
+    "action": "Second-impulse candidate; wait for 126d confirmation or a pullback that preserves breadth.",
+    "action_priority": 2,
+    "timing": {
+     "first_trigger_date": "2023-04-11",
+     "first_active_date": "2023-06-07",
+     "trading_days_since_first_trigger": 878,
+     "trading_days_since_first_active": 838,
+     "first_trigger_age": "3.5y",
+     "first_active_age": "3.3y"
+    },
+    "metrics": {
+     "21d": {
+      "basket_return": 0.0379,
+      "benchmark_return": 0.0181,
+      "excess_return": 0.0198,
+      "breadth": 0.375
+     },
+     "63d": {
+      "basket_return": 0.0983,
+      "benchmark_return": 0.0094,
+      "excess_return": 0.0889,
+      "breadth": 0.75
+     },
+     "126d": {
+      "basket_return": 0.1493,
+      "benchmark_return": -0.0252,
+      "excess_return": 0.1744,
+      "breadth": 0.75
+     }
+    },
+    "first_trigger_date": "2023-04-11",
+    "first_active_date": "2023-06-07",
+    "leaders": [
+     {
+      "ticker": "QSI",
+      "return_63d": 0.7606,
+      "excess_63d": 0.7513
+     },
+     {
+      "ticker": "NVDA",
+      "return_63d": 0.1278,
+      "excess_63d": 0.1184
+     },
+     {
+      "ticker": "ABT",
+      "return_63d": 0.089,
+      "excess_63d": 0.0797
+     },
+     {
+      "ticker": "MDT",
+      "return_63d": 0.0674,
+      "excess_63d": 0.0581
+     },
+     {
+      "ticker": "ONWRY",
+      "return_63d": 0.0377,
+      "excess_63d": 0.0283
+     }
+    ],
+    "as_of_date": "2026-10-09"
+   },
+   {
     "basket_id": "theme-defense-ai",
     "theme": "Defense AI",
     "theme_id": "defense-ai",
@@ -12576,104 +12673,6 @@
       "ticker": "LMT",
       "return_63d": -0.0152,
       "excess_63d": 0.1046
-     }
-    ],
-    "as_of_date": "2026-10-09"
-   },
-   {
-    "basket_id": "theme-bci-neurotech",
-    "theme": "BCI / Neurotech",
-    "theme_id": "bci-neurotech",
-    "kind": "corpus_theme",
-    "benchmark": "IHI",
-    "benchmark_requested": "IHI",
-    "tickers": [
-     "ABT",
-     "AXNX",
-     "BFLY",
-     "BSX",
-     "LIVN",
-     "MDT",
-     "NVDA",
-     "ONWD",
-     "ONWRY",
-     "QSI"
-    ],
-    "priced_tickers": [
-     "ABT",
-     "BFLY",
-     "BSX",
-     "LIVN",
-     "MDT",
-     "NVDA",
-     "ONWRY",
-     "QSI"
-    ],
-    "missing_tickers": [
-     "AXNX",
-     "ONWD"
-    ],
-    "priced_count": 8,
-    "state": "active",
-    "phase": "mature_active",
-    "phase_label": "Mature active",
-    "action": "Hold or trail existing exposure; avoid fresh chase unless it resets and re-accelerates.",
-    "action_priority": 3,
-    "timing": {
-     "first_trigger_date": "2023-04-11",
-     "first_active_date": "2023-06-07",
-     "trading_days_since_first_trigger": 878,
-     "trading_days_since_first_active": 838,
-     "first_trigger_age": "3.5y",
-     "first_active_age": "3.3y"
-    },
-    "metrics": {
-     "21d": {
-      "basket_return": 0.1524,
-      "benchmark_return": 0.0181,
-      "excess_return": 0.1343,
-      "breadth": 0.375
-     },
-     "63d": {
-      "basket_return": 0.2194,
-      "benchmark_return": 0.0094,
-      "excess_return": 0.2101,
-      "breadth": 0.75
-     },
-     "126d": {
-      "basket_return": 0.276,
-      "benchmark_return": -0.0252,
-      "excess_return": 0.3012,
-      "breadth": 0.75
-     }
-    },
-    "first_trigger_date": "2023-04-11",
-    "first_active_date": "2023-06-07",
-    "leaders": [
-     {
-      "ticker": "QSI",
-      "return_63d": 0.7606,
-      "excess_63d": 0.7513
-     },
-     {
-      "ticker": "NVDA",
-      "return_63d": 0.1278,
-      "excess_63d": 0.1184
-     },
-     {
-      "ticker": "ABT",
-      "return_63d": 0.089,
-      "excess_63d": 0.0797
-     },
-     {
-      "ticker": "MDT",
-      "return_63d": 0.0674,
-      "excess_63d": 0.0581
-     },
-     {
-      "ticker": "ONWRY",
-      "return_63d": 0.0377,
-      "excess_63d": 0.0283
      }
     ],
     "as_of_date": "2026-10-09"
@@ -12859,8 +12858,8 @@
      },
      {
       "ticker": "MRVL",
-      "return_63d": 0.2655,
-      "excess_63d": 0.2352
+      "return_63d": 0.2658,
+      "excess_63d": 0.2355
      },
      {
       "ticker": "ANET",
@@ -13045,8 +13044,8 @@
     "leaders": [
      {
       "ticker": "SMCI",
-      "return_63d": 0.5132,
-      "excess_63d": 0.483
+      "return_63d": 0.5134,
+      "excess_63d": 0.4831
      },
      {
       "ticker": "DELL",
@@ -14004,9 +14003,9 @@
       "breadth": 0.25
      },
      "126d": {
-      "basket_return": 0.0511,
+      "basket_return": 0.0512,
       "benchmark_return": 0.381,
-      "excess_return": -0.3299,
+      "excess_return": -0.3298,
       "breadth": 0.0833
      }
     },
@@ -14020,8 +14019,8 @@
      },
      {
       "ticker": "MRVL",
-      "return_63d": 0.2655,
-      "excess_63d": 0.2352
+      "return_63d": 0.2658,
+      "excess_63d": 0.2355
      },
      {
       "ticker": "NVDA",
