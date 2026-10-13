@@ -4,11 +4,11 @@
   "edition_id": "herald-2026-10-13",
   "edition_date": "2026-10-13",
   "edition_number": 183,
-  "generated_at": "2026-10-13T12:29:03Z",
+  "generated_at": "2026-10-13T13:29:10Z",
   "title": "The Hive Herald",
   "tagline": "Dispatches from the Post Fiat colony \u2014 on-chain intelligence, daily",
   "lead": {
-    "headline": "Memo velocity dropped to 20 vs a 55 seven-day average.",
+    "headline": "Memo velocity dropped to 23 vs a 55 seven-day average.",
     "why_it_matters": "Lower throughput in the task economy tends to precede either a maintenance window or a rebound. Watch the next 24h for direction.",
     "derived_from": [
       "sections.PULSE",
@@ -16,8 +16,8 @@
     ]
   },
   "data_window": {
-    "start": "2026-10-12T12:29:03Z",
-    "end": "2026-10-13T12:29:03Z",
+    "start": "2026-10-12T13:29:10Z",
+    "end": "2026-10-13T13:29:10Z",
     "duration": "24h",
     "timezone": "UTC"
   },
@@ -54,27 +54,27 @@
       "tier": "free",
       "name": "Pulse",
       "tagline": "Network vital signs",
-      "as_of": "2026-10-13T12:29:03Z",
+      "as_of": "2026-10-13T13:29:10Z",
       "lookback_window": "24h",
       "methodology_version": "1.1.0",
       "freshness_status": "fresh",
       "methodology_note": "Health score copied from the hourly health.json surface. Wallet counts and memo velocity derived from the chain-index snapshot taken at as_of.",
       "metrics": {
-        "health_score": 0.5423,
+        "health_score": 0.5532,
         "health_grade": "C",
         "total_wallets": 1080,
         "contributors": 339,
         "bots": 733,
         "infrastructure": 8,
-        "memos_today": 20,
+        "memos_today": 23,
         "memos_yesterday": 44,
         "memo_7d_daily_avg": 55.0,
         "velocity_direction": "dropping",
-        "total_transactions": 389503,
-        "total_memos": 25388,
+        "total_transactions": 389506,
+        "total_memos": 25391,
         "sybil_clusters": 6
       },
-      "narrative": "Health: 0.5423 (C). 1080 wallets, 339 contributors. 20 memos today vs 55 avg. Velocity dropping.",
+      "narrative": "Health: 0.5532 (C). 1080 wallets, 339 contributors. 23 memos today vs 55 avg. Velocity dropping.",
       "access": {
         "tier": "free",
         "subscription_required": false,
@@ -85,22 +85,22 @@
       "tier": "premium",
       "name": "Flow of Capital",
       "tagline": "Where PFT moved in the last 24 hours",
-      "as_of": "2026-10-13T12:29:03Z",
+      "as_of": "2026-10-13T13:29:10Z",
       "lookback_window": "24h",
       "methodology_version": "1.1.0",
       "freshness_status": "fresh",
       "methodology_note": "Reward payments counted from distribution/airdrop/task-node wallets to any non-bot, non-infrastructure address within a 24h rolling window. Top earner selected by aggregate PFT received in the window.",
       "metrics": {
-        "reward_payments_24h": 63,
-        "total_pft_distributed_24h": 14762,
+        "reward_payments_24h": 66,
+        "total_pft_distributed_24h": 14773,
         "unique_recipients_24h": 11,
         "top_earner_address": "rPExxzu9ULk8yuGDkfAJb4xYgPSgSesnSk",
         "top_earner_pft": 6580,
         "largest_single_payment_pft": 3500
       },
-      "narrative": "63 reward payments, 14762 PFT distributed to 11 contributors. Top earner: rPExxz...snSk (6580 PFT).",
+      "narrative": "66 reward payments, 14773 PFT distributed to 11 contributors. Top earner: rPExxz...snSk (6580 PFT).",
       "preview": {
-        "headline": "63 reward payments distributed 14,762 PFT in the last 24h",
+        "headline": "66 reward payments distributed 14,773 PFT in the last 24h",
         "locked": true
       },
       "access": {
@@ -114,7 +114,7 @@
       "tier": "premium",
       "name": "Who Stirs the Hive",
       "tagline": "Rising contributors, new arrivals, gone-quiet alerts",
-      "as_of": "2026-10-13T12:29:03Z",
+      "as_of": "2026-10-13T13:29:10Z",
       "lookback_window": "168h",
       "methodology_version": "1.1.0",
       "freshness_status": "fresh",
@@ -194,7 +194,7 @@
       "tier": "premium",
       "name": "Sybil Watch",
       "tagline": "Anomaly alerts and enforcement state",
-      "as_of": "2026-10-13T12:29:03Z",
+      "as_of": "2026-10-13T13:29:10Z",
       "lookback_window": "24h",
       "methodology_version": "1.1.0",
       "freshness_status": "fresh",
@@ -224,7 +224,7 @@
       "tier": "premium",
       "name": "From the Archive Vault",
       "tagline": "Full-history exclusive insights only we can produce",
-      "as_of": "2026-10-13T12:29:03Z",
+      "as_of": "2026-10-13T13:29:10Z",
       "lookback_window": "24h",
       "methodology_version": "1.1.0",
       "freshness_status": "fresh",
@@ -290,15 +290,15 @@
     "positioning": "The canonical public edition contract for a subscription-native intelligence product: machine-readable, archiveable, tier-aware, downstream-stable, and auditable against live indexed network data."
   },
   "integrity": {
-    "payload_sha256": "sha256:4112dcca85da2485770b09df8d6eb3e8b2771f8e55513357874777b3f4052c97",
+    "payload_sha256": "sha256:081ac7405efeaec76c860bf68ff379f3d30f038ac680d035cbcc88e2b5699f50",
     "generated_from": [
       "chain-index.db",
       "health.json",
       "auth.json"
     ],
     "source_snapshot_hashes": {
-      "health": "sha256:fda8020d65813898a900bd8586302bedc11c396fce26410c623f76e183eaad19",
-      "auth": "sha256:623d3a1a78e7ae67ffdd0aa30a25e4987905fb46b124eee3e7f954b6810b991b"
+      "health": "sha256:90baeeb0fb77fe1b8c9d4075a728eec7e545ffe05f2aee36a1ec6663cefe9950",
+      "auth": "sha256:de3227d2a2f9333e03df1bf59ae7d4f58a604572da15264c3705e18c33cc2531"
     },
     "determinism_note": "Edition generated from indexed public data and published analytics surfaces without manual overrides. Same chain index + same hourly crawl produces the same payload.",
     "canonical_serialization": "json_sort_keys",
