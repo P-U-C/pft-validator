@@ -4,19 +4,19 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-10-16T23:00:00Z",
-  "calculated_at": "2026-10-16T23:28:38Z",
-  "next_update_at": "2026-10-17T00:00:00Z",
+  "snapshot_id": "2026-10-17T00:00:00Z",
+  "calculated_at": "2026-10-17T00:29:10Z",
+  "next_update_at": "2026-10-17T01:00:00Z",
   "refresh_cadence": "hourly",
-  "health_score": 0.6145,
+  "health_score": 0.6287,
   "health_score_formula": "sum(component.score * component.weight)",
   "health_grade": "B",
   "component_metrics": {
     "concentration": {
-      "score": 0.9386,
+      "score": 0.9385,
       "weight": 0.2,
       "contribution": 0.1877,
-      "raw_hhi": 0.077611,
+      "raw_hhi": 0.077658,
       "formula": "max(0, min(1, (hhi_bad - HHI) / (hhi_bad - hhi_good)))",
       "description": "Herfindahl-Hirschman Index of memo activity distribution. Lower HHI = more distributed = healthier."
     },
@@ -31,12 +31,12 @@
       "description": "Fraction of active accounts that are real contributors (not bots or infrastructure)."
     },
     "memo_velocity": {
-      "score": 0.7284,
+      "score": 0.7995,
       "weight": 0.2,
-      "contribution": 0.1457,
-      "latest_day_memos": 41,
+      "contribution": 0.1599,
+      "latest_day_memos": 45,
       "avg_7d_daily": 56.3,
-      "velocity_ratio": 0.7284,
+      "velocity_ratio": 0.7995,
       "formula": "max(0, min(1, latest_day_count / avg_7d_daily))",
       "description": "Latest day memo count vs 7-day rolling average. Detects activity drops."
     },
@@ -103,9 +103,9 @@
       "severity": "none",
       "operator": ">",
       "threshold": 0.35,
-      "current_value": 0.0776,
+      "current_value": 0.0777,
       "lookback": "current_snapshot",
-      "reason": "HHI=0.0776 below threshold 0.35. Memo activity is reasonably distributed."
+      "reason": "HHI=0.0777 below threshold 0.35. Memo activity is reasonably distributed."
     },
     {
       "rule": "BOT_CLUSTER_GROWTH",
@@ -125,9 +125,9 @@
       "severity": "none",
       "operator": "<",
       "threshold": 0.5,
-      "current_value": 0.7284,
+      "current_value": 0.7995,
       "lookback": "7d",
-      "reason": "Today=41 memos vs 7d avg=56.3 (ratio=0.73). Memo velocity is within normal range."
+      "reason": "Today=45 memos vs 7d avg=56.3 (ratio=0.8). Memo velocity is within normal range."
     },
     {
       "rule": "NEW_SYBIL_CLUSTER",
@@ -159,20 +159,20 @@
   },
   "score_change": {
     "vs_prior_snapshot": 0.0142,
-    "prior_health_score": 0.6003,
-    "prior_calculated_at": "2026-10-16T22:28:49Z",
+    "prior_health_score": 0.6145,
+    "prior_calculated_at": "2026-10-16T23:28:38Z",
     "largest_movers": [
       {
         "component": "memo_velocity",
         "delta": 0.0142,
-        "raw_delta": 0.071,
-        "reason": "latest_day_memos=41 vs prior avg=56.3"
+        "raw_delta": 0.0711,
+        "reason": "latest_day_memos=45 vs prior avg=56.3"
       },
       {
         "component": "concentration",
         "delta": -0.0,
         "raw_delta": -0.0001,
-        "reason": "HHI moved to 0.0776"
+        "reason": "HHI moved to 0.0777"
       }
     ]
   },
@@ -181,8 +181,8 @@
     "contributors": 340,
     "bots": 733,
     "infrastructure": 8,
-    "total_transactions": 389719,
-    "memo_transactions": 25603,
+    "total_transactions": 389723,
+    "memo_transactions": 25607,
     "total_edges": 41865,
     "bidirectional_edges": 39726,
     "sybil_clusters": 6,
@@ -193,7 +193,7 @@
     "accounts": 0,
     "memo_transactions": 4,
     "edges": 0,
-    "since": "2026-10-16T22:28:49Z"
+    "since": "2026-10-16T23:28:38Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -202,5 +202,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:f0635a2b1731ad73e92f7d1a6fc58682eedd5cd668aaacfdef67c3fe9fc6216c"
+  "snapshot_hash": "sha256:cf2c831cd253b4fe1881d775d27a13ff916442b32422413456bf9f6142fbb154"
 }
