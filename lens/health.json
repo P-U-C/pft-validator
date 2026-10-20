@@ -4,9 +4,9 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-10-20T12:00:00Z",
-  "calculated_at": "2026-10-20T12:28:44Z",
-  "next_update_at": "2026-10-20T13:00:00Z",
+  "snapshot_id": "2026-10-20T13:00:00Z",
+  "calculated_at": "2026-10-20T13:28:54Z",
+  "next_update_at": "2026-10-20T14:00:00Z",
   "refresh_cadence": "hourly",
   "health_score": 0.6178,
   "health_score_formula": "sum(component.score * component.weight)",
@@ -158,29 +158,10 @@
     "clear": 3
   },
   "score_change": {
-    "vs_prior_snapshot": 0.0301,
-    "prior_health_score": 0.5877,
-    "prior_calculated_at": "2026-10-20T11:28:57Z",
-    "largest_movers": [
-      {
-        "component": "memo_velocity",
-        "delta": 0.0299,
-        "raw_delta": 0.1494,
-        "reason": "latest_day_memos=35 vs prior avg=46.9"
-      },
-      {
-        "component": "contributor_ratio",
-        "delta": 0.0003,
-        "raw_delta": 0.0011,
-        "reason": "contributor ratio=31.5% (341/1082)"
-      },
-      {
-        "component": "concentration",
-        "delta": -0.0,
-        "raw_delta": -0.0001,
-        "reason": "HHI moved to 0.0791"
-      }
-    ]
+    "vs_prior_snapshot": 0.0,
+    "prior_health_score": 0.6178,
+    "prior_calculated_at": "2026-10-20T12:28:44Z",
+    "largest_movers": []
   },
   "network_summary": {
     "total_accounts": 1082,
@@ -195,11 +176,11 @@
     "sybil_accounts": 769
   },
   "deltas": {
-    "health_score": 0.0301,
-    "accounts": 1,
-    "memo_transactions": 7,
-    "edges": 2,
-    "since": "2026-10-20T11:28:57Z"
+    "health_score": 0.0,
+    "accounts": 0,
+    "memo_transactions": 0,
+    "edges": 0,
+    "since": "2026-10-20T12:28:44Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -208,5 +189,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:422b82e1f4ebb2848fe16b5d83cdb9fcbf8ea25cfcb4e4d4055b0c6d9964603c"
+  "snapshot_hash": "sha256:c5edecb27f9c975c600faa066df590fbdc21d5cd37e026ceaeb8980cf9d80028"
 }
