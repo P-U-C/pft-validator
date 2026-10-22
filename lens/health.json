@@ -4,19 +4,19 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-10-22T12:00:00Z",
-  "calculated_at": "2026-10-22T12:29:04Z",
-  "next_update_at": "2026-10-22T13:00:00Z",
+  "snapshot_id": "2026-10-22T13:00:00Z",
+  "calculated_at": "2026-10-22T13:29:17Z",
+  "next_update_at": "2026-10-22T14:00:00Z",
   "refresh_cadence": "hourly",
-  "health_score": 0.5637,
+  "health_score": 0.5761,
   "health_score_formula": "sum(component.score * component.weight)",
   "health_grade": "C",
   "component_metrics": {
     "concentration": {
-      "score": 0.9325,
+      "score": 0.9324,
       "weight": 0.2,
       "contribution": 0.1865,
-      "raw_hhi": 0.080379,
+      "raw_hhi": 0.080415,
       "formula": "max(0, min(1, (hhi_bad - HHI) / (hhi_bad - hhi_good)))",
       "description": "Herfindahl-Hirschman Index of memo activity distribution. Lower HHI = more distributed = healthier."
     },
@@ -31,12 +31,12 @@
       "description": "Fraction of active accounts that are real contributors (not bots or infrastructure)."
     },
     "memo_velocity": {
-      "score": 0.4792,
+      "score": 0.5417,
       "weight": 0.2,
-      "contribution": 0.0958,
-      "latest_day_memos": 23,
+      "contribution": 0.1083,
+      "latest_day_memos": 26,
       "avg_7d_daily": 48.0,
-      "velocity_ratio": 0.4792,
+      "velocity_ratio": 0.5417,
       "formula": "max(0, min(1, latest_day_count / avg_7d_daily))",
       "description": "Latest day memo count vs 7-day rolling average. Detects activity drops."
     },
@@ -121,13 +121,13 @@
     {
       "rule": "VELOCITY_DROP",
       "category": "activity",
-      "status": "triggered",
-      "severity": "medium",
+      "status": "clear",
+      "severity": "none",
       "operator": "<",
       "threshold": 0.5,
-      "current_value": 0.4792,
+      "current_value": 0.5417,
       "lookback": "7d",
-      "reason": "Today=23 memos vs 7d avg=48.0 (ratio=0.48). Activity dropped below 50% of normal."
+      "reason": "Today=26 memos vs 7d avg=48.0 (ratio=0.54). Memo velocity is within normal range."
     },
     {
       "rule": "NEW_SYBIL_CLUSTER",
@@ -154,19 +154,25 @@
   ],
   "anomaly_summary": {
     "total_rules": 5,
-    "triggered": 3,
-    "clear": 2
+    "triggered": 2,
+    "clear": 3
   },
   "score_change": {
-    "vs_prior_snapshot": 0.0042,
-    "prior_health_score": 0.5595,
-    "prior_calculated_at": "2026-10-22T11:29:03Z",
+    "vs_prior_snapshot": 0.0124,
+    "prior_health_score": 0.5637,
+    "prior_calculated_at": "2026-10-22T12:29:04Z",
     "largest_movers": [
       {
         "component": "memo_velocity",
-        "delta": 0.0042,
-        "raw_delta": 0.0209,
-        "reason": "latest_day_memos=23 vs prior avg=48.0"
+        "delta": 0.0125,
+        "raw_delta": 0.0625,
+        "reason": "latest_day_memos=26 vs prior avg=48.0"
+      },
+      {
+        "component": "concentration",
+        "delta": -0.0,
+        "raw_delta": -0.0001,
+        "reason": "HHI moved to 0.0804"
       }
     ]
   },
@@ -175,19 +181,19 @@
     "contributors": 341,
     "bots": 733,
     "infrastructure": 8,
-    "total_transactions": 389964,
-    "memo_transactions": 25846,
+    "total_transactions": 389967,
+    "memo_transactions": 25849,
     "total_edges": 41869,
     "bidirectional_edges": 39728,
     "sybil_clusters": 6,
     "sybil_accounts": 769
   },
   "deltas": {
-    "health_score": 0.0042,
+    "health_score": 0.0124,
     "accounts": 0,
-    "memo_transactions": 1,
+    "memo_transactions": 3,
     "edges": 0,
-    "since": "2026-10-22T11:29:03Z"
+    "since": "2026-10-22T12:29:04Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -196,5 +202,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:8cedae42827f3922c081e128f20a7f61631512028e0efb00690391839becc42b"
+  "snapshot_hash": "sha256:2dbd79736f4442bf946ffb5d286bdce067894a8f00637e20426f06ada0db5396"
 }
