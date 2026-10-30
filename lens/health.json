@@ -4,19 +4,19 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-10-30T11:00:00Z",
-  "calculated_at": "2026-10-30T11:29:22Z",
-  "next_update_at": "2026-10-30T12:00:00Z",
+  "snapshot_id": "2026-10-30T12:00:00Z",
+  "calculated_at": "2026-10-30T12:29:39Z",
+  "next_update_at": "2026-10-30T13:00:00Z",
   "refresh_cadence": "hourly",
-  "health_score": 0.5556,
+  "health_score": 0.5719,
   "health_score_formula": "sum(component.score * component.weight)",
   "health_grade": "C",
   "component_metrics": {
     "concentration": {
-      "score": 0.9223,
+      "score": 0.9222,
       "weight": 0.2,
-      "contribution": 0.1845,
-      "raw_hhi": 0.084976,
+      "contribution": 0.1844,
+      "raw_hhi": 0.085025,
       "formula": "max(0, min(1, (hhi_bad - HHI) / (hhi_bad - hhi_good)))",
       "description": "Herfindahl-Hirschman Index of memo activity distribution. Lower HHI = more distributed = healthier."
     },
@@ -31,12 +31,12 @@
       "description": "Fraction of active accounts that are real contributors (not bots or infrastructure)."
     },
     "memo_velocity": {
-      "score": 0.449,
+      "score": 0.5306,
       "weight": 0.2,
-      "contribution": 0.0898,
-      "latest_day_memos": 22,
+      "contribution": 0.1061,
+      "latest_day_memos": 26,
       "avg_7d_daily": 49.0,
-      "velocity_ratio": 0.449,
+      "velocity_ratio": 0.5306,
       "formula": "max(0, min(1, latest_day_count / avg_7d_daily))",
       "description": "Latest day memo count vs 7-day rolling average. Detects activity drops."
     },
@@ -121,13 +121,13 @@
     {
       "rule": "VELOCITY_DROP",
       "category": "activity",
-      "status": "triggered",
-      "severity": "medium",
+      "status": "clear",
+      "severity": "none",
       "operator": "<",
       "threshold": 0.5,
-      "current_value": 0.449,
+      "current_value": 0.5306,
       "lookback": "7d",
-      "reason": "Today=22 memos vs 7d avg=49.0 (ratio=0.45). Activity dropped below 50% of normal."
+      "reason": "Today=26 memos vs 7d avg=49.0 (ratio=0.53). Memo velocity is within normal range."
     },
     {
       "rule": "NEW_SYBIL_CLUSTER",
@@ -154,19 +154,25 @@
   ],
   "anomaly_summary": {
     "total_rules": 5,
-    "triggered": 3,
-    "clear": 2
+    "triggered": 2,
+    "clear": 3
   },
   "score_change": {
-    "vs_prior_snapshot": 0.0041,
-    "prior_health_score": 0.5515,
-    "prior_calculated_at": "2026-10-30T10:29:26Z",
+    "vs_prior_snapshot": 0.0163,
+    "prior_health_score": 0.5556,
+    "prior_calculated_at": "2026-10-30T11:29:22Z",
     "largest_movers": [
       {
         "component": "memo_velocity",
-        "delta": 0.0041,
-        "raw_delta": 0.0204,
-        "reason": "latest_day_memos=22 vs prior avg=49.0"
+        "delta": 0.0163,
+        "raw_delta": 0.0816,
+        "reason": "latest_day_memos=26 vs prior avg=49.0"
+      },
+      {
+        "component": "concentration",
+        "delta": -0.0,
+        "raw_delta": -0.0001,
+        "reason": "HHI moved to 0.085"
       }
     ]
   },
@@ -175,19 +181,19 @@
     "contributors": 341,
     "bots": 733,
     "infrastructure": 8,
-    "total_transactions": 390349,
-    "memo_transactions": 26230,
+    "total_transactions": 390353,
+    "memo_transactions": 26234,
     "total_edges": 41870,
     "bidirectional_edges": 39728,
     "sybil_clusters": 6,
     "sybil_accounts": 769
   },
   "deltas": {
-    "health_score": 0.0041,
+    "health_score": 0.0163,
     "accounts": 0,
-    "memo_transactions": 1,
+    "memo_transactions": 4,
     "edges": 0,
-    "since": "2026-10-30T10:29:26Z"
+    "since": "2026-10-30T11:29:22Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -196,5 +202,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:4dd0f3c0d91918c6f1b1b717927431c2701e40f919dee59729b1995658a16b0e"
+  "snapshot_hash": "sha256:e98a8e3a850112a12935bdd2e89e297ab162dde97fd54ed17fd2623e3152eb2f"
 }
