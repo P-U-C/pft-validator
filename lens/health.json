@@ -4,9 +4,9 @@
   "classifier_version": "1.0.0",
   "scoring_weights_version": "1.0.0",
   "anomaly_rules_version": "1.0.0",
-  "snapshot_id": "2026-11-02T22:00:00Z",
-  "calculated_at": "2026-11-02T22:29:41Z",
-  "next_update_at": "2026-11-02T23:00:00Z",
+  "snapshot_id": "2026-11-02T23:00:00Z",
+  "calculated_at": "2026-11-02T23:29:32Z",
+  "next_update_at": "2026-11-03T00:00:00Z",
   "refresh_cadence": "hourly",
   "health_score": 0.6278,
   "health_score_formula": "sum(component.score * component.weight)",
@@ -158,23 +158,10 @@
     "clear": 3
   },
   "score_change": {
-    "vs_prior_snapshot": 0.0035,
-    "prior_health_score": 0.6243,
-    "prior_calculated_at": "2026-11-02T21:29:54Z",
-    "largest_movers": [
-      {
-        "component": "memo_velocity",
-        "delta": 0.0035,
-        "raw_delta": 0.0177,
-        "reason": "latest_day_memos=46 vs prior avg=56.4"
-      },
-      {
-        "component": "concentration",
-        "delta": -0.0,
-        "raw_delta": -0.0001,
-        "reason": "HHI moved to 0.0872"
-      }
-    ]
+    "vs_prior_snapshot": 0.0,
+    "prior_health_score": 0.6278,
+    "prior_calculated_at": "2026-11-02T22:29:41Z",
+    "largest_movers": []
   },
   "network_summary": {
     "total_accounts": 1082,
@@ -189,11 +176,11 @@
     "sybil_accounts": 769
   },
   "deltas": {
-    "health_score": 0.0035,
+    "health_score": 0.0,
     "accounts": 0,
-    "memo_transactions": 1,
+    "memo_transactions": 0,
     "edges": 0,
-    "since": "2026-11-02T21:29:54Z"
+    "since": "2026-11-02T22:29:41Z"
   },
   "data_source": {
     "database": "chain-index.db",
@@ -202,5 +189,5 @@
     "lens_url": "https://pft.permanentupperclass.com/lens/",
     "audit_url": "https://pft.permanentupperclass.com/lens/audit.html"
   },
-  "snapshot_hash": "sha256:fe848e5b5a06c852636fa3070bc5a048d967b87cd7d6197d4a6130429af7cfaf"
+  "snapshot_hash": "sha256:b942e67ef382f4b3ef25ecac6310ad307e63f2c868f24fb1e86c21220ab5ba98"
 }
