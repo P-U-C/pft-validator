@@ -123,8 +123,8 @@
     "contracts": 0
    }
   },
-  "convergence_refreshed_at": "2026-11-07T13:55:08Z",
-  "relative_edge_refreshed_at": "2026-11-07T21:18:09Z"
+  "convergence_refreshed_at": "2026-11-08T13:55:07Z",
+  "relative_edge_refreshed_at": "2026-11-08T21:18:26Z"
  },
  "results": [
   {
@@ -2582,7 +2582,7 @@
   }
  ],
  "book": {
-  "generated_at": "2026-11-07T21:17:05.169831+00:00",
+  "generated_at": "2026-11-08T21:17:15.552166+00:00",
   "live_unlocked": false,
   "go_live_gate": {
    "required_closed_trades": 30,
@@ -2607,8 +2607,8 @@
      "cost_total_usd": 170.4,
      "entry_date": "2026-10-27",
      "entry_rationale": "thesis-implied move 0.051 vs market-implied 0.024 (ratio 2.12); conference_launch in 71d on 2027-01-06",
-     "mark": 25.67,
-     "pct_pnl": -69.87,
+     "mark": 25.36,
+     "pct_pnl": -70.23,
      "direction": "long",
      "status": "open",
      "closed_at": null,
@@ -2631,8 +2631,8 @@
      "cost_total_usd": 193.5,
      "entry_date": "2026-10-28",
      "entry_rationale": "thesis-implied move 0.051 vs market-implied 0.027 (ratio 1.87); conference_launch in 70d on 2027-01-06",
-     "mark": 31.89,
-     "pct_pnl": -67.03,
+     "mark": 31.54,
+     "pct_pnl": -67.41,
      "direction": "long",
      "status": "open",
      "closed_at": null,
@@ -2655,8 +2655,8 @@
      "cost_total_usd": 96.75,
      "entry_date": "2026-10-29",
      "entry_rationale": "thesis-implied move 0.051 vs market-implied 0.027 (ratio 1.85); conference_launch in 69d on 2027-01-06",
-     "mark": 32.18,
-     "pct_pnl": -66.74,
+     "mark": 31.82,
+     "pct_pnl": -67.11,
      "direction": "long",
      "status": "open",
      "closed_at": null,
@@ -12278,8 +12278,8 @@
     "open_count": 103,
     "closed_count": 317,
     "invested_usd": 1342.56,
-    "mark_to_market_usd": 885.89,
-    "unrealized_pnl_usd": -456.67,
+    "mark_to_market_usd": 884.21,
+    "unrealized_pnl_usd": -458.35,
     "buckets": {
      "short_term": {
       "closed": 8,
@@ -12327,7 +12327,7 @@
   }
  },
  "relative_edge": {
-  "generated_at": "2026-11-07T21:18:09Z",
+  "generated_at": "2026-11-08T21:18:26Z",
   "source": "Yahoo Finance adjusted close via yfinance",
   "price_start": "2021-01-01",
   "price_end": null,
@@ -12497,60 +12497,50 @@
      "5019.T",
      "5706.T",
      "QS",
-     "SES",
-     "SLDP",
-     "TM"
+     "SLDP"
     ],
     "missing_tickers": [
-     "PCRFY"
+     "PCRFY",
+     "SES",
+     "TM"
     ],
-    "priced_count": 9,
+    "priced_count": 7,
     "state": "trigger",
     "phase": "re_accelerating",
     "phase_label": "Re-accelerating",
     "action": "Second-impulse candidate; wait for 126d confirmation or a pullback that preserves breadth.",
     "action_priority": 2,
     "timing": {
-     "first_trigger_date": "2022-03-10",
-     "first_active_date": "2023-11-28",
-     "trading_days_since_first_trigger": 1170,
-     "trading_days_since_first_active": 738,
-     "first_trigger_age": "4.6y",
+     "first_trigger_date": "2022-03-02",
+     "first_active_date": "2023-11-29",
+     "trading_days_since_first_trigger": 1176,
+     "trading_days_since_first_active": 737,
+     "first_trigger_age": "4.7y",
      "first_active_age": "2.9y"
     },
     "metrics": {
      "21d": {
-      "basket_return": -0.2882,
+      "basket_return": -0.3284,
       "benchmark_return": -0.1175,
-      "excess_return": -0.1707,
-      "breadth": 0.3333
+      "excess_return": -0.2109,
+      "breadth": 0.1429
      },
      "63d": {
-      "basket_return": 1.5555,
+      "basket_return": 2.2969,
       "benchmark_return": -0.185,
-      "excess_return": 1.7406,
-      "breadth": 0.7778
+      "excess_return": 2.482,
+      "breadth": 0.7143
      },
      "126d": {
-      "basket_return": -0.4886,
+      "basket_return": -0.5282,
       "benchmark_return": -0.3216,
-      "excess_return": -0.167,
-      "breadth": 0.5556
+      "excess_return": -0.2066,
+      "breadth": 0.4286
      }
     },
-    "first_trigger_date": "2022-03-10",
-    "first_active_date": "2023-11-28",
+    "first_trigger_date": "2022-03-02",
+    "first_active_date": "2023-11-29",
     "leaders": [
-     {
-      "ticker": "SES",
-      "return_63d": 0.5658,
-      "excess_63d": 0.7508
-     },
-     {
-      "ticker": "TM",
-      "return_63d": 0.1452,
-      "excess_63d": 0.3302
-     },
      {
       "ticker": "006400.KS",
       "return_63d": 0.1156,
@@ -12565,6 +12555,16 @@
       "ticker": "096770.KS",
       "return_63d": -0.0171,
       "excess_63d": 0.168
+     },
+     {
+      "ticker": "5019.T",
+      "return_63d": -0.0182,
+      "excess_63d": 0.1668
+     },
+     {
+      "ticker": "SLDP",
+      "return_63d": -0.1553,
+      "excess_63d": 0.0297
      }
     ],
     "as_of_date": "2026-11-06"
@@ -12873,107 +12873,6 @@
     "as_of_date": "2026-11-06"
    },
    {
-    "basket_id": "theme-defense-ai",
-    "theme": "Defense AI",
-    "theme_id": "defense-ai",
-    "kind": "corpus_theme",
-    "benchmark": "ITA",
-    "benchmark_requested": "ITA",
-    "tickers": [
-     "AVAV",
-     "AXON",
-     "BA",
-     "BAH",
-     "CACI",
-     "KTOS",
-     "LDOS",
-     "LHX",
-     "LMT",
-     "NOC",
-     "PLTR",
-     "RTX"
-    ],
-    "priced_tickers": [
-     "AVAV",
-     "AXON",
-     "BA",
-     "BAH",
-     "CACI",
-     "KTOS",
-     "LDOS",
-     "LHX",
-     "LMT",
-     "NOC",
-     "PLTR",
-     "RTX"
-    ],
-    "missing_tickers": [],
-    "priced_count": 12,
-    "state": "watch",
-    "phase": "fading_watch",
-    "phase_label": "Fading watch",
-    "action": "No new trade; prior edge is stale or losing benchmark-relative breadth.",
-    "action_priority": 5,
-    "timing": {
-     "first_trigger_date": "2024-10-24",
-     "first_active_date": null,
-     "trading_days_since_first_trigger": 510,
-     "trading_days_since_first_active": null,
-     "first_trigger_age": "2.0y",
-     "first_active_age": null
-    },
-    "metrics": {
-     "21d": {
-      "basket_return": -0.0768,
-      "benchmark_return": 0.0101,
-      "excess_return": -0.0868,
-      "breadth": 0.5833
-     },
-     "63d": {
-      "basket_return": -0.1939,
-      "benchmark_return": -0.175,
-      "excess_return": -0.0189,
-      "breadth": 0.6667
-     },
-     "126d": {
-      "basket_return": -0.0279,
-      "benchmark_return": -0.0723,
-      "excess_return": 0.0444,
-      "breadth": 0.5833
-     }
-    },
-    "first_trigger_date": "2024-10-24",
-    "first_active_date": null,
-    "leaders": [
-     {
-      "ticker": "BAH",
-      "return_63d": 0.1039,
-      "excess_63d": 0.279
-     },
-     {
-      "ticker": "LDOS",
-      "return_63d": -0.0431,
-      "excess_63d": 0.132
-     },
-     {
-      "ticker": "LMT",
-      "return_63d": -0.054,
-      "excess_63d": 0.121
-     },
-     {
-      "ticker": "CACI",
-      "return_63d": -0.0572,
-      "excess_63d": 0.1178
-     },
-     {
-      "ticker": "PLTR",
-      "return_63d": -0.0847,
-      "excess_63d": 0.0903
-     }
-    ],
-    "as_of_date": "2026-11-06"
-   },
-   {
     "basket_id": "theme-ai-infrastructure",
     "theme": "AI Infrastructure",
     "theme_id": "ai-infrastructure",
@@ -13070,6 +12969,108 @@
       "ticker": "NVDA",
       "return_63d": -0.1411,
       "excess_63d": 0.0441
+     }
+    ],
+    "as_of_date": "2026-11-06"
+   },
+   {
+    "basket_id": "theme-defense-ai",
+    "theme": "Defense AI",
+    "theme_id": "defense-ai",
+    "kind": "corpus_theme",
+    "benchmark": "ITA",
+    "benchmark_requested": "ITA",
+    "tickers": [
+     "AVAV",
+     "AXON",
+     "BA",
+     "BAH",
+     "CACI",
+     "KTOS",
+     "LDOS",
+     "LHX",
+     "LMT",
+     "NOC",
+     "PLTR",
+     "RTX"
+    ],
+    "priced_tickers": [
+     "AVAV",
+     "AXON",
+     "BA",
+     "BAH",
+     "KTOS",
+     "LDOS",
+     "LHX",
+     "LMT",
+     "NOC",
+     "PLTR",
+     "RTX"
+    ],
+    "missing_tickers": [
+     "CACI"
+    ],
+    "priced_count": 11,
+    "state": "watch",
+    "phase": "fading_watch",
+    "phase_label": "Fading watch",
+    "action": "No new trade; prior edge is stale or losing benchmark-relative breadth.",
+    "action_priority": 5,
+    "timing": {
+     "first_trigger_date": "2024-10-24",
+     "first_active_date": "2024-11-11",
+     "trading_days_since_first_trigger": 510,
+     "trading_days_since_first_active": 498,
+     "first_trigger_age": "2.0y",
+     "first_active_age": "2.0y"
+    },
+    "metrics": {
+     "21d": {
+      "basket_return": -0.0858,
+      "benchmark_return": 0.0101,
+      "excess_return": -0.0959,
+      "breadth": 0.5455
+     },
+     "63d": {
+      "basket_return": -0.2059,
+      "benchmark_return": -0.175,
+      "excess_return": -0.0309,
+      "breadth": 0.6364
+     },
+     "126d": {
+      "basket_return": -0.0513,
+      "benchmark_return": -0.0723,
+      "excess_return": 0.021,
+      "breadth": 0.5455
+     }
+    },
+    "first_trigger_date": "2024-10-24",
+    "first_active_date": "2024-11-11",
+    "leaders": [
+     {
+      "ticker": "BAH",
+      "return_63d": 0.1039,
+      "excess_63d": 0.279
+     },
+     {
+      "ticker": "LDOS",
+      "return_63d": -0.0431,
+      "excess_63d": 0.132
+     },
+     {
+      "ticker": "LMT",
+      "return_63d": -0.054,
+      "excess_63d": 0.121
+     },
+     {
+      "ticker": "PLTR",
+      "return_63d": -0.0847,
+      "excess_63d": 0.0903
+     },
+     {
+      "ticker": "NOC",
+      "return_63d": -0.0874,
+      "excess_63d": 0.0876
      }
     ],
     "as_of_date": "2026-11-06"
@@ -14060,58 +14061,53 @@
      "HUT",
      "IREN",
      "MARA",
-     "RIOT",
      "WULF"
     ],
     "missing_tickers": [
-     "BITF"
+     "BITF",
+     "RIOT"
     ],
-    "priced_count": 11,
+    "priced_count": 10,
     "state": "watch",
     "phase": "fading_watch",
     "phase_label": "Fading watch",
     "action": "No new trade; prior edge is stale or losing benchmark-relative breadth.",
     "action_priority": 5,
     "timing": {
-     "first_trigger_date": "2024-07-25",
+     "first_trigger_date": "2024-07-29",
      "first_active_date": "2024-07-15",
-     "trading_days_since_first_trigger": 574,
+     "trading_days_since_first_trigger": 572,
      "trading_days_since_first_active": 582,
      "first_trigger_age": "2.3y",
      "first_active_age": "2.3y"
     },
     "metrics": {
      "21d": {
-      "basket_return": -0.2959,
+      "basket_return": -0.3145,
       "benchmark_return": -0.0731,
-      "excess_return": -0.2228,
-      "breadth": 0.0909
+      "excess_return": -0.2414,
+      "breadth": 0.0
      },
      "63d": {
-      "basket_return": -0.3853,
+      "basket_return": -0.4013,
       "benchmark_return": 0.1835,
-      "excess_return": -0.5689,
+      "excess_return": -0.5849,
       "breadth": 0.0
      },
      "126d": {
-      "basket_return": -0.5087,
+      "basket_return": -0.5217,
       "benchmark_return": -0.0565,
-      "excess_return": -0.4521,
+      "excess_return": -0.4652,
       "breadth": 0.0
      }
     },
-    "first_trigger_date": "2024-07-25",
+    "first_trigger_date": "2024-07-29",
     "first_active_date": "2024-07-15",
     "leaders": [
      {
       "ticker": "CAN",
       "return_63d": -0.07,
       "excess_63d": -0.2535
-     },
-     {
-      "ticker": "RIOT",
-      "return_63d": -0.1387,
-      "excess_63d": -0.3222
      },
      {
       "ticker": "WULF",
@@ -14127,6 +14123,11 @@
       "ticker": "MARA",
       "return_63d": -0.3358,
       "excess_63d": -0.5193
+     },
+     {
+      "ticker": "HUT",
+      "return_63d": -0.3854,
+      "excess_63d": -0.5689
      }
     ],
     "as_of_date": "2026-11-06"
