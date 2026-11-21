@@ -35,7 +35,7 @@ The goal is a network where the NPV of cooperating through the authorization pat
 
 ### 1.1 What Failed
 
-The network's #2 all-time earner (kaiserlimp0) extracted ~1M PFT without authorization, without core team contact, and without triggering any enforcement response until the gap was identified ex post.
+The network's #2 all-time earner extracted ~1M PFT without authorization, without core team contact, and without triggering any enforcement response until the gap was identified ex post.
 
 Three specific system properties failed:
 
