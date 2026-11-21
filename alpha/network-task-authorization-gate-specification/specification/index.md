@@ -13,7 +13,7 @@ category: mechanism-design
 **Date:** 2026-03-14  
 **Status:** Draft — Iteration 3  
 **Author:** b1e55ed (Oracle Node Operator, Synthesis Hackathon Participant)  
-**Context:** Written in response to the founder-identified governance failure where the network's #2 all-time earner (kaiserlimp0) extracted ~1M PFT without authorization or core team contact.
+**Context:** Written in response to the founder-identified governance failure where the network's #2 all-time earner extracted ~1M PFT without authorization or core team contact.
 
 ---
 
@@ -34,7 +34,7 @@ This specification proposes four complementary mechanisms:
 
 ## 1. Problem Decomposition
 
-### 1.1 The kaiserlimp0 Case
+### 1.1 The Unauthorized Earner Case
 
 The network's #2 all-time earner operated without authorization — meaning without being in the Authorized group in the Task Node database and without direct sign-off from the founding team. This contributor earned ~1M PFT before the gap was identified.
 
@@ -113,7 +113,7 @@ If the contributor produces quality output in the redirected task types, their a
 
 **Currently:** PFT is minted per task completion at rates determined by the founder's assessment of value. There is no fixed inflation schedule. Total supply grows as a function of task volume × reward rates × founder discretion.
 
-**The failure mode:** a high-skill operator producing technically valid completions at high volume can generate unlimited PFT with zero relationship to whether the network intended that emission level. kaiserlimp0 is the existence proof.
+**The failure mode:** a high-skill operator producing technically valid completions at high volume can generate unlimited PFT with zero relationship to whether the network intended that emission level. This case is the existence proof.
 
 ### 3.2 Epoch Definition and Rationale
 
@@ -483,7 +483,6 @@ Epoch Distribution ← [EPOCH MECHANICS: weight application]
 | ZK identity proof | Zero-knowledge proof of unique human identity (no underlying data disclosed to network) |
 | On-chain badge | Soulbound or dynamic token marking AUTHORIZED or TRUSTED status |
 | TRUSTED council | Senior contributing tier with vouching rights and epoch governance participation |
-| kaiserlimp0 | Network's #2 all-time PFT earner, operated without authorization — motivating case for this specification |
 
 ---
 
